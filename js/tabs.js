@@ -71,10 +71,19 @@ function activateSubTab(groupClass, panelId, btnElement) {
     btnElement.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500`;
     // Lazy-render trend panels
     if (panelId === 'panel-prelims-trend') renderPrelimsTrend();
-    if (panelId === 'panel-mains-trend-gs1') renderMainsGS1Trend();
-    if (panelId === 'panel-mains-trend-gs2') renderMainsGS2Trend();
-    if (panelId === 'panel-mains-trend-gs3') renderMainsGS3Trend();
-    if (panelId === 'panel-mains-trend-gs4') renderMainsGS4Trend();
+}
+
+function activateInnerTab(gsNum, tab, btnEl) {
+    document.querySelectorAll('.inner-pane-gs' + gsNum).forEach(p => p.classList.add('hidden'));
+    document.getElementById('inner-gs' + gsNum + '-' + tab).classList.remove('hidden');
+    document.querySelectorAll('.inner-tab-gs' + gsNum).forEach(btn => {
+        btn.className = `inner-tab-gs${gsNum} text-[11px] py-1.5 px-4 rounded-lg font-bold uppercase transition-all text-slate-400 hover:text-white hover:bg-white/10 border border-transparent`;
+    });
+    btnEl.className = `inner-tab-gs${gsNum} text-[11px] py-1.5 px-4 rounded-lg font-bold uppercase transition-all bg-violet-600 text-white border border-violet-500`;
+    if (tab === 'trend') {
+        const renderers = [null, renderMainsGS1Trend, renderMainsGS2Trend, renderMainsGS3Trend, renderMainsGS4Trend];
+        renderers[gsNum]();
+    }
 }
 
 function activateSubTab_PYQ(groupClass, panelId, btnElement) {
