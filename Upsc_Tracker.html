@@ -24,7 +24,6 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
 
-    <!-- MASTER GLOBAL HUD NAVBAR -->
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 px-4 lg:px-8 py-4 shadow-xs">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-4 w-full md:w-auto">
@@ -51,18 +50,12 @@
 
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
         
-        <!-- ROOT NAVIGATION: MARATHON VS PLANNER -->
         <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 bg-slate-200/50 rounded-2xl border border-slate-300/50">
             <button onclick="activateRootTab('marathon')" id="btn-root-marathon" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all bg-indigo-600 text-white shadow-lg heading-font border border-indigo-500">⚔️ Marathon Tracker</button>
             <button onclick="activateRootTab('planner')" id="btn-root-planner" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-transparent">📅 Strategy Planner</button>
         </div>
 
-        <!-- ============================================== -->
-        <!-- ROOT 1: MARATHON VIEW -->
-        <!-- ============================================== -->
         <div id="view-marathon" class="root-pane-view block space-y-8">
-            
-            <!-- TOP STATS -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="neo-card rounded-3xl p-6 border-l-4 border-indigo-600 flex flex-col justify-between relative overflow-hidden">
                     <div>
@@ -97,7 +90,6 @@
                 </div>
             </div>
 
-            <!-- PIE CHART GRAPHICAL HUB -->
             <div class="neo-card rounded-3xl p-6">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                     <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>
@@ -116,7 +108,6 @@
                 </div>
             </div>
 
-            <!-- LEVEL 1: MASTER NAVIGATION TABS -->
             <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm border border-slate-200">
                 <button onclick="activateMasterTab('syllabus')" id="btn-master-syllabus" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font">1. Syllabus</button>
                 <button onclick="activateMasterTab('ca')" id="btn-master-ca" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">2. CA Tracker</button>
@@ -124,18 +115,13 @@
                 <button onclick="activateMasterTab('testseries')" id="btn-master-testseries" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">4. Test-Series</button>
             </div>
 
-            <!-- ======================= -->
-            <!-- TRACK 1: SYLLABUS HUB -->
-            <!-- ======================= -->
+            <!-- TRACK 1: SYLLABUS -->
             <div id="master-syllabus" class="master-pane-view block space-y-6">
-                <!-- LEVEL 2: SYLLABUS STAGE TABS -->
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab('prelims')" id="btn-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
                     <button onclick="activateStageTab('mains')" id="btn-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains</button>
                     <button onclick="activateStageTab('anthro')" id="btn-stage-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage III: Anthro</button>
                 </div>
-
-                <!-- LEVEL 3: PRELIMS PANELS -->
                 <div id="deck-prelims" class="stage-pane-view block space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
@@ -144,8 +130,6 @@
                     <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
                     <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
                 </div>
-
-                <!-- LEVEL 3: MAINS PANELS -->
                 <div id="deck-mains" class="stage-pane-view hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab('mains', 'panel-mains-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
@@ -164,8 +148,6 @@
                     <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
                     <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
                 </div>
-
-                <!-- LEVEL 3: ANTHROPOLOGY PANELS -->
                 <div id="deck-anthro" class="stage-pane-view hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab('anthro', 'panel-anthro-p1', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">Paper I Focus</button>
@@ -184,9 +166,7 @@
                 </div>
             </div>
 
-            <!-- ======================= -->
             <!-- TRACK 2: CA TRACKER -->
-            <!-- ======================= -->
             <div id="master-ca" class="master-pane-view hidden space-y-8">
                 <div class="neo-card rounded-3xl p-6">
                     <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">Current Affairs (CA) Matrix</h2>
@@ -194,16 +174,13 @@
                 </div>
             </div>
 
-            <!-- ======================= -->
-            <!-- TRACK 3: PYQ TRACKER (NEW 3-TIER SYSTEM) -->
-            <!-- ======================= -->
+            <!-- TRACK 3: PYQ TRACKER -->
             <div id="master-pyq" class="master-pane-view hidden space-y-6">
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab_PYQ('prelims')" id="btn-pyq-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
                     <button onclick="activateStageTab_PYQ('mains')" id="btn-pyq-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains & Optional</button>
                 </div>
 
-                <!-- PYQ Prelims Panels -->
                 <div id="deck-pyq-prelims" class="stage-pane-pyq block space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab_PYQ('prelims', 'panel-pyq-p1', this)" class="sub-tab-pyq-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
@@ -213,7 +190,6 @@
                     <div id="panel-pyq-p2" class="sub-pane-pyq-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: CSAT Paper II</h2><div class="space-y-3" id="box-pyq-p2"></div></div>
                 </div>
 
-                <!-- PYQ Mains Panels -->
                 <div id="deck-pyq-mains" class="stage-pane-pyq hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs1', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
@@ -232,16 +208,13 @@
                 </div>
             </div>
 
-            <!-- ======================= -->
-            <!-- TRACK 4: TEST SERIES (NEW 3-TIER SYSTEM) -->
-            <!-- ======================= -->
+            <!-- TRACK 4: TEST SERIES -->
             <div id="master-testseries" class="master-pane-view hidden space-y-6">
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab_TS('prelims')" id="btn-ts-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
                     <button onclick="activateStageTab_TS('mains')" id="btn-ts-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains & Optional</button>
                 </div>
 
-                <!-- TS Prelims Panels -->
                 <div id="deck-ts-prelims" class="stage-pane-ts block space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab_TS('prelims', 'panel-ts-p1', this)" class="sub-tab-ts-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
@@ -251,7 +224,6 @@
                     <div id="panel-ts-p2" class="sub-pane-ts-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: CSAT Paper II</h2><div class="space-y-3" id="box-ts-p2"></div></div>
                 </div>
 
-                <!-- TS Mains Panels -->
                 <div id="deck-ts-mains" class="stage-pane-ts hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
                         <button onclick="activateSubTab_TS('mains', 'panel-ts-gs1', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
@@ -392,109 +364,41 @@
         const dataA2 = ["1.1 Evolution of the Indian Culture and Civilization: Prehistoric (Paleolithic, Mesolithic, Neolithic and Chalcolithic); Protohistoric (Indus Valley Civilization); Islamic impacts; Westernization and Modernization trends.", "1.2 Paleoanthropological evidences from India with special reference to Ramapithecus, Sivapithecus and Narmada Man.", "1.3 Ethno-archaeology in India: The concept of ethno-archaeology; Survivals and Parallels among the hunter-gatherers, pastoralists, nomadic communities, agriculturalists and artisan communities.", "2. Demographic profile of India: Ethnic and linguistic elements in the Indian population and their distribution; Social and economic characteristics of the ethnographic elements.", "3.1 The structure and nature of traditional Indian social system: Varnashrama, Purushartha, Karma, Rina and Rebirth concepts.", "3.2 Caste system in India: Structure and characteristics; Varna and Caste; Theories of origin of caste system; Dominant Caste; Caste mobility; Future of caste system; Jajmani system; Jati Panchayat.", "3.3 Sacred Complex and Nature-Man-Spirit Complex.", "3.4 Impact of Buddhism, Jainism, Islam and Christianity on Indian society.", "4. Emergence and Growth of Anthropology in India: Contributions of the 18th, 19th and early 20th Century scholar-administrators; Contributions of Indian anthropologists to tribal and peasant studies.", "5.1 Indian Village: Significance of village study in India; Indian village as a social system; Traditional and changing patterns of settlement and inter-caste relations; Agrarian relations in Indian villages; Impact of globalization on Indian villages.", "5.2 Linguistic and religious minorities and their social, political and economic problems.", "5.3 Indigenous and exogenous processes of socio-cultural change in Indian society: Sanskritization, Westernization, Modernization; Inter-play of Little and Great Traditions; Panchayati Raj and social change.", "6.1 Tribal situation in India: Bio-genetic variability, linguistic and socio-economic characteristics of tribal populations and their distribution.", "6.2 Problems of the tribal Communities: Land alienation, poverty, indebtedness, low literacy, poor health, malnutrition, underemployment; Tribal unrest and Left-Wing Extremism.", "6.3 Developmental projects and their impact on tribal displacement and rehabilitation problems; Development of forest policy and tribals.", "7.1 Problems of exploitation and deprivation of Scheduled Castes, Scheduled Tribes and Other Backward Classes; Constitutional safeguards for Scheduled Tribes and Scheduled Castes.", "7.2 Social change and contemporary tribal societies: Impact of modern democratic institutions, development programmes and welfare measures on tribals and weaker sections.", "7.3 The concept of PTGs (Particularly Vulnerable Tribal Groups) and their distribution; Special programmes for their development; Role of NGOs in tribal development.", "8.1 Impact of Hinduism, Buddhism, Christianity, Islam and other religions on tribal societies.", "8.2 Tribe and nation state: Comparative study of tribal communities in India and other democratic countries; issues of integration and autonomy.", "9.1 History of administration of tribal areas: Tribal policies and plans during British rule and post- independence; 5th and 6th Schedules of the Constitution; Panchayati Raj provisions for tribal areas (PESA); Tribal Sub-Plan framework.", "9.2 Role of Anthropology in tribal and rural development.", "9.3 Contributions of anthropology to the understanding of regionalism, communalism, and ethnic conflicts."];
         const dataCA = ["June 2026 Monthly Compilation", "July 2026 Monthly Compilation", "August 2026 Monthly Compilation", "September 2026 Monthly Compilation", "October 2026 Monthly Compilation", "November 2026 Monthly Compilation", "December 2026 Monthly Compilation", "January 2027 Monthly Compilation", "February 2027 Monthly Compilation", "March 2027 Monthly Compilation", "April 2027 Monthly Compilation", "May 2027 (Pre-Exam Update)"];
         
-        // =========================================================================================
-        // NEW SYLLABUS-MATCHED PYQ GS PAPER I ARRAY INCORPORATED DIRECTLY FROM THE SOURCE DOCUMENT
-        // =========================================================================================
+        // ====================================================================================================
+        // NATIVE INJECTION: EXACT PYQ GS-1 QUESTIONS SOURCED VERBATIM FROM UNACADEMY COMPILATION[cite: 2]
+        // ====================================================================================================
         const dataPYQ_p1 = [
-            "Modern India: India in the 18th Century",
-            "Modern India: Indian Renaissance and Reform Movements",
-            "Modern India: Early Uprising Against the British and Revolt of 1857",
-            "Modern India: Rise of Indian National Movement: Moderate and Extremists Phase",
-            "Modern India: Phases of Revolutionary Nationalism",
-            "Modern India: The Beginning of Gandhian Era",
-            "Modern India: The National Movement in the 1940s",
-            "Modern India: Development of Press, Education and Civil Services",
-            "Modern India: Independence to Partition",
-            "Ancient India: Prehistoric Period and Indus Valley Civilisation",
-            "Ancient India: Vedic and Later Vedic Age",
-            "Ancient India: Mauryan and Post-Mauryan Age",
-            "Ancient India: Gupta and Post- Gupta Age",
-            "Ancient India: Sangam Age",
-            "Medieval India: Delhi Sultanate (1206 AD to 1526 AD)",
-            "Medieval India: Mughal Empire (1526 AD to 1761 AD)",
-            "Medieval India: Provincial Kingdoms in Medieval India",
-            "Medieval India: Religious movement during medieval period",
-            "Art & Culture: Architecture and Sculpture",
-            "Art & Culture: Literature: Religious and Scientific",
-            "Art & Culture: Performing Arts: Dance, Theatre and Music",
-            "Art & Culture: Visual Arts: Painting, ceramics and drawing",
-            "Art & Culture: Indian Philosophy and Bhakti & Sufi Movements",
-            "Art & Culture: Indian Traditions, Festivals, and Calendars",
-            "Art & Culture: Miscellaneous",
-            "World Geography: The Earth and the Universe",
-            "World Geography: Geomorphology",
-            "World Geography: Climatology",
-            "World Geography: Oceanography",
-            "World Geography: World Climatic Regions",
-            "World Geography: Human and Economic Geography",
-            "World Geography: World Map",
-            "Indian Geography: Physiography of India",
-            "Indian Geography: Drainage System of India",
-            "Indian Geography: Indian Climate",
-            "Indian Geography: Soils",
-            "Indian Geography: Natural Vegetation in India",
-            "Indian Geography: Mineral and Industries",
-            "Indian Geography: Agriculture in India",
-            "Indian Geography: Indian Map",
-            "Environment & Ecology: Protected Area Network: NP, WS, BR, etc.",
-            "Environment & Ecology: Ecosystem and Ecology",
-            "Environment & Ecology: Environmental Pollution",
-            "Environment & Ecology: Biodiversity",
-            "Environment & Ecology: Global Conservation Efforts",
-            "Environment & Ecology: National Conservation Efforts",
-            "Environment & Ecology: Climate Change: Causes and Implications",
-            "Environment & Ecology: Environment, Sustainable Development and General Issues",
-            "Environment & Ecology: Agriculture",
-            "Indian Polity and Governance: Historical Background & Making of Indian Constitution",
-            "Indian Polity and Governance: Features of the Indian Constitution",
-            "Indian Polity and Governance: Legislature",
-            "Indian Polity and Governance: Executive",
-            "Indian Polity and Governance: Judiciary",
-            "Indian Polity and Governance: Local Self Government",
-            "Indian Polity and Governance: Governance",
-            "Indian Polity and Governance: Constitutional and Non-constitutional Bodies",
-            "Indian Polity and Governance: Judicial & Quasi-Judicial Bodies",
-            "International Relations: India's Foreign Policy",
-            "International Relations: India & Its Neighbors",
-            "International Relations: International Groups and Political Organizations",
-            "International Relations: Places in news",
-            "Indian Economy: Money: Barter to Bitcoins",
-            "Indian Economy: Bank Classification",
-            "Indian Economy: NPA, Bad-Loans, BASEL",
-            "Indian Economy: Sharemarket, Companies Act",
-            "Indian Economy: Insurance, Pension, Financial inclusion",
-            "Indian Economy: Budget Direct Taxes",
-            "Indian Economy: Budget Indirect Taxes GST",
-            "Indian Economy: Finance Commission, BlackMoney, Subsidies",
-            "Indian Economy: BOP, CAD Currency Exchange",
-            "Indian Economy: WTO, IMF & other International Organisations & Agreeements",
-            "Indian Economy: Sectors of Economy- Agriculture",
-            "Indian Economy: Sectors- MFG, Services, Ease of Doing Biz, IPR, Startup, MSME",
-            "Indian Economy: NITI, Planning Commission, FYP, Unemployment",
-            "Indian Economy: GDP, GNP",
-            "Indian Economy: Inflation",
-            "Indian Economy: Infra: Energy",
-            "Indian Economy: Infra: Transport, Urban Rural, Communication, Investment, PPP",
-            "Indian Economy: HRD: Census, Health Hunger",
-            "Indian Economy: HRD: Education and Skill",
-            "Indian Economy: HRD: Poverty",
-            "Indian Economy: HRD: Weaker Section, HDI, SDG",
-            "Indian Economy: Microeconomics",
-            "Science & Tech: Biotechnology",
-            "Science & Tech: Defence Technology",
-            "Science & Tech: Space Science",
-            "Science & Tech: Communication Technology",
-            "Science & Tech: Energy",
-            "Science & Tech: Miscellaneous",
-            "Science & Tech: Physics",
-            "Science & Tech: Chemistry",
-            "Science & Tech: Biology",
-            "Current Affairs and Miscellaneous: Current Affairs: India",
-            "Current Affairs and Miscellaneous: Current Affairs: World",
-            "Current Affairs and Miscellaneous: GK/Persons in News",
-            "Current Affairs and Miscellaneous: Miscellaneous"
+            `1. Consider the following fruits: I. Papaya II. Pineapple III. Guava. How many of the above were introduced in India by the Portuguese in the sixteenth and seventeenth centuries? (a) Only one (b) Only two (c) All the three (d) None[cite: 2]`,
+            `2. With reference to revenue collection by Cornwallis, consider the following statements: 1. Under the Ryotwari Settlement of revenue collection, the peasants were exempted from revenue payment in case of bad harvests or natural calamities. 2. Under the Permanent Settlement in Bengal, if the Zamindar failed to pay his revenues to the state, on or before the fixed date, he would be removed from his Zamindari. Which of the statements given above is/are correct? (a) 1 only (b) 2 only (c) Both 1 and 2 (d) Neither 1 nor 2[cite: 2]`,
+            `3. In the first quarter of the seventeenth century, in which of the following was/were the factory/factories of the English East India Company located? 1. Broach 2. Chicacole 3. Trichinopoly. Select the correct answer using the code given below: (a) 1 only (b) 1 and 2 (c) 3 only (d) 2 and 3[cite: 2]`,
+            `4. By which one of the following Acts was the Governor General of Bengal designated as the Governor General of India? (a) The Regulating Act (b) The Pitt's India Act (c) The Charter Act of 1793 (d) The Charter Act of 1833[cite: 2]`,
+            `5. With reference to Indian History, Alexander Rea, A.H. Longhurst, Robert Sewell, James Burgess and Walter Elliot were associated with (a) archaeological excavations (b) establishment of English Press in Colonial India (c) establishment of Churches in Princely States (d) construction of railways in Colonial India[cite: 2]`,
+            `6. With reference to Indian history, consider the following statements: 1. The Dutch established their factories/warehouses on the east coast on lands granted to them by the Gajapati rulers. 2. Alfonso de Albuquerque captured Goa from the Bijapur Sultanate. 3. The English East India Company established a factory at Madras on a plot of land leased from a representative of the Vijayanagara empire. Which of the statements given above are correct? (a) 1 and 2 only (b) 2 and 3 only (c) 1 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `7. Which of the following statements correctly explains the impact of the Industrial Revolution on India during the first half of the nineteenth century? (a) Indian handicrafts were ruined. (b) Machines were introduced in the Indian textile industry in large numbers. (c) Railway lines were laid in many parts of the country. (d) Heavy duties were imposed on the imports of British manufactures.[cite: 2]`,
+            `8. Who among the following rulers of medieval Gujarat surrendered Diu to the Portuguese? (a) Ahmad Shah (b) Mahmud Begarha (c) Bahadur Shah (d) Muhammad Shah[cite: 2]`,
+            `9. With reference to the history of India, consider the following pairs: 1. Aurang: In-charge of treasury of the State 2. Banian: Indian agent of the East India Company 3. Mirasidar: Designated revenue payer to the State. Which of the pairs given above is/are correctly matched? (a) 1 and 2 only (b) 2 and 3 only (c) 3 only (d) 1, 2 and 3[cite: 2]`,
+            `10. Wellesley established the Fort William College Calcutta because (a) He was asked by the Board of Directors at London to do so (b) He wanted to revive interest in oriental learning in India (c) He wanted to provide William Carey and his associates with employment (d) He wanted to train British civilians for administrative purpose in India[cite: 2]`,
+            `11. Which one of the following groups of plants was domesticated in the New world and introduced in the Old World? (a) Tobacco, cocoa and rubber (b) Tobacco, cotton and rubber (c) Cotton, coffee and sugarcane (d) Rubber, coffee and wheat[cite: 2]`,
+            `12. Consider the following statements about 'the Charter Act of 1813': 1. It ended the trade monopoly of the East India Company in India except for trade in tea and trade with China. 2. It asserted the sovereignty of the British Crown over the Indian territories held by the Company. 3. The revenues of India were now controlled by the British Parliament. Which of the statements given above are correct? (a) 1 and 2 only (b) 2 and 3 only (c) 1 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `13. The staple commodities of export by the English East India Company from Bengal in the middle of the 18th century were: (a) Raw cotton, oil-seeds and opium (b) Sugar, salt, zinc and lead (c) Copper, silver, gold, spices and tea (d) Cotton, silk, saltpetre and opium[cite: 2]`,
+            `14. Which one of the following statements does not apply to the system of Subsidiary Alliance introduced by Lord Wellesley? (a) To maintain a large standing army at others expense (b) To keep India safe from Napoleonic danger (c) To secure a fixed income for the Company (d) To establish British paramountcy over the Indian States[cite: 2]`,
+            `15. Who among the following was/were associated with the introduction of Ryotwari Settlement in India during the British rule? 1. Lord Cornwallis 2. Alexander Read 3. Thomas Munro. Select the correct answer using the code given below: (a) 1 only (b) 1 and 3 only (c) 2 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `16. Who among the following was the founder of the 'Self-Respect Movement'? (a) 'Periyar' E.V.Ramaswamy Naicker (b) Dr. B. R. Ambedkar (c) Bhaskarrao Jadhav (d) Dinkarrao Javalkar[cite: 2]`,
+            `17. Consider the following statements about Raja Ram Mohan Roy: I. He possessed great love and respect for the traditional philosophical systems of the East. II. He desired his countrymen to accept the rational and scientific approach and the principle of human dignity and social equality of all men and women. Which of the statements given above is/are correct? (a) I only (b) II only (c) Both I and II (d) Neither I nor II[cite: 2]`,
+            `18. With reference to Madanapalle of Andhra Pradesh, which one of the following statements is correct? (a) Pingali Venkayya designed the tricolour Indian National Flag here. (b) Pattabhi Sitaramaiah led the Quit India Movement of the Andhra region from here. (c) Rabindranath Tagore translated the National Anthem from Bengali to English here. (d) Madame Blavatsky and Colonel Olcott set up headquarters of Theosophical Society first here.[cite: 2]`,
+            `19. The Vital-Vidhwansak, the first monthly journal to have the untouchable people as its target audience, was published by: (a) Gopal Baba Walangkar (b) Jyotiba Phule (c) Mohandas Karamchand Gandhi (d) Bhimrao Ramji Ambedkar[cite: 2]`,
+            `20. In the context of Indian history, the Rakhmabai case of 1884 revolved around: 1. Women's right to gain education 2. Age of consent 3. Restitution of conjugal rights. Select the correct answer using the code given below: (a) 1 and 2 only (b) 2 and 3 only (c) 1 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `21. Consider the following pairs: Movement/Organisation - Leader. 1. All India Anti-Untouchability League - Mahatma Gandhi 2. All India Kisan Sabha - Swami Sahajanand Saraswati 3. Self-Respect Movement - Naicker E.V. Ramaswami. Which of the pairs given above is/are correctly matched? (a) 1 only (b) 1 and 2 only (c) 2 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `22. Which among the following events happened earliest? (a) Swami Dayanand established Arya Samaj. (b) Dinabandhu Mitra wrote Neel Darpan. (c) Bankim Chandra Chattopadhyay wrote Anandmath. (d) Satyendranath Tagore became the first Indian to succeed in the Indian Civil Services Examination.[cite: 2]`,
+            `23. Satya Shodhak Samaj organised: (a) a movement for upliftment of tribals in Bihar (b) a temple-entry movement in Gujarat (c) an anti-caste movement in Maharashtra (d) a peasant movement in Punjab[cite: 2]`,
+            `24. Consider the following: 1. Calcutta Unitarian Committee 2. Tabernacle of New Dispensation 3. Indian Reform Association. Keshab Chandra Sen is associated with the establishment of which of the above? (a) 1 and 3 only (b) 2 and 3 only (c) 3 only (d) 1, 2 and 3[cite: 2]`,
+            `25. Annie Besant was: 1. Responsible for starting the Home Rule Movement. 2. The founder of the Theosophical Society. 3. Once the President of the Indian National Congress. Select the correct statement/statements using the code given below: (a) 1 only (b) 2 and 3 only (c) 1 and 3 only (d) 1, 2 and 3[cite: 2]`,
+            `26. Indigo cultivation in India declined by the beginning of the 20th century because of: (a) peasant resistance to the oppressive conduct of planters (b) its unprofitability in the world market because of new inventions (c) national leaders' opposition to the cultivation of indigo (d) Government control over the planters[cite: 2]`,
+            `27. With reference to the history of India, "Ulgulan" or the Great Tumult is the description of which of the following events? (a) The Revolt of 1857 (b) The Mappila Rebellion of 1921 (c) The Indigo Revolt of 1859-60 (d) Birsa Munda's Revolt of 1899-1900[cite: 2]`,
+            `28. After the Santhal Uprising subsided, what were the measure/measures taken by the colonial government? 1. The territories called 'Santhal Parganas' were created. 2. It became illegal for a Santhal to transfer land to a non-Santhal. Select the correct answer using the code given below: (a) 1 only (b) 2 only (c) Both 1 and 2 (d) Neither 1 nor 2[cite: 2]`,
+            `29. What was/were the object/objects of Queen Victoria's Proclamation (1858)? 1. To disclaim any intention to annex Indian States. 2. To place the Indian administration under the British Crown. 3. To regulate East India Company's trade with India. Select the correct answer using the code given below: (a) 1 and 2 only (b) 2 only (c) 1 and 3 only (d) 1, 2 and 3[cite: 2]`
         ];
-        
+
         const dataPYQ_p2 = ["CSAT PYQ (2023)", "CSAT PYQ (2022)"];
         const dataPYQ_gs1 = ["GS-I PYQ (2023)", "GS-I PYQ (2022)"];
         const dataPYQ_gs2 = ["GS-II PYQ (2023)", "GS-II PYQ (2022)"];
@@ -521,19 +425,16 @@
             'ca':  { hex: '#14b8a6', bg: '#ccfbf1', text: '#0d9488' } 
         };
 
-        // Initialize Core Syllabus & CA
         buildList('box-prelims-gs', dataP1, 'p1'); buildList('box-prelims-csat', dataP2, 'p2');
         buildList('box-mains-lang-a', dataLA, 'la'); buildList('box-mains-lang-b', dataLB, 'lb'); buildList('box-mains-essay', dataES, 'es');
         buildList('box-mains-gs1', dataGS1, 'gs1'); buildList('box-mains-gs2', dataGS2, 'gs2'); buildList('box-mains-gs3', dataGS3, 'gs3'); buildList('box-mains-gs4', dataGS4, 'gs4');
         buildList('box-anthro-p1', dataA1, 'a1'); buildList('box-anthro-p2', dataA2, 'a2');
         buildList('box-ca', dataCA, 'ca');
 
-        // Initialize PYQ Sub-Boxes
         buildList('box-pyq-p1', dataPYQ_p1, 'pq1'); buildList('box-pyq-p2', dataPYQ_p2, 'pq2');
         buildList('box-pyq-gs1', dataPYQ_gs1, 'qg1'); buildList('box-pyq-gs2', dataPYQ_gs2, 'qg2'); buildList('box-pyq-gs3', dataPYQ_gs3, 'qg3'); buildList('box-pyq-gs4', dataPYQ_gs4, 'qg4');
         buildList('box-pyq-a1', dataPYQ_a1, 'qa1'); buildList('box-pyq-a2', dataPYQ_a2, 'qa2');
 
-        // Initialize Test Series Sub-Boxes
         buildList('box-ts-p1', dataTS_p1, 'tp1'); buildList('box-ts-p2', dataTS_p2, 'tp2');
         buildList('box-ts-gs1', dataTS_gs1, 'tg1'); buildList('box-ts-gs2', dataTS_gs2, 'tg2'); buildList('box-ts-gs3', dataTS_gs3, 'tg3'); buildList('box-ts-gs4', dataTS_gs4, 'tg4');
         buildList('box-ts-essay', dataTS_essay, 'te1'); buildList('box-ts-a1', dataTS_a1, 'ta1'); buildList('box-ts-a2', dataTS_a2, 'ta2');
@@ -557,9 +458,6 @@
             `).join('');
         }
 
-        // ==========================
-        // SAFE CLOUD INTEGRATION 
-        // ==========================
         let dbClient = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -653,7 +551,7 @@
 
             if(!dbClient) return;
             try {
-                const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ id: elementId, is_checked: isChecked, topic_note: noteText, updated_at: new Date().toISOString() });
+                const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ id: elementId, is_checked: isChecked, topic_note: noteText, updated_at: new DatetoISOString() });
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
                 await Promise.race([pushPromise, timeoutPromise]);
                 document.getElementById("sync-status-text").innerText = "CLOUD SYNCED ACROSS DEVICES";
@@ -664,9 +562,6 @@
             }
         }
 
-        // ==========================
-        // DYNAMIC INJECTION MODALS
-        // ==========================
         function openCustomTopicModal() { 
             document.getElementById('modal-target-wrapper').classList.remove('hidden');
             document.getElementById("modal-title-display").innerText = "📂 Add Custom Entry";
@@ -730,9 +625,6 @@
             }
         }
 
-        // ==========================
-        // DYNAMIC PLANNER ENGINE
-        // ==========================
         function openPlannerModal() { document.getElementById('plan-modal').classList.remove('hidden'); }
         function closePlannerModal() { document.getElementById('plan-modal').classList.add('hidden'); document.getElementById('modal-plan-title').value = ""; }
 
@@ -814,9 +706,6 @@
             });
         }
 
-        // ==========================
-        // UI HELPERS & CALCS
-        // ==========================
         function calculateMetricsHUD() {
             const allBoxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
             const syllabusBoxes = allBoxes.filter(b => !b.id.startsWith('plan_') && !b.id.startsWith('uid-pyq') && !b.id.startsWith('uid-ts') && !b.id.startsWith('uid-pq') && !b.id.startsWith('uid-qg') && !b.id.startsWith('uid-qa') && !b.id.startsWith('uid-tp') && !b.id.startsWith('uid-tg') && !b.id.startsWith('uid-te') && !b.id.startsWith('uid-ta'));
@@ -864,9 +753,6 @@
             update(); setInterval(update, 60000);
         }
 
-        // ==========================
-        // 3-TIER NAVIGATION LOGIC
-        // ==========================
         function activateRootTab(id) {
             document.querySelectorAll('.root-pane-view').forEach(p => p.classList.add('hidden'));
             document.getElementById(`view-${id}`).classList.remove('hidden');
