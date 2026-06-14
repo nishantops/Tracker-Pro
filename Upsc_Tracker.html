@@ -6,7 +6,7 @@
     <title>Nishant Kumar • UPSC CSE Command Center 2027</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="pyq_data.js"></script>
+    <script src="pyq_data.js?v=3"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap');
         
@@ -943,6 +943,7 @@
                         '<span class="text-[11px] text-slate-600">' + escH(val) + '</span>' +
                     '</label>'
                 ).join('');
+                const clearBtn = '<button onclick="clearAnswer(\'' + qId + '\')" class="text-[9px] font-bold text-slate-400 hover:text-red-500 mt-1 cursor-pointer">Clear selection</button>';
                 
                 const yearBadge = q.year ? '<span class="text-[9px] font-mono font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">' + q.year + '</span>' : '';
                 
@@ -964,7 +965,7 @@
                         '<div class="flex-1 min-w-0">' +
                             '<div class="flex items-center gap-2 mb-1"><span class="text-[10px] font-mono font-bold text-slate-400">Q' + q.number + '</span>' + yearBadge + (isDropped ? '<span class="text-[9px] font-mono font-bold bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">DROPPED</span>' : '') + '</div>' +
                             '<p class="text-xs text-slate-700 font-medium leading-relaxed">' + formatQText(q.question) + '</p>' +
-                            '<div class="mt-2 pl-2 border-l-2 border-slate-100">' + optHtml + '</div>' +
+                            '<div class="mt-2 pl-2 border-l-2 border-slate-100">' + optHtml + clearBtn + '</div>' +
                             feedbackDiv +
                             '<div class="mt-2"><button onclick="this.nextElementSibling.classList.toggle(\'hidden\');this.textContent=this.textContent===\'Show Answer\'?\'Hide Answer\':\'Show Answer\'" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">Show Answer</button>' +
                             answerDisplay + '</div>' +
@@ -1006,6 +1007,17 @@
                 document.getElementById(qId + '-card').classList.add('border-red-200');
                 document.getElementById(qId + '-card').classList.remove('border-emerald-200');
             }
+        }
+
+        function clearAnswer(qId) {
+            // Uncheck all radio buttons for this question
+            document.querySelectorAll('input[name="' + qId + '"]').forEach(r => r.checked = false);
+            // Hide feedback
+            const fb = document.getElementById(qId + '-feedback');
+            if (fb) { fb.classList.add('hidden'); fb.textContent = ''; }
+            // Remove border colors
+            const card = document.getElementById(qId + '-card');
+            if (card) { card.classList.remove('border-emerald-200', 'border-red-200'); }
         }
 
         function escH(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
