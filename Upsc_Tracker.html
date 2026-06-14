@@ -97,10 +97,10 @@
     <header class="backdrop-blur-md sticky top-0 z-40 border-b border-indigo-100/50 px-4 lg:px-8 py-4 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-4 w-full md:w-auto">
-                <div class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-2xl tracking-tighter shadow-xl shadow-violet-500/30">NK</div>
+                <div id="user-avatar" class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-2xl tracking-tighter shadow-xl shadow-violet-500/30">NK</div>
                 <div>
                     <h1 class="text-2xl font-black tracking-tight text-slate-900 heading-font flex items-center gap-2">
-                        Nishant Kumar <span class="text-[10px] bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 font-bold px-2.5 py-1 rounded-full uppercase font-mono border border-violet-200/50">Mission 2027</span>
+                        <span id="user-display-name">User</span> <span class="text-[10px] bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 font-bold px-2.5 py-1 rounded-full uppercase font-mono border border-violet-200/50">Mission 2027</span>
                     </h1>
                     <p class="text-xs text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1.5">
                         <span id="sync-status-indicator" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> 
@@ -702,12 +702,54 @@
         setInterval(updateSessionActivity, 5 * 60 * 1000);
         setInterval(checkAutoLogout, 60 * 1000);
 
-        function showApp() {
+        async function showApp() {
+            // Get user display name
+            let displayName = await getUserDisplayName();
+            if (!displayName) {
+                displayName = prompt('Welcome! Please enter your name:');
+                if (displayName && displayName.trim()) {
+                    displayName = displayName.trim();
+                    await saveUserDisplayName(displayName);
+                } else {
+                    displayName = 'User';
+                }
+            }
+            // Update header with user name
+            document.getElementById('user-display-name').textContent = displayName;
+            const initials = displayName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('user-avatar').textContent = initials;
+            document.title = displayName + ' \u2022 UPSC CSE Command Center 2027';
+
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
             syncLatestCloudState();
             updateSessionActivity();
+        }
+
+        async function getUserDisplayName() {
+            if (!dbClient || !currentUserId) return null;
+            try {
+                const { data } = await dbClient.from('nishant_upsc_tracker').select('topic_note').eq('id', 'user_profile').eq('user_id', currentUserId).single();
+                if (data && data.topic_note) {
+                    const profile = JSON.parse(data.topic_note);
+                    return profile.display_name || null;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        async function saveUserDisplayName(name) {
+            if (!dbClient || !currentUserId) return;
+            try {
+                await dbClient.from('nishant_upsc_tracker').upsert({
+                    id: 'user_profile',
+                    user_id: currentUserId,
+                    is_checked: false,
+                    topic_note: JSON.stringify({ display_name: name }),
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id,user_id' });
+            } catch(e) { console.error('Failed to save profile:', e); }
         }
 
         // Allow Enter key to submit login
