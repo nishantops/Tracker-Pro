@@ -10,20 +10,23 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap');
         
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 50%, #ede9fe 100%); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e1b4b); background-size: 400% 400%; animation: bodyGradient 20s ease infinite; min-height: 100vh; }
+        @keyframes bodyGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+        
         .heading-font { font-family: 'Cabinet Grotesk', sans-serif; }
-        .neo-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.12), 0 4px 6px -4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; }
-        .neo-card:hover { transform: translateY(-1px); box-shadow: 0 20px 50px -12px rgba(99, 102, 241, 0.18), 0 8px 10px -6px rgba(0,0,0,0.05); }
-        .task-row { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .task-row:has(input[type="checkbox"]:checked) { background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%) !important; border-color: rgba(16, 185, 129, 0.4) !important; }
-        .task-row:hover { transform: translateX(2px); }
+        .neo-card { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.05); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s; color: #e2e8f0; }
+        .neo-card:hover { transform: translateY(-3px) scale(1.005); box-shadow: 0 25px 60px -12px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255,255,255,0.1); border-color: rgba(139, 92, 246, 0.3); }
+        .task-row { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+        .task-row:has(input[type="checkbox"]:checked) { background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%) !important; border-color: rgba(16, 185, 129, 0.4) !important; box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+        .task-row:hover { transform: translateX(4px); background: rgba(255,255,255,0.06); border-color: rgba(139, 92, 246, 0.2); }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a78bfa, #6366f1); border-radius: 99px; }
         
-        .pie-chart-frame { width: 48px; height: 48px; border-radius: 50%; transition: all 0.5s ease-out; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .pie-chart-frame { width: 48px; height: 48px; border-radius: 50%; transition: all 0.5s ease-out; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 0 20px rgba(139, 92, 246, 0.1); }
         .hidden { display: none !important; }
-        .locked-note { opacity: 0.6; pointer-events: none; background-color: #f1f5f9 !important; }
+        .locked-note { opacity: 0.5; pointer-events: none; background-color: rgba(15, 23, 42, 0.3) !important; }
 
         /* Auth Screen */
         #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e); background-size: 400% 400%; animation: authGradient 12s ease infinite; position: relative; overflow: hidden; }
@@ -40,15 +43,15 @@
         .auth-social-btn:hover { border-color: #8b5cf6; background: #faf5ff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139,92,246,0.1); }
 
         /* Animated header */
-        header { background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(238,242,255,0.95) 100%) !important; }
+        header { background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 27, 75, 0.9) 100%) !important; border-bottom: 1px solid rgba(139, 92, 246, 0.2) !important; box-shadow: 0 4px 30px rgba(0,0,0,0.3), 0 0 60px rgba(139, 92, 246, 0.05) !important; }
 
         /* Vibrant progress bar */
-        #global-progress-bar { background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #d946ef) !important; background-size: 200% 100%; animation: shimmer 3s ease infinite; }
+        #global-progress-bar { background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #d946ef, #ec4899) !important; background-size: 300% 100%; animation: shimmer 4s ease infinite; box-shadow: 0 0 15px rgba(139, 92, 246, 0.5), 0 0 30px rgba(139, 92, 246, 0.2); }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
         /* Pulse on countdown */
-        #prelims-countdown-live, #mains-countdown-live { animation: countPulse 2s ease-in-out infinite alternate; }
-        @keyframes countPulse { from { opacity: 0.85; } to { opacity: 1; } }
+        #prelims-countdown-live, #mains-countdown-live { animation: countPulse 2s ease-in-out infinite alternate; text-shadow: 0 0 20px currentColor; }
+        @keyframes countPulse { from { opacity: 0.85; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
         /* Profile Setup Screen */
         #profile-setup-screen { display: none; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483); background-size: 400% 400%; animation: authGradient 15s ease infinite; position: relative; overflow: hidden; }
@@ -71,14 +74,44 @@
 
         /* Header enhancements */
         .header-badge { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.6rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; animation: badgePulse 3s ease-in-out infinite; }
-        @keyframes badgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 4px rgba(99,102,241,0); } }
-        .header-stat { display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; font-weight: 700; color: #64748b; padding: 0.25rem 0.6rem; background: linear-gradient(135deg, #f8fafc, #eef2ff); border-radius: 0.5rem; border: 1px solid #e2e8f0; }
+        @keyframes badgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 6px rgba(99,102,241,0); } }
+        .header-stat { display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; font-weight: 700; color: #a5b4fc; padding: 0.25rem 0.6rem; background: rgba(99, 102, 241, 0.15); border-radius: 0.5rem; border: 1px solid rgba(99, 102, 241, 0.3); }
 
         /* Button hover effects */
         .btn-vibrant { position: relative; overflow: hidden; }
         .btn-vibrant::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent); opacity: 0; transition: opacity 0.3s; }
         .btn-vibrant:hover::after { opacity: 1; }
         .btn-vibrant:active { transform: scale(0.97); }
+
+        /* Glow effects */
+        .glow-violet { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1); }
+        .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1); }
+        .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1); }
+        .glow-rose { box-shadow: 0 0 20px rgba(244, 63, 94, 0.3), 0 0 40px rgba(244, 63, 94, 0.1); }
+
+        /* Glassmorphism inputs in dark mode */
+        #app-container input[type="text"], #app-container textarea { background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(139, 92, 246, 0.2); color: #e2e8f0; }
+        #app-container input[type="text"]:focus, #app-container textarea:focus { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); background: rgba(15, 23, 42, 0.6); }
+        #app-container input[type="text"]::placeholder, #app-container textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
+
+        /* Animated gradient text */
+        .gradient-text-animated { background: linear-gradient(270deg, #6366f1, #a855f7, #ec4899, #f59e0b, #6366f1); background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientText 6s ease infinite; }
+        @keyframes gradientText { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Card entrance animation */
+        .animate-in { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* Profile menu dropdown */
+        .profile-menu { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 1rem; padding: 0.5rem; min-width: 180px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 100; animation: dropIn 0.2s ease-out; }
+        @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .profile-menu button { width: 100%; padding: 0.6rem 1rem; border: none; background: transparent; color: #e2e8f0; font-size: 0.75rem; font-weight: 700; text-align: left; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+        .profile-menu button:hover { background: rgba(139, 92, 246, 0.2); color: #a5b4fc; }
+
+        /* Dark theme overrides for text */
+        #app-container h1, #app-container h2, #app-container h3, #app-container .heading-font { color: #f1f5f9; }
+        #app-container p, #app-container span, #app-container label { color: #94a3b8; }
+        #app-container select { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(139, 92, 246, 0.2); color: #e2e8f0; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
@@ -166,84 +199,89 @@
     <!-- MAIN APP (hidden until authenticated) -->
     <div id="app-container" class="hidden">
 
-    <header class="backdrop-blur-md sticky top-0 z-40 border-b border-indigo-100/50 px-4 lg:px-8 py-4 shadow-sm">
+    <header class="backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-4">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-4 w-full md:w-auto">
-                <div id="user-avatar" class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-2xl tracking-tighter shadow-xl shadow-violet-500/30">NK</div>
+                <div id="user-avatar" class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-2xl tracking-tighter shadow-xl shadow-violet-500/30 glow-violet cursor-pointer" onclick="toggleProfileMenu()">NK</div>
                 <div>
-                    <h1 class="text-2xl font-black tracking-tight text-slate-900 heading-font flex items-center gap-2">
-                        <span id="user-display-name">User</span> <span class="text-[10px] bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 font-bold px-2.5 py-1 rounded-full uppercase font-mono border border-violet-200/50">Mission 2027</span>
+                    <h1 class="text-2xl font-black tracking-tight heading-font flex items-center gap-2">
+                        <span id="user-display-name" class="gradient-text-animated">User</span> <span class="text-[10px] bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 text-violet-300 font-bold px-2.5 py-1 rounded-full uppercase font-mono border border-violet-500/30">Mission 2027</span>
                     </h1>
                     <div class="flex items-center gap-2 mt-0.5">
                         <span id="user-age-badge" class="header-stat" style="display:none;">🎂 <span id="user-age-text">--</span> yrs</span>
                         <span id="user-attempt-badge" class="header-stat" style="display:none;">🎯 Attempt <span id="user-attempt-text">--</span></span>
                         <span class="flex items-center gap-1.5">
                             <span id="sync-status-indicator" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> 
-                            <span id="sync-status-text" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">SYSTEM BOOTING...</span>
+                            <span id="sync-status-text" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SYSTEM BOOTING...</span>
                         </span>
                     </div>
+                </div>
+                <!-- Profile dropdown menu -->
+                <div id="profile-menu" class="profile-menu hidden" style="position:absolute; top:70px; left:16px;">
+                    <button onclick="openProfileEdit()">✏️ Update Profile</button>
+                    <button onclick="handleLogout()">⏻ Sign Out</button>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto font-mono text-xs font-bold">
-                <div class="bg-gradient-to-r from-slate-50 to-indigo-50 rounded-xl p-1 flex border border-indigo-100">
-                    <span class="px-2.5 py-1 text-slate-500">⏱</span>
-                    <span id="live-date-hud" class="px-2.5 py-1 bg-white rounded-lg text-slate-900 shadow-xs">---</span>
+                <div class="bg-gradient-to-r from-slate-800/50 to-indigo-900/50 rounded-xl p-1 flex border border-indigo-500/20">
+                    <span class="px-2.5 py-1 text-indigo-400">⏱</span>
+                    <span id="live-date-hud" class="px-2.5 py-1 bg-slate-900/60 rounded-lg text-indigo-200 shadow-xs">---</span>
                 </div>
-                <button onclick="handleLogout()" class="cursor-pointer bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 text-rose-600 text-[10px] font-bold px-3.5 py-2 rounded-lg transition-all border border-rose-200/60 shadow-sm" title="Sign Out">⏻ LOGOUT</button>
+                <button onclick="handleLogout()" class="cursor-pointer bg-gradient-to-r from-rose-500/10 to-pink-500/10 hover:from-rose-500/20 hover:to-pink-500/20 text-rose-400 text-[10px] font-bold px-3.5 py-2 rounded-lg transition-all border border-rose-500/30 shadow-sm" title="Sign Out">⏻ LOGOUT</button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
         
-        <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 bg-gradient-to-r from-indigo-50/80 via-violet-50/80 to-fuchsia-50/80 rounded-2xl border border-indigo-200/40 shadow-sm">
+        <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-violet-500/20 shadow-lg shadow-violet-500/5">
             <button onclick="activateRootTab('marathon')" id="btn-root-marathon" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 heading-font border border-indigo-500">⚔️ Marathon Tracker</button>
-            <button onclick="activateRootTab('planner')" id="btn-root-planner" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-500 hover:text-violet-700 hover:bg-white/80 heading-font border border-transparent">📅 Strategy Planner</button>
+            <button onclick="activateRootTab('planner')" id="btn-root-planner" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-400 hover:text-violet-300 hover:bg-white/5 heading-font border border-transparent">📅 Strategy Planner</button>
         </div>
 
         <div id="view-marathon" class="root-pane-view block space-y-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="neo-card rounded-3xl p-6 border-l-4 border-violet-500 flex flex-col justify-between relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-100/40 to-transparent rounded-bl-full"></div>
+                <div class="neo-card rounded-3xl p-6 border-l-4 border-violet-500 flex flex-col justify-between relative overflow-hidden glow-violet animate-in" style="animation-delay:0.1s;">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full"></div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">Global Syllabus Absorption</h3>
-                            <span id="global-perc-badge" class="bg-gradient-to-r from-violet-50 to-fuchsia-50 text-violet-700 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono border border-violet-100">0% MATRIX</span>
+                            <h3 class="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">Global Syllabus Absorption</h3>
+                            <span id="global-perc-badge" class="bg-violet-500/20 text-violet-300 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono border border-violet-500/30">0% MATRIX</span>
                         </div>
-                        <div class="heading-font text-5xl font-black bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent tracking-tight my-1" id="global-perc-text">0.0%</div>
+                        <div class="heading-font text-5xl font-black gradient-text-animated tracking-tight my-1" id="global-perc-text">0.0%</div>
                     </div>
                     <div class="mt-4">
-                        <div class="w-full bg-slate-200/60 rounded-full h-2.5 overflow-hidden mb-2"><div id="global-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-500 shadow-[0_0_12px_rgba(79,70,229,0.3)]"></div></div>
-                        <div class="text-[11px] text-slate-500 flex justify-between items-center font-mono">
-                            <span>CHECKED UNITS: <strong id="global-count-checked" class="text-slate-900 font-bold">0</strong> / <span id="global-count-total">0</span></span>
+                        <div class="w-full bg-slate-700/40 rounded-full h-3 overflow-hidden mb-2 border border-slate-600/30"><div id="global-progress-bar" class="h-full w-0 rounded-full transition-all duration-700"></div></div>
+                        <div class="text-[11px] text-slate-400 flex justify-between items-center font-mono">
+                            <span>CHECKED UNITS: <strong id="global-count-checked" class="text-violet-300 font-bold">0</strong> / <span id="global-count-total">0</span></span>
                         </div>
                     </div>
                 </div>
-                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-amber-400 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-100/40 to-transparent rounded-bl-full"></div>
+                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-amber-400 relative overflow-hidden glow-amber animate-in" style="animation-delay:0.2s;">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full"></div>
                     <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
-                        <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Prelims 2027</div>
-                        <p class="text-xs text-slate-500 mt-0.5">Target Horizon: May 23, 2027</p>
+                        <span class="text-[10px] uppercase font-bold text-amber-300/80 tracking-widest font-mono block mb-1">Live Target Delta</span>
+                        <div class="heading-font text-xl font-black text-amber-100">UPSC CSE Prelims 2027</div>
+                        <p class="text-xs text-slate-400 mt-0.5">Target Horizon: May 23, 2027</p>
                     </div>
-                    <div class="mt-6 pt-3 border-t border-amber-100 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent tracking-tight" id="prelims-countdown-live">--- Days</div></div>
+                    <div class="mt-6 pt-3 border-t border-amber-500/20 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent tracking-tight" id="prelims-countdown-live">--- Days</div></div>
                 </div>
-                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-rose-400 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-rose-100/40 to-transparent rounded-bl-full"></div>
+                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-rose-400 relative overflow-hidden glow-rose animate-in" style="animation-delay:0.3s;">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-full"></div>
                     <div>
-                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
-                        <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Mains Phase 2027</div>
-                        <p class="text-xs text-slate-500 mt-0.5">Estimated Inception: August 20, 2027</p>
+                        <span class="text-[10px] uppercase font-bold text-rose-300/80 tracking-widest font-mono block mb-1">Live Target Delta</span>
+                        <div class="heading-font text-xl font-black text-rose-100">UPSC CSE Mains Phase 2027</div>
+                        <p class="text-xs text-slate-400 mt-0.5">Estimated Inception: August 20, 2027</p>
                     </div>
-                    <div class="mt-6 pt-3 border-t border-rose-100 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent tracking-tight" id="mains-countdown-live">--- Days</div></div>
+                    <div class="mt-6 pt-3 border-t border-rose-500/20 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent tracking-tight" id="mains-countdown-live">--- Days</div></div>
                 </div>
             </div>
 
             <div class="neo-card rounded-3xl p-6">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                    <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>
-                    <button onclick="openCustomTopicModal()" class="cursor-pointer bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-sm font-mono">+ ADD CUSTOM TOPIC</button>
+                <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
+                    <h3 class="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>
+                    <button onclick="openCustomTopicModal()" class="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-violet-500/20 font-mono btn-vibrant">+ ADD CUSTOM TOPIC</button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS Paper I</div></div></div>
@@ -801,7 +839,37 @@
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('auth-screen').style.display = 'flex';
             document.getElementById('auth-password').value = '';
+            document.getElementById('profile-menu').classList.add('hidden');
         }
+
+        function toggleProfileMenu() {
+            document.getElementById('profile-menu').classList.toggle('hidden');
+        }
+
+        function openProfileEdit() {
+            document.getElementById('profile-menu').classList.add('hidden');
+            // Show profile setup screen with pre-filled values
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('profile-setup-screen').style.display = 'flex';
+            // Pre-fill current values
+            const name = document.getElementById('user-display-name').textContent;
+            const age = document.getElementById('user-age-text').textContent;
+            const attempt = document.getElementById('user-attempt-text').textContent;
+            if (name && name !== 'User') document.getElementById('setup-name').value = name;
+            if (age && age !== '--') document.getElementById('setup-age').value = age;
+            if (attempt && attempt !== '--') document.getElementById('setup-attempt').value = attempt;
+            // Change button text for edit mode
+            document.getElementById('setup-submit-btn').innerHTML = '💾 Update Profile';
+        }
+
+        // Close profile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('profile-menu');
+            const avatar = document.getElementById('user-avatar');
+            if (menu && !menu.contains(e.target) && !avatar.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
 
         // ===== SESSION TRACKING =====
         async function recordSession(userEmail) {
@@ -1298,7 +1366,7 @@
             ['marathon', 'planner'].forEach(k => {
                 const btn = document.getElementById(`btn-root-${k}`);
                 if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 heading-font border border-indigo-500"; } 
-                else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-500 hover:text-violet-700 hover:bg-white/80 heading-font border border-transparent"; }
+                else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-400 hover:text-violet-300 hover:bg-white/5 heading-font border border-transparent"; }
             });
         }
 
