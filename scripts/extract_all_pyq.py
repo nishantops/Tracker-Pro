@@ -584,13 +584,39 @@ def parse_single_question_csat(lines, q_num):
 
 
 def parse_answers_csat(lines):
-    """Parse answers from CSAT explanation pages. Handles Solution: (x) and Answer: (x)."""
+    """Parse answers from CSAT explanation pages. Handles multiple formats:
+    - N.\tAnswer: (x) or Answer: X
+    - N.\t\\nAnswer: C (uppercase, no parens)
+    - N.\t\\nAnswer D (no colon)
+    - N.\tAnswer: The correct option is option (x)
+    - N.\tSolution: (x)
+    """
     answers = {}
     text = '\n'.join(lines)
-    # Pattern: number. Answer: (letter) or Solution: (letter) or Answer: X
-    matches = re.findall(r'(\d+)\.\s+(?:Answer|Solution):\s*\(?([a-dxX])\)?', text)
+    
+    # Pattern 1: N. Answer/Solution: (letter) - standard format
+    matches = re.findall(r'(\d+)\.\s+(?:Answer|Solution):\s*\(?([a-dA-DxX])\)?', text)
     for num, letter in matches:
         answers[int(num)] = letter.lower()
+    
+    # Pattern 2: N.\t\nAnswer: letter or Answer letter (on next line after number)
+    matches2 = re.findall(r'(\d+)\.\t\s*\n\s*Answer:?\s*\(?([a-dA-D])\)?', text)
+    for num, letter in matches2:
+        if int(num) not in answers:
+            answers[int(num)] = letter.lower()
+    
+    # Pattern 3: "Answer: The correct option is option (x)" or "is (x)"
+    matches3 = re.findall(r'(\d+)\.\s+(?:Answer|Solution):\s*(?:The correct option is (?:option\s*)?)?\(?([a-dA-D])\)?', text, re.IGNORECASE)
+    for num, letter in matches3:
+        if int(num) not in answers:
+            answers[int(num)] = letter.lower()
+    
+    # Pattern 4: "N.\tAnswer: (x) is correct" 
+    matches4 = re.findall(r'(\d+)\.\s+(?:Answer|Solution):\s*\(?([a-dA-D])\)?\s*is correct', text, re.IGNORECASE)
+    for num, letter in matches4:
+        if int(num) not in answers:
+            answers[int(num)] = letter.lower()
+    
     return answers
 
 
@@ -598,73 +624,132 @@ def parse_comprehension_questions(lines):
     """
     Special parser for CSAT Comprehension section.
     Extracts passages and attaches them to their question groups.
-    Structure: Directions -> Passage(s) -> Questions
+    
+    Two formats in the PDF:
+    1. "Directions for the following N items:" -> passage(s) -> questions (2024-2025)
+    2. Standalone "Passage" or "Passage-N" markers -> text -> questions (2011-2023)
+    
+    Strategy: Work through the text linearly, detecting passage starts and question starts.
+    Each passage belongs to the questions that follow it until the next passage.
     """
     questions = []
     
-    # Join all lines into one text for easier splitting
+    # Join all lines and clean
     full_text = '\n'.join(lines)
-    
     # Remove standalone page numbers and topic headers
     full_text = re.sub(r'\n\d{1,3}\n', '\n', full_text)
     full_text = re.sub(r'\nComprehension\n', '\n', full_text)
+    # Remove "Directions..." lines and "Read the following..." instructions
+    full_text = re.sub(r'Directions?\s+for\s+the\s+following\s+\d+\s*\([^)]*\)\s*items?:\s*', '', full_text)
+    full_text = re.sub(r'Read the following.*?only\.?\s*', '', full_text, flags=re.DOTALL | re.IGNORECASE)
+    full_text = re.sub(r'Your answers.*?only\.?\s*', '', full_text, flags=re.IGNORECASE)
     
-    # Split by "Directions for the following" - each is a passage group
-    groups = re.split(r'(Directions?\s+for\s+the\s+following\s+\d+\s*\([^)]*\)\s*items?:)', full_text)
+    # Split the text into segments: alternating passages and question blocks
+    # A "Passage" marker starts a new passage segment
+    # A "N.\t" line starts a question
     
-    # groups[0] is text before first Directions (usually empty/header)
-    # Then alternating: [directions_header, passage+questions, directions_header, passage+questions, ...]
+    # Strategy: find all passage markers and all question starts, then interleave
+    # Passage markers: "Passage" or "Passage-1" or "Passage - 1" or "Passage I/II/III" on a line
+    passage_pattern = re.compile(r'\n(Passage\s*-?\s*(?:\d|[IV]{1,4}|)\s*)\n', re.IGNORECASE)
     
-    current_passage = ""
+    # Find all passage marker positions
+    passage_positions = [(m.start(), m.end(), m.group(1).strip()) for m in passage_pattern.finditer(full_text)]
     
-    for i in range(1, len(groups), 2):
-        directions = groups[i].strip() if i < len(groups) else ""
-        block = groups[i + 1] if i + 1 < len(groups) else ""
+    # Find all question start positions: N.\t
+    question_pattern = re.compile(r'\n(\d+)\.\t')
+    question_positions = [(m.start(), m.end(), int(m.group(1))) for m in question_pattern.finditer(full_text)]
+    
+    if not passage_positions:
+        # Fallback: no passage markers found, parse as regular questions
+        q_lines = full_text.split('\n')
+        return parse_questions_csat(q_lines)
+    
+    # Build passage groups: for each passage marker, collect text until next question
+    # Then collect questions until next passage marker
+    current_passage_text = ""
+    current_passage_questions = []
+    
+    # Process passages sequentially
+    all_groups = []  # List of (passage_text, [question_indices])
+    
+    for p_idx, (p_start, p_end, p_label) in enumerate(passage_positions):
+        # Find where this passage text ends (at the next question start after it)
+        # OR at the next passage marker if there's a multi-passage group
         
-        # The block contains: read instructions, passage text, then questions
-        # Find where questions start (first N.\t pattern)
-        first_q_match = re.search(r'\n(\d+)\.\t', block)
-        if not first_q_match:
-            # Try alternate pattern: N. at start of line followed by tab
-            first_q_match = re.search(r'\n(\d+)\.\s{2,}', block)
+        # Next passage marker position (if any)
+        next_passage_start = passage_positions[p_idx + 1][0] if p_idx + 1 < len(passage_positions) else len(full_text)
         
-        if first_q_match:
-            passage_text = block[:first_q_match.start()]
-            questions_text = block[first_q_match.start():]
-        else:
+        # Find the first question that comes after this passage
+        first_q_after = None
+        for q_start, q_end, q_num in question_positions:
+            if q_start > p_start:
+                first_q_after = (q_start, q_end, q_num)
+                break
+        
+        if first_q_after is None:
             continue
         
+        # Passage text is between passage marker end and first question start
+        passage_text = full_text[p_end:first_q_after[0]]
+        
+        # Check if next passage comes BEFORE the first question (multi-passage group)
+        # In that case, this passage text extends to the next passage marker
+        if next_passage_start < first_q_after[0]:
+            # This passage is part of a multi-passage group — combine with next
+            # We'll handle this by marking it and combining later
+            passage_text = full_text[p_end:next_passage_start]
+            all_groups.append((p_label, passage_text, None))  # No questions yet
+            continue
+        
+        # Collect all questions between this passage and the next passage marker
+        q_end_boundary = next_passage_start
+        passage_questions_text = full_text[first_q_after[0]:q_end_boundary]
+        
         # Clean passage text
-        # Remove "Read the following..." instruction line
-        passage_text = re.sub(r'Read the following.*?only\.?\s*', '', passage_text, flags=re.DOTALL | re.IGNORECASE)
-        passage_text = re.sub(r'Your answers.*?only\.?\s*', '', passage_text, flags=re.IGNORECASE)
-        passage_text = re.sub(r'\t+', ' ', passage_text)
-        passage_text = re.sub(r'\n+', ' ', passage_text)
-        passage_text = re.sub(r'\s+', ' ', passage_text).strip()
+        clean_passage = passage_text.strip()
+        clean_passage = re.sub(r'\t+', ' ', clean_passage)
+        clean_passage = re.sub(r'\n+', ' ', clean_passage)
+        clean_passage = re.sub(r'\s+', ' ', clean_passage).strip()
         
-        # Format passage nicely - separate Passage-1 and Passage-2
-        passage_text = re.sub(r'\s*(Passage\s*-?\s*\d)\s*', r'<br><br><b>\1</b><br>', passage_text)
-        passage_text = re.sub(r'^<br><br>', '', passage_text)  # Remove leading br
+        # Combine with any preceding passage texts that had no questions (multi-passage)
+        combined_passage = ""
+        # Check if previous groups have no questions (multi-passage continuation)
+        while all_groups and all_groups[-1][2] is None:
+            prev_label, prev_text, _ = all_groups.pop()
+            prev_clean = re.sub(r'\t+', ' ', prev_text)
+            prev_clean = re.sub(r'\n+', ' ', prev_clean)
+            prev_clean = re.sub(r'\s+', ' ', prev_clean).strip()
+            combined_passage += f"<b>{prev_label}</b><br>{prev_clean}<br><br>"
         
-        current_passage = passage_text
+        combined_passage += f"<b>{p_label}</b><br>{clean_passage}" if combined_passage else clean_passage
+        if combined_passage and not combined_passage.startswith("<b>"):
+            combined_passage = f"<b>{p_label}</b><br>{clean_passage}"
         
-        # Now parse questions from this block using the standard CSAT parser
-        q_lines = questions_text.split('\n')
+        all_groups.append((p_label, combined_passage, passage_questions_text))
+    
+    # Now parse questions for each group
+    for p_label, passage_text, q_text in all_groups:
+        if q_text is None:
+            continue
+        
+        q_lines = q_text.split('\n')
         block_questions = parse_questions_csat(q_lines)
         
-        # Attach passage to each question
         for q in block_questions:
-            q['passage'] = current_passage
+            q['passage'] = passage_text
             questions.append(q)
     
-    # Handle any questions that might be outside passage groups (shouldn't happen but safety)
-    # Also parse questions before first Directions if any
-    if groups[0].strip():
-        pre_lines = groups[0].split('\n')
-        pre_qs = parse_questions_csat(pre_lines)
-        for q in pre_qs:
-            q['passage'] = ''
-            questions.insert(0, q)
+    # Handle questions that appear BEFORE the first passage marker
+    if passage_positions and question_positions:
+        first_passage_start = passage_positions[0][0]
+        pre_passage_qs = [(qs, qe, qn) for qs, qe, qn in question_positions if qs < first_passage_start]
+        if pre_passage_qs:
+            pre_text = full_text[:first_passage_start]
+            pre_lines = pre_text.split('\n')
+            pre_questions = parse_questions_csat(pre_lines)
+            for q in pre_questions:
+                q['passage'] = ''
+            questions = pre_questions + questions
     
     return questions
 
