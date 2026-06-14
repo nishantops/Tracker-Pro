@@ -108,6 +108,15 @@
 /* Provider Toggle (hidden - Gemini only now) */
 .ai-provider-toggle { display: none; }
 
+/* Chat View must be flex child to allow messages to scroll */
+#ai-chat-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 .ai-provider-btn {
     flex: 1;
     padding: 0.4rem 0.75rem;
@@ -162,6 +171,8 @@
     line-height: 1.5;
     word-break: break-word;
     animation: msgIn 0.3s ease-out;
+    user-select: text;
+    flex-shrink: 0;
 }
 
 @keyframes msgIn {
