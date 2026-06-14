@@ -29,6 +29,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a78bfa, #6366f1); border-radius: 99px; }
         
         .pie-chart-frame { width: 48px; height: 48px; border-radius: 50%; transition: all 0.5s ease-out; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 0 20px rgba(139, 92, 246, 0.1); }
+        .asn-pie { width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(139,92,246,0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.4s ease; }
+        .asn-card { background: rgba(30, 27, 75, 0.6); border: 1px solid rgba(139, 92, 246, 0.25); backdrop-filter: blur(12px); }
+        .asn-card:hover { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 8px 30px rgba(139,92,246,0.15); }
         .hidden { display: none !important; }
         .locked-note { opacity: 0.5; pointer-events: none; background-color: rgba(15, 23, 42, 0.3) !important; }
 
@@ -114,8 +117,25 @@
 
         /* Dark theme overrides for text */
         #app-container h1, #app-container h2, #app-container h3, #app-container .heading-font { color: #f1f5f9; }
-        #app-container p, #app-container span, #app-container label { color: #94a3b8; }
+        #app-container p, #app-container span, #app-container label { color: #cbd5e1; }
         #app-container select { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(139, 92, 246, 0.2); color: #e2e8f0; }
+
+        /* Improved contrast for pie section cards */
+        .pie-card-dark { background: rgba(30, 27, 75, 0.5) !important; border: 1px solid rgba(139, 92, 246, 0.2) !important; backdrop-filter: blur(8px); }
+        .pie-card-dark:hover { border-color: rgba(139, 92, 246, 0.4) !important; box-shadow: 0 8px 20px rgba(139,92,246,0.1); }
+        .pie-card-dark .pie-label { color: #a5b4fc !important; }
+        .pie-card-dark .pie-title { color: #e2e8f0 !important; }
+
+        /* Improved task row contrast */
+        .task-row { background: rgba(30, 27, 75, 0.35) !important; border: 1px solid rgba(139, 92, 246, 0.15) !important; }
+        .task-row:hover { background: rgba(30, 27, 75, 0.55) !important; border-color: rgba(139, 92, 246, 0.35) !important; }
+        .task-row label span { color: #e2e8f0 !important; }
+        .task-row:has(input[type="checkbox"]:checked) label span { color: #64748b !important; }
+
+        /* Tab improvements */
+        .neo-card .sub-tab-prelims, .neo-card .sub-tab-mains, .neo-card .sub-tab-anthro { color: #cbd5e1; }
+        .stage-btn-inactive { color: #a5b4fc !important; border-color: rgba(139,92,246,0.3) !important; background: rgba(30,27,75,0.3) !important; }
+        .stage-btn-inactive:hover { background: rgba(99,102,241,0.15) !important; color: #c7d2fe !important; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
@@ -288,87 +308,87 @@
                     <button onclick="openCustomTopicModal()" class="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-violet-500/20 font-mono btn-vibrant">+ ADD CUSTOM TOPIC</button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS Paper I</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-p2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P2 <span id="lbl-p2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">CSAT</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS1 <span id="lbl-gs1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">History/Geo</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS2 <span id="lbl-gs2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Polity/IR</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs3" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS3 <span id="lbl-gs3" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Economy/Tech</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs4" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS4 <span id="lbl-gs4" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Ethics</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-a1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P1 <span id="lbl-a1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper I</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-a2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P2 <span id="lbl-a2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper II</div></div></div>
-                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-ca" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">CA Matrix <span id="lbl-ca" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Current Affairs</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">GS Paper I</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-p2" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P2 <span id="lbl-p2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">CSAT</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-gs1" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS1 <span id="lbl-gs1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">History/Geo</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-gs2" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS2 <span id="lbl-gs2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Polity/IR</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-gs3" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS3 <span id="lbl-gs3" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Economy/Tech</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-gs4" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS4 <span id="lbl-gs4" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Ethics</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-a1" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P1 <span id="lbl-a1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Paper I</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-a2" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P2 <span id="lbl-a2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Paper II</div></div></div>
+                    <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-ca" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">CA Matrix <span id="lbl-ca" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">Current Affairs</div></div></div>
                 </div>
             </div>
 
-            <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm border border-slate-200">
-                <button onclick="activateMasterTab('syllabus')" id="btn-master-syllabus" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font">1. Syllabus</button>
-                <button onclick="activateMasterTab('ca')" id="btn-master-ca" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">2. CA Tracker</button>
-                <button onclick="activateMasterTab('pyq')" id="btn-master-pyq" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">3. PYQ</button>
-                <button onclick="activateMasterTab('testseries')" id="btn-master-testseries" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">4. Test-Series</button>
+            <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm">
+                <button onclick="activateMasterTab('syllabus')" id="btn-master-syllabus" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md heading-font">1. Syllabus</button>
+                <button onclick="activateMasterTab('ca')" id="btn-master-ca" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-300 hover:text-white hover:bg-white/10 heading-font">2. CA Tracker</button>
+                <button onclick="activateMasterTab('pyq')" id="btn-master-pyq" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-300 hover:text-white hover:bg-white/10 heading-font">3. PYQ</button>
+                <button onclick="activateMasterTab('testseries')" id="btn-master-testseries" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-300 hover:text-white hover:bg-white/10 heading-font">4. Test-Series</button>
             </div>
 
             <!-- TRACK 1: SYLLABUS -->
             <div id="master-syllabus" class="master-pane-view block space-y-6">
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab('prelims')" id="btn-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
-                    <button onclick="activateStageTab('mains')" id="btn-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains</button>
-                    <button onclick="activateStageTab('anthro')" id="btn-stage-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage III: Anthro</button>
+                    <button onclick="activateStageTab('mains')" id="btn-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font">Stage II: Mains</button>
+                    <button onclick="activateStageTab('anthro')" id="btn-stage-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font">Stage III: Anthro</button>
                 </div>
                 <div id="deck-prelims" class="stage-pane-view block space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
-                        <button onclick="activateSubTab('prelims', 'panel-prelims-csat', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">CSAT Paper II</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS Paper I</button>
+                        <button onclick="activateSubTab('prelims', 'panel-prelims-csat', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">CSAT Paper II</button>
                     </div>
-                    <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
-                    <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
+                    <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
+                    <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
                 </div>
                 <div id="deck-mains" class="stage-pane-view hidden space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab('mains', 'panel-mains-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-gs2', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-II</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-gs3', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-III</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-gs4', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-IV</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-essay', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Essay</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-lang-a', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang A</button>
-                        <button onclick="activateSubTab('mains', 'panel-mains-lang-b', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang B</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS-I</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs2', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-II</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs3', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-III</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs4', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-IV</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-essay', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Essay</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-lang-a', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Lang A</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-lang-b', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Lang B</button>
                     </div>
-                    <div id="panel-mains-gs1" class="sub-pane-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies I Blueprint</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
-                    <div id="panel-mains-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies II Blueprint</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
-                    <div id="panel-mains-gs3" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies III Blueprint</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
-                    <div id="panel-mains-gs4" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies IV Ethics</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
-                    <div id="panel-mains-essay" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
-                    <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
-                    <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
+                    <div id="panel-mains-gs1" class="sub-pane-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies I Blueprint</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
+                    <div id="panel-mains-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies II Blueprint</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
+                    <div id="panel-mains-gs3" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies III Blueprint</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
+                    <div id="panel-mains-gs4" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies IV Ethics</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
+                    <div id="panel-mains-essay" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
+                    <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
+                    <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
                 </div>
                 <div id="deck-anthro" class="stage-pane-view hidden space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab('anthro', 'panel-anthro-p1', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">Paper I Focus</button>
-                        <button onclick="activateSubTab('anthro', 'panel-anthro-p2', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Paper II Focus</button>
-                        <button onclick="activateSubTab('anthro', 'panel-anthro-asn', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent text-indigo-900 bg-indigo-50 border-indigo-200 hover:bg-indigo-100">Assignments</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-p1', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">Paper I Focus</button>
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-p2', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Paper II Focus</button>
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-asn', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 border border-amber-500/30 bg-amber-500/10">Assignments</button>
                     </div>
-                    <div id="panel-anthro-p1" class="sub-pane-anthro block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper I</h2><div class="space-y-3" id="box-anthro-p1"></div></div>
-                    <div id="panel-anthro-p2" class="sub-pane-anthro hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper II</h2><div class="space-y-3" id="box-anthro-p2"></div></div>
-                    <div id="panel-anthro-asn" class="sub-pane-anthro hidden neo-card rounded-3xl p-6 border-l-4 border-indigo-500">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-                            <h2 class="heading-font text-xl font-black text-indigo-900">Custom Assignments</h2>
-                            <button onclick="openAssignmentModal()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm font-mono">+ ADD ASSIGNMENT</button>
+                    <div id="panel-anthro-p1" class="sub-pane-anthro block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Anthropology Optional: Paper I</h2><div class="space-y-3" id="box-anthro-p1"></div></div>
+                    <div id="panel-anthro-p2" class="sub-pane-anthro hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Anthropology Optional: Paper II</h2><div class="space-y-3" id="box-anthro-p2"></div></div>
+                    <div id="panel-anthro-asn" class="sub-pane-anthro hidden neo-card rounded-3xl p-6 border-l-4 border-amber-500">
+                        <div class="flex justify-between items-center border-b border-violet-500/20 pb-3 mb-4">
+                            <h2 class="heading-font text-xl font-black text-amber-200">Custom Assignments</h2>
+                            <button onclick="openAssignmentModal()" class="cursor-pointer bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm font-mono btn-vibrant">+ ADD ASSIGNMENT</button>
                         </div>
-                        <div class="space-y-3" id="box-anthro-asn"></div>
+                        <div class="space-y-4" id="box-anthro-asn"></div>
                     </div>
                 </div>
             </div>
 
             <!-- TRACK 2: CA TRACKER -->
             <div id="master-ca" class="master-pane-view hidden space-y-6">
-                <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                    <button onclick="activateCATab('tracker')" id="btn-ca-tab-tracker" class="sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">Monthly Tracker</button>
-                    <button onclick="activateCATab('links')" id="btn-ca-tab-links" class="sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">My CA Links</button>
+                <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                    <button onclick="activateCATab('tracker')" id="btn-ca-tab-tracker" class="sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">Monthly Tracker</button>
+                    <button onclick="activateCATab('links')" id="btn-ca-tab-links" class="sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">My CA Links</button>
                 </div>
 
                 <!-- CA Tracker Panel -->
                 <div id="panel-ca-tracker" class="ca-pane block">
                     <div class="neo-card rounded-3xl p-6">
-                        <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3 mb-4 gap-2">
+                        <div class="flex flex-wrap justify-between items-center border-b border-violet-500/20 pb-3 mb-4 gap-2">
                             <h2 class="heading-font text-2xl font-black">Current Affairs (CA) Matrix</h2>
                             <div id="ca-dynamic-links" class="flex flex-wrap gap-2"></div>
                         </div>
@@ -379,20 +399,20 @@
                 <!-- CA Links Management Panel -->
                 <div id="panel-ca-links" class="ca-pane hidden">
                     <div class="neo-card rounded-3xl p-6">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                        <div class="flex justify-between items-center border-b border-violet-500/20 pb-3 mb-4">
                             <h2 class="heading-font text-xl font-black">Manage CA Links</h2>
                             <button onclick="openCALinkForm()" class="cursor-pointer bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm font-mono">+ ADD LINK</button>
                         </div>
                         <p class="text-xs text-slate-400 mb-4">Links added here will appear as quick-access buttons on the CA Tracker section.</p>
                         <!-- Add Link Form (hidden by default) -->
-                        <div id="ca-link-form" class="hidden mb-5 p-4 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/50 to-orange-50/50 space-y-3">
+                        <div id="ca-link-form" class="hidden mb-5 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-3">
                             <div>
                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 font-mono">Link Title *</label>
-                                <input type="text" id="ca-link-input-title" placeholder="e.g., Monthly Magazine, Newspaper" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-500">
+                                <input type="text" id="ca-link-input-title" placeholder="e.g., Monthly Magazine, Newspaper" class="w-full bg-slate-900/40 border border-violet-500/20 rounded-xl p-2.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-400">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 font-mono">URL *</label>
-                                <input type="url" id="ca-link-input-url" placeholder="https://..." class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-500">
+                                <input type="url" id="ca-link-input-url" placeholder="https://..." class="w-full bg-slate-900/40 border border-violet-500/20 rounded-xl p-2.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-400">
                             </div>
                             <div class="flex gap-2 justify-end">
                                 <button onclick="closeCALinkForm()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-3 py-2 rounded-lg">Cancel</button>
@@ -409,24 +429,24 @@
             <div id="master-pyq" class="master-pane-view hidden space-y-6">
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab_PYQ('prelims')" id="btn-pyq-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
-                    <button onclick="activateStageTab_PYQ('mains')" id="btn-pyq-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains & Optional</button>
+                    <button onclick="activateStageTab_PYQ('mains')" id="btn-pyq-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font">Stage II: Mains & Optional</button>
                 </div>
 
                 <div id="deck-pyq-prelims" class="stage-pane-pyq block space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab_PYQ('prelims', 'panel-pyq-p1', this)" class="sub-tab-pyq-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
-                        <button onclick="activateSubTab_PYQ('prelims', 'panel-pyq-p2', this)" class="sub-tab-pyq-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">CSAT Paper II</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab_PYQ('prelims', 'panel-pyq-p1', this)" class="sub-tab-pyq-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS Paper I</button>
+                        <button onclick="activateSubTab_PYQ('prelims', 'panel-pyq-p2', this)" class="sub-tab-pyq-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">CSAT Paper II</button>
                     </div>
                     <div id="panel-pyq-p1" class="sub-pane-pyq-prelims block neo-card rounded-3xl p-6">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                        <div class="flex justify-between items-center border-b border-violet-500/20 pb-3 mb-4">
                             <h2 class="heading-font text-xl font-black">PYQ: GS Paper I</h2>
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-mono font-bold text-slate-400">TOTAL: <span id="pyq-total-count" class="text-indigo-600">0</span> Questions</span>
                             </div>
                         </div>
                         <div class="mb-4 flex flex-wrap gap-2 items-center">
-                            <input type="text" id="pyq-search" placeholder="Search questions..." oninput="filterPYQ()" class="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-indigo-400">
-                            <select id="pyq-year-filter" onchange="filterPYQ()" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-indigo-400">
+                            <input type="text" id="pyq-search" placeholder="Search questions..." oninput="filterPYQ()" class="flex-1 min-w-[200px] bg-slate-900/40 border border-violet-500/20 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-400">
+                            <select id="pyq-year-filter" onchange="filterPYQ()" class="bg-slate-900/40 border border-violet-500/20 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-400">
                                 <option value="">All Years</option>
                                 <option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option>
                                 <option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option>
@@ -438,15 +458,15 @@
                         <div id="pyq-topics-container" class="space-y-3"></div>
                     </div>
                     <div id="panel-pyq-p2" class="sub-pane-pyq-prelims hidden neo-card rounded-3xl p-6">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                        <div class="flex justify-between items-center border-b border-violet-500/20 pb-3 mb-4">
                             <h2 class="heading-font text-xl font-black">PYQ: CSAT Paper II</h2>
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-mono font-bold text-slate-400">TOTAL: <span id="csat-total-count" class="text-indigo-600">0</span> Questions</span>
                             </div>
                         </div>
                         <div class="mb-4 flex flex-wrap gap-2 items-center">
-                            <input type="text" id="csat-search" placeholder="Search questions..." oninput="filterCSAT()" class="flex-1 min-w-[200px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-indigo-400">
-                            <select id="csat-year-filter" onchange="filterCSAT()" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-indigo-400">
+                            <input type="text" id="csat-search" placeholder="Search questions..." oninput="filterCSAT()" class="flex-1 min-w-[200px] bg-slate-900/40 border border-violet-500/20 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-400">
+                            <select id="csat-year-filter" onchange="filterCSAT()" class="bg-slate-900/40 border border-violet-500/20 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-violet-400 placeholder-slate-400">
                                 <option value="">All Years</option>
                                 <option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option>
                                 <option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option>
@@ -460,20 +480,20 @@
                 </div>
 
                 <div id="deck-pyq-mains" class="stage-pane-pyq hidden space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs1', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs2', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-II</button>
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs3', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-III</button>
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs4', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-IV</button>
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-a1', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Anthro P1</button>
-                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-a2', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Anthro P2</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs1', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS-I</button>
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs2', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-II</button>
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs3', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-III</button>
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-gs4', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-IV</button>
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-a1', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Anthro P1</button>
+                        <button onclick="activateSubTab_PYQ('mains', 'panel-pyq-a2', this)" class="sub-tab-pyq-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Anthro P2</button>
                     </div>
-                    <div id="panel-pyq-gs1" class="sub-pane-pyq-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: GS-I</h2><div class="space-y-3" id="box-pyq-gs1"></div></div>
-                    <div id="panel-pyq-gs2" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: GS-II</h2><div class="space-y-3" id="box-pyq-gs2"></div></div>
-                    <div id="panel-pyq-gs3" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: GS-III</h2><div class="space-y-3" id="box-pyq-gs3"></div></div>
-                    <div id="panel-pyq-gs4" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: GS-IV</h2><div class="space-y-3" id="box-pyq-gs4"></div></div>
-                    <div id="panel-pyq-a1" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: Anthro Paper I</h2><div class="space-y-3" id="box-pyq-a1"></div></div>
-                    <div id="panel-pyq-a2" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">PYQ: Anthro Paper II</h2><div class="space-y-3" id="box-pyq-a2"></div></div>
+                    <div id="panel-pyq-gs1" class="sub-pane-pyq-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: GS-I</h2><div class="space-y-3" id="box-pyq-gs1"></div></div>
+                    <div id="panel-pyq-gs2" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: GS-II</h2><div class="space-y-3" id="box-pyq-gs2"></div></div>
+                    <div id="panel-pyq-gs3" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: GS-III</h2><div class="space-y-3" id="box-pyq-gs3"></div></div>
+                    <div id="panel-pyq-gs4" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: GS-IV</h2><div class="space-y-3" id="box-pyq-gs4"></div></div>
+                    <div id="panel-pyq-a1" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: Anthro Paper I</h2><div class="space-y-3" id="box-pyq-a1"></div></div>
+                    <div id="panel-pyq-a2" class="sub-pane-pyq-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">PYQ: Anthro Paper II</h2><div class="space-y-3" id="box-pyq-a2"></div></div>
                 </div>
             </div>
 
@@ -481,35 +501,35 @@
             <div id="master-testseries" class="master-pane-view hidden space-y-6">
                 <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
                     <button onclick="activateStageTab_TS('prelims')" id="btn-ts-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
-                    <button onclick="activateStageTab_TS('mains')" id="btn-ts-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains & Optional</button>
+                    <button onclick="activateStageTab_TS('mains')" id="btn-ts-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font">Stage II: Mains & Optional</button>
                 </div>
 
                 <div id="deck-ts-prelims" class="stage-pane-ts block space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab_TS('prelims', 'panel-ts-p1', this)" class="sub-tab-ts-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
-                        <button onclick="activateSubTab_TS('prelims', 'panel-ts-p2', this)" class="sub-tab-ts-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">CSAT Paper II</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab_TS('prelims', 'panel-ts-p1', this)" class="sub-tab-ts-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS Paper I</button>
+                        <button onclick="activateSubTab_TS('prelims', 'panel-ts-p2', this)" class="sub-tab-ts-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">CSAT Paper II</button>
                     </div>
-                    <div id="panel-ts-p1" class="sub-pane-ts-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: GS Paper I</h2><div class="space-y-3" id="box-ts-p1"></div></div>
-                    <div id="panel-ts-p2" class="sub-pane-ts-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: CSAT Paper II</h2><div class="space-y-3" id="box-ts-p2"></div></div>
+                    <div id="panel-ts-p1" class="sub-pane-ts-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: GS Paper I</h2><div class="space-y-3" id="box-ts-p1"></div></div>
+                    <div id="panel-ts-p2" class="sub-pane-ts-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: CSAT Paper II</h2><div class="space-y-3" id="box-ts-p2"></div></div>
                 </div>
 
                 <div id="deck-ts-mains" class="stage-pane-ts hidden space-y-4">
-                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs1', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs2', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-II</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs3', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-III</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs4', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-IV</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-essay', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Essay</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-a1', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Anthro P1</button>
-                        <button onclick="activateSubTab_TS('mains', 'panel-ts-a2', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Anthro P2</button>
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs1', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS-I</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs2', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-II</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs3', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-III</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-gs4', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">GS-IV</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-essay', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Essay</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-a1', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Anthro P1</button>
+                        <button onclick="activateSubTab_TS('mains', 'panel-ts-a2', this)" class="sub-tab-ts-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Anthro P2</button>
                     </div>
-                    <div id="panel-ts-gs1" class="sub-pane-ts-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: GS-I</h2><div class="space-y-3" id="box-ts-gs1"></div></div>
-                    <div id="panel-ts-gs2" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: GS-II</h2><div class="space-y-3" id="box-ts-gs2"></div></div>
-                    <div id="panel-ts-gs3" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: GS-III</h2><div class="space-y-3" id="box-ts-gs3"></div></div>
-                    <div id="panel-ts-gs4" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: GS-IV</h2><div class="space-y-3" id="box-ts-gs4"></div></div>
-                    <div id="panel-ts-essay" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: Essay Framework</h2><div class="space-y-3" id="box-ts-essay"></div></div>
-                    <div id="panel-ts-a1" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: Anthro Paper I</h2><div class="space-y-3" id="box-ts-a1"></div></div>
-                    <div id="panel-ts-a2" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Test Series: Anthro Paper II</h2><div class="space-y-3" id="box-ts-a2"></div></div>
+                    <div id="panel-ts-gs1" class="sub-pane-ts-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: GS-I</h2><div class="space-y-3" id="box-ts-gs1"></div></div>
+                    <div id="panel-ts-gs2" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: GS-II</h2><div class="space-y-3" id="box-ts-gs2"></div></div>
+                    <div id="panel-ts-gs3" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: GS-III</h2><div class="space-y-3" id="box-ts-gs3"></div></div>
+                    <div id="panel-ts-gs4" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: GS-IV</h2><div class="space-y-3" id="box-ts-gs4"></div></div>
+                    <div id="panel-ts-essay" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: Essay Framework</h2><div class="space-y-3" id="box-ts-essay"></div></div>
+                    <div id="panel-ts-a1" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: Anthro Paper I</h2><div class="space-y-3" id="box-ts-a1"></div></div>
+                    <div id="panel-ts-a2" class="sub-pane-ts-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Test Series: Anthro Paper II</h2><div class="space-y-3" id="box-ts-a2"></div></div>
                 </div>
             </div>
         </div>
@@ -603,6 +623,19 @@
                 <div>
                     <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Entry Description</label>
                     <textarea id="modal-text-content" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500 custom-scrollbar"></textarea>
+                </div>
+                <div id="modal-asn-fields" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Total Questions</label>
+                            <input type="number" id="modal-asn-total" min="1" max="999" placeholder="e.g. 20" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Questions Attempted</label>
+                            <input type="number" id="modal-asn-attempted" min="0" max="999" placeholder="e.g. 8" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-mono">A completion pie chart will be auto-generated for this assignment.</p>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-2 text-xs font-bold font-mono">
@@ -779,13 +812,13 @@
             const el = document.getElementById(domId);
             if(!el) return;
             el.innerHTML = dataArr.map((text, idx) => `
-                <div class="task-row flex flex-col p-3.5 bg-white border border-slate-200/80 hover:border-indigo-500/20 rounded-2xl transition duration-200 group relative shadow-2xs">
+                <div class="task-row flex flex-col p-3.5 rounded-2xl transition duration-200 group relative">
                     <label for="uid-${prefix}-${idx}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
-                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
-                        <span class="text-slate-700 font-medium ml-2 break-words group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through transition-all">${text}</span>
+                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-violet-400/50 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
+                        <span class="text-slate-200 font-medium ml-2 break-words group-has-[:checked]:text-slate-500 group-has-[:checked]:line-through transition-all">${text}</span>
                     </label>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-uid-${prefix}-${idx}" oninput="debouncedSync('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300">
+                        <input type="text" id="note-uid-${prefix}-${idx}" oninput="debouncedSync('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-900/40 border border-violet-500/20 rounded-lg p-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-violet-400 focus:bg-slate-900/60 transition-all placeholder-slate-500">
                     </div>
                 </div>
             `).join('');
@@ -1268,6 +1301,7 @@
 
         function openCustomTopicModal() { 
             document.getElementById('modal-target-wrapper').classList.remove('hidden');
+            document.getElementById('modal-asn-fields').classList.add('hidden');
             document.getElementById("modal-title-display").innerText = "📂 Add Custom Entry";
             document.getElementById("custom-modal").classList.remove('hidden'); 
         }
@@ -1275,19 +1309,30 @@
             document.getElementById('modal-select-panel').value = 'box-anthro-asn';
             document.getElementById('modal-target-wrapper').classList.add('hidden');
             document.getElementById("modal-title-display").innerText = "🎓 Add New Assignment";
+            document.getElementById('modal-asn-fields').classList.remove('hidden');
             document.getElementById("custom-modal").classList.remove('hidden'); 
         }
-        function closeCustomTopicModal() { document.getElementById("custom-modal").classList.add('hidden'); document.getElementById("modal-text-content").value = ""; }
+        function closeCustomTopicModal() { document.getElementById("custom-modal").classList.add('hidden'); document.getElementById("modal-text-content").value = ""; document.getElementById('modal-asn-fields').classList.add('hidden'); document.getElementById('modal-asn-total').value = ''; document.getElementById('modal-asn-attempted').value = ''; }
 
         function executeInjectCustomNode() {
             const targetBox = document.getElementById("modal-select-panel").value;
             const textValue = document.getElementById("modal-text-content").value.trim();
             if (!textValue) return alert("Cannot be empty.");
 
+            const isAssignment = targetBox === 'box-anthro-asn';
+            let noteData = '';
+            if (isAssignment) {
+                const total = parseInt(document.getElementById('modal-asn-total').value) || 0;
+                const attempted = parseInt(document.getElementById('modal-asn-attempted').value) || 0;
+                if (total < 1) return alert("Total questions must be at least 1.");
+                if (attempted > total) return alert("Attempted cannot exceed total.");
+                noteData = JSON.stringify({ total: total, attempted: attempted, userNote: '' });
+            }
+
             const encodedSafeText = btoa(unescape(encodeURIComponent(textValue)));
             const generatedCloudId = `custom_${targetBox}_${encodedSafeText}`;
 
-            buildCustomTopicNode(targetBox, textValue, generatedCloudId, false, "");
+            buildCustomTopicNode(targetBox, textValue, generatedCloudId, false, noteData);
             handleSyncAction(generatedCloudId);
             closeCustomTopicModal();
         }
@@ -1298,32 +1343,74 @@
             
             const checkAttr = isChecked ? 'checked' : '';
             const isAssignment = targetBoxId === 'box-anthro-asn';
-            const badgeStr = isAssignment ? 'Assignment' : 'Added Task';
-            const colorStr = isAssignment ? 'bg-rose-500' : 'bg-indigo-600';
 
-            const htmlNode = `
-                <div class="task-row flex flex-col p-3.5 bg-indigo-50/50 border border-indigo-200/80 rounded-2xl transition group relative">
+            if (isAssignment) {
+                // Parse assignment data from noteText (JSON format)
+                let asnData = { total: 0, attempted: 0, userNote: '' };
+                try { asnData = JSON.parse(noteText); } catch(e) { asnData.userNote = noteText || ''; }
+                const total = asnData.total || 0;
+                const attempted = Math.min(asnData.attempted || 0, total);
+                const pct = total > 0 ? Math.round((attempted / total) * 100) : 0;
+                const pieColor = pct >= 75 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#f43f5e';
+                const pieGradient = total > 0 ? `conic-gradient(${pieColor} ${pct}%, rgba(100,116,139,0.3) 0%)` : 'rgba(100,116,139,0.2)';
+
+                const htmlNode = `
+                <div id="${fullId}" class="asn-card rounded-2xl p-4 transition group relative">
+                    <div class="flex items-center gap-4">
+                        <div class="asn-pie" style="background: ${pieGradient}; display:flex; align-items:center; justify-content:center;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(15,23,42,0.9);display:flex;align-items:center;justify-content:center;">
+                                <span class="text-[10px] font-black text-white font-mono">${pct}%</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-amber-500/20 text-amber-300 text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider font-black border border-amber-500/30">Assignment</span>
+                                <input type="checkbox" id="cb-${fullId}" onchange="handleAssignmentCheck('${fullId}')" class="h-4 w-4 rounded border-slate-500 text-emerald-500 cursor-pointer" ${checkAttr}>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-100 leading-tight break-words ${isChecked ? 'line-through text-slate-500' : ''}">${text}</h4>
+                            <div class="flex items-center gap-3 mt-1.5">
+                                <span class="text-[10px] font-mono text-slate-400">Total: <strong class="text-violet-300">${total}</strong></span>
+                                <span class="text-[10px] font-mono text-slate-400">Done: <strong class="text-emerald-300">${attempted}</strong></span>
+                                <span class="text-[10px] font-mono text-slate-400">Left: <strong class="text-rose-300">${total - attempted}</strong></span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="editAssignmentProgress('${fullId}')" class="text-violet-400 hover:text-violet-300 transition cursor-pointer" title="Update progress"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="eraseCustomNode('${fullId}', this)" class="text-slate-500 hover:text-rose-400 transition cursor-pointer" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="mt-3 ml-16">
+                        <input type="text" id="note-${fullId}" data-asn-json='${JSON.stringify(asnData).replace(/'/g, "&#39;")}' oninput="debouncedSyncAssignment('${fullId}')" value="${asnData.userNote || ''}" placeholder="Add a note..." class="w-full bg-slate-900/40 border border-violet-500/20 rounded-lg p-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-violet-400 focus:bg-slate-900/60 transition-all placeholder-slate-500 ${isChecked ? 'locked-note' : ''}">
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', htmlNode);
+            } else {
+                const badgeStr = 'Added Task';
+                const colorStr = 'bg-indigo-600';
+                const htmlNode = `
+                <div class="task-row flex flex-col p-3.5 rounded-2xl transition group relative">
                     <div class="flex justify-between items-start w-full">
                         <label for="${fullId}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
-                            <input type="checkbox" id="${fullId}" onchange="handleSyncAction('${fullId}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-indigo-300 text-indigo-600 cursor-pointer" ${checkAttr}>
-                            <span class="text-indigo-900 group-has-[:checked]:text-indigo-400 group-has-[:checked]:line-through break-words font-medium flex items-center flex-wrap gap-2">
+                            <input type="checkbox" id="${fullId}" onchange="handleSyncAction('${fullId}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-violet-400/50 text-indigo-600 cursor-pointer" ${checkAttr}>
+                            <span class="text-slate-200 group-has-[:checked]:text-slate-500 group-has-[:checked]:line-through break-words font-medium flex items-center flex-wrap gap-2">
                                 <span class="${colorStr} text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-black shadow-sm">${badgeStr}</span>
                                 ${text}
                             </span>
                         </label>
-                        <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition cursor-pointer ml-4"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition cursor-pointer ml-4"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                     </div>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-${fullId}" oninput="debouncedSync('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-white/60 border border-indigo-200 rounded-lg p-2 text-[11px] font-mono text-indigo-800 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-indigo-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
+                        <input type="text" id="note-${fullId}" oninput="debouncedSync('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-slate-900/40 border border-violet-500/20 rounded-lg p-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-violet-400 focus:bg-slate-900/60 transition-all placeholder-slate-500 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
                     </div>
                 </div>`;
-            container.insertAdjacentHTML('beforeend', htmlNode);
+                container.insertAdjacentHTML('beforeend', htmlNode);
+            }
             calculateMetricsHUD();
         }
 
         async function eraseCustomNode(id, btnElement) {
             if(confirm("Permanently erase this from the cloud database?")) {
-                btnElement.closest('.task-row, [id^=plan_card_wrapper]').remove();
+                btnElement.closest('.task-row, .asn-card, [id^=plan_card_wrapper]').remove();
                 calculateMetricsHUD(); calculatePlanPies();
                 if(dbClient) {
                     if (id.startsWith('plan_meta_')) {
@@ -1337,6 +1424,74 @@
                         await dbClient.from('upsc_tracker_progress').delete().eq('id', id).eq('user_id', currentUserId);
                     }
                 }
+            }
+        }
+
+        function editAssignmentProgress(fullId) {
+            const cardEl = document.getElementById(fullId);
+            if (!cardEl) return;
+            const noteInput = document.getElementById('note-' + fullId);
+            let asnData = { total: 0, attempted: 0, userNote: '' };
+            try {
+                const stored = noteInput ? noteInput.dataset.asnJson || '' : '';
+                asnData = JSON.parse(stored);
+            } catch(e) {}
+            const newAttempted = prompt(`Update questions attempted (out of ${asnData.total}):`, asnData.attempted);
+            if (newAttempted === null) return;
+            const val = parseInt(newAttempted);
+            if (isNaN(val) || val < 0 || val > asnData.total) { alert(`Must be between 0 and ${asnData.total}`); return; }
+            asnData.attempted = val;
+            asnData.userNote = noteInput ? noteInput.value : '';
+            // Re-render this assignment card
+            cardEl.remove();
+            const targetBoxId = 'box-anthro-asn';
+            const parts = fullId.split('_');
+            const encodedPayload = parts.slice(2).join('_');
+            let decodedText = '';
+            try { decodedText = decodeURIComponent(escape(atob(encodedPayload))); } catch(e) { decodedText = 'Assignment'; }
+            const noteJson = JSON.stringify(asnData);
+            buildCustomTopicNode(targetBoxId, decodedText, fullId, false, noteJson);
+            syncAssignmentToCloud(fullId, noteJson);
+        }
+
+        function handleAssignmentCheck(fullId) {
+            const cbEl = document.getElementById('cb-' + fullId);
+            const isChecked = cbEl ? cbEl.checked : false;
+            const noteInput = document.getElementById('note-' + fullId);
+            let asnData = { total: 0, attempted: 0, userNote: '' };
+            try { asnData = JSON.parse(noteInput ? noteInput.dataset.asnJson || '{}' : '{}'); } catch(e) {}
+            asnData.userNote = noteInput ? noteInput.value : '';
+            const noteJson = JSON.stringify(asnData);
+            calculateMetricsHUD();
+            if (!dbClient) return;
+            dbClient.from('upsc_tracker_progress').upsert({ id: fullId, user_id: currentUserId, is_checked: isChecked, topic_note: noteJson, updated_at: new Date().toISOString() }, { onConflict: 'id,user_id' });
+        }
+
+        function debouncedSyncAssignment(fullId) {
+            clearTimeout(window['_asnTimer_' + fullId]);
+            window['_asnTimer_' + fullId] = setTimeout(() => {
+                const noteInput = document.getElementById('note-' + fullId);
+                if (!noteInput) return;
+                let asnData = { total: 0, attempted: 0, userNote: '' };
+                try { asnData = JSON.parse(noteInput.dataset.asnJson || '{}'); } catch(e) {}
+                asnData.userNote = noteInput.value;
+                const noteJson = JSON.stringify(asnData);
+                noteInput.dataset.asnJson = noteJson;
+                syncAssignmentToCloud(fullId, noteJson);
+            }, 800);
+        }
+
+        async function syncAssignmentToCloud(fullId, noteJson) {
+            if (!dbClient) return;
+            try {
+                const cbEl = document.getElementById('cb-' + fullId);
+                const isChecked = cbEl ? cbEl.checked : false;
+                await dbClient.from('upsc_tracker_progress').upsert({ id: fullId, user_id: currentUserId, is_checked: isChecked, topic_note: noteJson, updated_at: new Date().toISOString() }, { onConflict: 'id,user_id' });
+                document.getElementById("sync-status-text").innerText = "CLOUD SYNCED ACROSS DEVICES";
+                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+            } catch(e) {
+                document.getElementById("sync-status-text").innerText = "SYNC FAILED: NETWORK OFFLINE";
+                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
             }
         }
 
@@ -1417,7 +1572,7 @@
                 taskBoxes.forEach(b => { if(b.checked) sChecked++; });
                 const sPct = sTotal > 0 ? Math.round((sChecked / sTotal) * 100) : 0;
                 if (lblEl) lblEl.innerText = sPct + "%";
-                pieEl.style.background = `conic-gradient(#10b981 ${sPct}%, #e2e8f0 0%)`;
+                pieEl.style.background = `conic-gradient(#10b981 ${sPct}%, rgba(51,65,85,0.6) 0%)`;
             });
         }
 
@@ -1447,10 +1602,10 @@
                 
                 if (pieEl && lblEl) {
                     lblEl.innerText = sPct + "%";
-                    lblEl.style.backgroundColor = theme.bg;
-                    lblEl.style.color = theme.text;
-                    pieEl.style.background = `conic-gradient(${theme.hex} ${sPct}%, #e2e8f0 0%)`;
-                    if (sPct > 0) { pieEl.style.border = 'none'; } else { pieEl.style.border = '2px solid rgba(255,255,255,0.8)'; }
+                    lblEl.style.backgroundColor = theme.hex + '33';
+                    lblEl.style.color = theme.hex;
+                    pieEl.style.background = `conic-gradient(${theme.hex} ${sPct}%, rgba(51,65,85,0.6) 0%)`;
+                    if (sPct > 0) { pieEl.style.border = 'none'; } else { pieEl.style.border = '2px solid rgba(139,92,246,0.3)'; }
                 }
             });
         }
@@ -1633,8 +1788,8 @@
             document.getElementById(`master-${id}`).classList.remove('hidden');
             ['syllabus', 'ca', 'pyq', 'testseries'].forEach(k => {
                 const btn = document.getElementById(`btn-master-${k}`);
-                if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font"; } 
-                else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font"; }
+                if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md heading-font"; } 
+                else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-300 hover:text-white hover:bg-white/10 heading-font"; }
             });
             // Lazy render PYQ/CSAT on first open
             if (id === 'pyq') { lazyRenderPYQ(); lazyRenderCSAT(); }
@@ -1645,7 +1800,7 @@
             document.getElementById(`deck-${id}`).classList.remove('hidden');
             ['prelims', 'mains', 'anthro'].forEach(k => {
                 const btn = document.getElementById(`btn-stage-${k}`);
-                btn.className = `deck-${k}` === `deck-${id}` ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200";
+                btn.className = `deck-${k}` === `deck-${id}` ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font";
             });
         }
         
@@ -1654,7 +1809,7 @@
             document.getElementById(`deck-pyq-${id}`).classList.remove('hidden');
             ['prelims', 'mains'].forEach(k => {
                 const btn = document.getElementById(`btn-pyq-stage-${k}`);
-                btn.className = k === id ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200";
+                btn.className = k === id ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font";
             });
         }
         
@@ -1663,7 +1818,7 @@
             document.getElementById(`deck-ts-${id}`).classList.remove('hidden');
             ['prelims', 'mains'].forEach(k => {
                 const btn = document.getElementById(`btn-ts-stage-${k}`);
-                btn.className = k === id ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200";
+                btn.className = k === id ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all stage-btn-inactive heading-font";
             });
         }
 
@@ -1671,41 +1826,41 @@
             document.querySelectorAll('.sub-pane-' + groupClass).forEach(p => p.classList.add('hidden'));
             document.getElementById(panelId).classList.remove('hidden');
             document.querySelectorAll('.sub-tab-' + groupClass).forEach(btn => {
-                btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
+                btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent`;
             });
-            btnElement.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200`;
+            btnElement.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500`;
         }
 
         function activateSubTab_PYQ(groupClass, panelId, btnElement) {
             document.querySelectorAll('.sub-pane-pyq-' + groupClass).forEach(p => p.classList.add('hidden'));
             document.getElementById(panelId).classList.remove('hidden');
             document.querySelectorAll('.sub-tab-pyq-' + groupClass).forEach(btn => {
-                btn.className = `sub-tab-pyq-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
+                btn.className = `sub-tab-pyq-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent`;
             });
-            btnElement.className = `sub-tab-pyq-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200`;
+            btnElement.className = `sub-tab-pyq-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500`;
         }
         
         function activateSubTab_TS(groupClass, panelId, btnElement) {
             document.querySelectorAll('.sub-pane-ts-' + groupClass).forEach(p => p.classList.add('hidden'));
             document.getElementById(panelId).classList.remove('hidden');
             document.querySelectorAll('.sub-tab-ts-' + groupClass).forEach(btn => {
-                btn.className = `sub-tab-ts-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
+                btn.className = `sub-tab-ts-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent`;
             });
-            btnElement.className = `sub-tab-ts-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200`;
+            btnElement.className = `sub-tab-ts-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500`;
         }
 
         // ===== CA SECTION: Tab Switching & Link Management =====
         function activateCATab(tab) {
             document.querySelectorAll('.ca-pane').forEach(p => p.classList.add('hidden'));
             document.querySelectorAll('.sub-tab-ca').forEach(btn => {
-                btn.className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent';
+                btn.className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent';
             });
             if (tab === 'tracker') {
                 document.getElementById('panel-ca-tracker').classList.remove('hidden');
-                document.getElementById('btn-ca-tab-tracker').className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200';
+                document.getElementById('btn-ca-tab-tracker').className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500';
             } else {
                 document.getElementById('panel-ca-links').classList.remove('hidden');
-                document.getElementById('btn-ca-tab-links').className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200';
+                document.getElementById('btn-ca-tab-links').className = 'sub-tab-ca inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500';
             }
             if (tab === 'links') renderCALinks();
         }
