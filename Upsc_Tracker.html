@@ -149,6 +149,14 @@
     </div>
 
     <script>
+        // =========================================================================
+        // 🚨 NISHANT: YOU MUST PASTE YOUR KEY INTO THE SECOND LINE BELOW 🚨
+        // =========================================================================
+        const SUPABASE_URL = "https://wdbwnutkomemrciybezz.supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_HYqlB7gJZmJ-Ni8ZywKJ_w_bNZWlGGy";
+        // =========================================================================
+
+
         const dataP1 = ["Current events of national and international importance.","History of India: Ancient, medieval structural socio-economic histories.","Indian National Movement: Freedom struggle phases.","Physical Geography of India and global domains.","Social and Economic Geography of the World.","Indian Polity: Constitution, systems, design.","Panchayati Raj, public policy, rights issues.","Economic Development: Planning, sustainable frameworks.","Social Sector Initiatives: Poverty, inclusion markers.","General Issues on Environmental Ecology & Bio-diversity.","Climate Change vectors, global commitments tracker.","General Science: Foundational physics, chemistry, biology."];
         const dataP2 = ["Comprehension structural text analysis.","Interpersonal modules with focus on communication.","Logical reasoning and high analytical testing.","Decision-making mechanics & strategic problem solving.","General mental ability matrix validations.","Basic Numeracy: Numbers & scales of magnitude (Class X floor).","Data Interpretation: Charts, graphs, tables sufficiency (Class X floor)."];
         const dataLA = ["Comprehension of designated Indian text reading passages.","Precis Writing structural summarizations.","Usage and Vocabulary expression validation.","Short Essay composition writing frameworks.","Translation rules: English to Indian language & reverse."];
@@ -189,14 +197,17 @@
             `).join('');
         }
 
-        // ==========================================
-        // SAFE CLOUD INTEGRATION WITH 5-SECOND KILL SWITCH
-        // ==========================================
-        const SUPABASE_URL = "https://wdbwnutkomemrciybezz.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkYndudXRrb21lbXJjaXliZXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMTU4NTgsImV4cCI6MjA1NzkwMzg1OH0.8y6xYpM3PbyL2-zS3g7yT6fT8uS_w8H9H6M_9w6E5mI";
         let dbClient = null;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Failsafe check to prevent empty keys
+            if (SUPABASE_ANON_KEY.includes("YOUR_KEY_HERE") || SUPABASE_ANON_KEY.startsWith("eyJhbGci")) {
+                document.getElementById("sync-status-text").innerText = "CRITICAL: MISSING API KEY";
+                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
+                alert("Nishant: The code still contains the wrong API key.\n\nPlease open your Upsc_Tracker.html file, scroll down to Line 183, and paste your actual 'sb_publishable_...' key inside the quotes.");
+                return;
+            }
+
             document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
             
             if (window.supabase) {
@@ -211,7 +222,6 @@
         async function syncLatestCloudState() {
             if(!dbClient) return;
             try {
-                // 5-Second Kill Switch for the fetch request
                 const fetchPromise = dbClient.from('nishant_upsc_tracker').select('*');
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
                 
@@ -239,15 +249,13 @@
                     calculateMetricsHUD();
                 }
             } catch(e) {
-                // Network blocked the request or it timed out
-                document.getElementById("sync-status-text").innerText = "OFFLINE: DATABASE BLOCKED BY NETWORK";
+                document.getElementById("sync-status-text").innerText = "OFFLINE: DB REJECTED CONNECTION (CHECK KEY)";
                 document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
-                console.error("Supabase sync failed:", e);
             }
         }
 
         async function handleCheck(elementId, isChecked) {
-            calculateMetricsHUD(); // Instant local UI update
+            calculateMetricsHUD(); 
             if(!dbClient) return;
             try {
                 const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ id: elementId, is_checked: isChecked, updated_at: new Date().toISOString() });
