@@ -38,7 +38,6 @@
         .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #e2e8f0, transparent); }
         .auth-social-btn { width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: white; }
         .auth-social-btn:hover { border-color: #8b5cf6; background: #faf5ff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139,92,246,0.1); }
-        .auth-otp-section input { font-family: 'Plus Jakarta Sans', monospace; letter-spacing: 0.15em; }
 
         /* Animated header */
         header { background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(238,242,255,0.95) 100%) !important; }
@@ -69,13 +68,7 @@
                 Continue with Google
             </button>
 
-            <div class="auth-divider"><span style="font-size:0.65rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">or sign in with</span></div>
-
-            <!-- Tab toggle: Email / Phone -->
-            <div style="display:flex; gap:0.25rem; background:#f1f5f9; border-radius:0.5rem; padding:0.2rem; margin-bottom:1rem;">
-                <button onclick="switchAuthTab('email')" id="auth-tab-email" style="flex:1; padding:0.5rem; border-radius:0.4rem; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; transition:all 0.2s; background:white; color:#4f46e5; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.08);">Email</button>
-                <button onclick="switchAuthTab('phone')" id="auth-tab-phone" style="flex:1; padding:0.5rem; border-radius:0.4rem; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; transition:all 0.2s; background:transparent; color:#64748b; border:none;">Phone OTP</button>
-            </div>
+            <div class="auth-divider"><span style="font-size:0.65rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">or use email</span></div>
 
             <!-- Email/Password Section -->
             <div id="auth-email-section">
@@ -92,20 +85,6 @@
                     <button id="auth-signup-btn" onclick="handleSignup()" style="flex:1; padding:0.8rem; background:linear-gradient(135deg,#059669,#10b981,#34d399); color:white; border:none; border-radius:0.75rem; font-size:0.75rem; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 15px -3px rgba(16,185,129,0.4); transition: all 0.2s;">Sign Up</button>
                 </div>
                 <p style="font-size:0.6rem; color:#94a3b8; text-align:center; margin-top:0.75rem;">Sign Up creates a new account. Sign In for existing users.</p>
-            </div>
-
-            <!-- Phone OTP Section -->
-            <div id="auth-phone-section" style="display:none;">
-                <div>
-                    <label style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#475569;">Phone Number (with country code)</label>
-                    <input type="tel" id="auth-phone" placeholder="+91 9876543210" class="auth-otp-section" autocomplete="tel">
-                </div>
-                <button id="auth-otp-send-btn" onclick="handleSendOTP()" style="margin-top:1rem; width:100%; padding:0.8rem; background:linear-gradient(135deg,#059669,#10b981); color:white; border:none; border-radius:0.75rem; font-size:0.8rem; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 15px -3px rgba(16,185,129,0.4); transition: all 0.2s;">Send OTP</button>
-                <div id="auth-otp-verify" style="display:none; margin-top:1rem;">
-                    <label style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#475569;">Enter 6-digit OTP</label>
-                    <input type="text" id="auth-otp-code" placeholder="000000" maxlength="6" class="auth-otp-section" style="text-align:center; font-size:1.25rem; letter-spacing:0.5em;">
-                    <button onclick="handleVerifyOTP()" style="margin-top:0.75rem; width:100%; padding:0.8rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:0.75rem; font-size:0.8rem; font-weight:800; cursor:pointer; text-transform:uppercase; box-shadow:0 4px 15px -3px rgba(139,92,246,0.4); transition: all 0.2s;">Verify & Sign In</button>
-                </div>
             </div>
 
             <div id="auth-error"></div>
@@ -566,31 +545,6 @@
         let dbClient = null;
         let currentUserId = null; // Stores authenticated user's UUID for DB operations
 
-        // ===== AUTH UI HELPERS =====
-        function switchAuthTab(tab) {
-            const errEl = document.getElementById('auth-error');
-            errEl.style.display = 'none';
-            if (tab === 'email') {
-                document.getElementById('auth-email-section').style.display = 'block';
-                document.getElementById('auth-phone-section').style.display = 'none';
-                document.getElementById('auth-tab-email').style.background = 'white';
-                document.getElementById('auth-tab-email').style.color = '#4f46e5';
-                document.getElementById('auth-tab-email').style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-                document.getElementById('auth-tab-phone').style.background = 'transparent';
-                document.getElementById('auth-tab-phone').style.color = '#64748b';
-                document.getElementById('auth-tab-phone').style.boxShadow = 'none';
-            } else {
-                document.getElementById('auth-email-section').style.display = 'none';
-                document.getElementById('auth-phone-section').style.display = 'block';
-                document.getElementById('auth-tab-phone').style.background = 'white';
-                document.getElementById('auth-tab-phone').style.color = '#059669';
-                document.getElementById('auth-tab-phone').style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-                document.getElementById('auth-tab-email').style.background = 'transparent';
-                document.getElementById('auth-tab-email').style.color = '#64748b';
-                document.getElementById('auth-tab-email').style.boxShadow = 'none';
-            }
-        }
-
         // ===== AUTH FUNCTIONS =====
         function ensureClient() {
             if (!dbClient && window.supabase) { dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
@@ -686,50 +640,6 @@
             }
         }
 
-        async function handleSendOTP() {
-            const phone = document.getElementById('auth-phone').value.trim();
-            const errEl = document.getElementById('auth-error');
-            const btn = document.getElementById('auth-otp-send-btn');
-            
-            if (!phone || phone.length < 10) { errEl.style.display = 'block'; errEl.textContent = 'Enter valid phone with country code (e.g. +91...).'; return; }
-            
-            btn.style.opacity = '0.5'; btn.textContent = 'SENDING...';
-            errEl.style.display = 'none';
-            
-            try {
-                if (!ensureClient()) throw new Error('Supabase script blocked');
-                const { error } = await dbClient.auth.signInWithOtp({ phone });
-                if (error) throw error;
-                btn.style.opacity = '1'; btn.textContent = 'OTP SENT ✓';
-                document.getElementById('auth-otp-verify').style.display = 'block';
-            } catch(e) {
-                btn.style.opacity = '1'; btn.textContent = 'SEND OTP';
-                errEl.style.display = 'block';
-                errEl.textContent = e.message || 'Failed to send OTP.';
-            }
-        }
-
-        async function handleVerifyOTP() {
-            const phone = document.getElementById('auth-phone').value.trim();
-            const token = document.getElementById('auth-otp-code').value.trim();
-            const errEl = document.getElementById('auth-error');
-            
-            if (!token || token.length !== 6) { errEl.style.display = 'block'; errEl.textContent = 'Enter the 6-digit OTP.'; return; }
-            errEl.style.display = 'none';
-            
-            try {
-                if (!ensureClient()) throw new Error('Supabase script blocked');
-                const { data, error } = await dbClient.auth.verifyOtp({ phone, token, type: 'sms' });
-                if (error) throw error;
-                currentUserId = data.user.id;
-                await recordSession(data.user.email || data.user.phone);
-                showApp();
-            } catch(e) {
-                errEl.style.display = 'block';
-                errEl.textContent = e.message || 'OTP verification failed.';
-            }
-        }
-
         async function handleLogout() {
             if (dbClient) { await dbClient.auth.signOut(); }
             dbClient = null;
@@ -737,8 +647,6 @@
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('auth-screen').style.display = 'flex';
             document.getElementById('auth-password').value = '';
-            document.getElementById('auth-otp-code').value = '';
-            document.getElementById('auth-otp-verify').style.display = 'none';
         }
 
         // ===== SESSION TRACKING =====
@@ -805,7 +713,6 @@
         // Allow Enter key to submit login
         document.getElementById('auth-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
         document.getElementById('auth-email').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
-        document.getElementById('auth-otp-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleVerifyOTP(); });
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (!window.supabase) {
