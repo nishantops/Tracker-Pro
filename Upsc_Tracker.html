@@ -16,10 +16,15 @@
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+        
+        /* High Performance Pure CSS Pie Charts */
+        .pie-chart-frame { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-center: center; transition: all 0.4s ease-in-out; }
+        .pie-chart-center { width: 48px; height: 64px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; font-family: monospace; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
 
+    <!-- MASTER GLOBAL HUD NAVBAR -->
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 px-4 lg:px-8 py-4 shadow-xs">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-4 w-full md:w-auto">
@@ -47,6 +52,7 @@
         </div>
     </header>
 
+    <!-- MAIN DASHBOARD METRICS -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="neo-card rounded-3xl p-6 border-l-4 border-indigo-600 flex flex-col justify-between relative overflow-hidden">
@@ -90,12 +96,61 @@
             </div>
         </div>
 
+        <!-- PIE CHART GRAPHICAL HUB OVERVIEW -->
+        <div class="neo-card rounded-3xl p-6">
+            <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono mb-4 border-b border-slate-100 pb-2">SECTIONAL SYLLABUS PIE COMPLETION MATRIX</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <!-- Prelims P1 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-p1" class="pie-chart-frame bg-slate-200"><div id="lbl-p1" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Prelims P1</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">GS Paper I</div></div>
+                </div>
+                <!-- Prelims CSAT -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-p2" class="pie-chart-frame bg-slate-200"><div id="lbl-p2" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Prelims P2</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">CSAT Paper II</div></div>
+                </div>
+                <!-- Mains GS1 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-gs1" class="pie-chart-frame bg-slate-200"><div id="lbl-gs1" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Mains GS1</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">GS-I Blueprint</div></div>
+                </div>
+                <!-- Mains GS2 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-gs2" class="pie-chart-frame bg-slate-200"><div id="lbl-gs2" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Mains GS2</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">GS-II Blueprint</div></div>
+                </div>
+                <!-- Mains GS3 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-gs3" class="pie-chart-frame bg-slate-200"><div id="lbl-gs3" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Mains GS3</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">GS-III Blueprint</div></div>
+                </div>
+                <!-- Mains GS4 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-gs4" class="pie-chart-frame bg-slate-200"><div id="lbl-gs4" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Mains GS4</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">GS-IV Ethics</div></div>
+                </div>
+                <!-- Anthro Paper 1 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-a1" class="pie-chart-frame bg-slate-200"><div id="lbl-a1" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Anthro P1</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">Paper I Focus</div></div>
+                </div>
+                <!-- Anthro Paper 2 -->
+                <div class="bg-white/50 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-2xs">
+                    <div id="pie-a2" class="pie-chart-frame bg-slate-200"><div id="lbl-a2" class="pie-chart-center text-slate-800">0%</div></div>
+                    <div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Anthro P2</div><div class="text-xs font-black text-slate-800 mt-0.5 leading-none">Paper II Focus</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS CONTROLLER -->
         <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm">
             <button onclick="activateTab('deck-prelims')" id="btn-deck-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims Blueprint</button>
             <button onclick="activateTab('deck-mains')" id="btn-deck-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">Stage II: Core Mains &amp; Languages</button>
             <button onclick="activateTab('deck-anthro')" id="btn-deck-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">Stage III: Anthropology Optional</button>
         </div>
 
+        <!-- SYLLABUS LIST LAYOUT SLOTS -->
         <div class="space-y-6">
             <div id="deck-prelims" class="tab-pane-view block space-y-8">
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">General Studies (Paper I) Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
@@ -106,7 +161,7 @@
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper A: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper B: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper I: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
-                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper II: General Studies I (GS-I)</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
+                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper II: General Studies I (GS-1)</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper III: General Studies II (GS-II)</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper IV: General Studies III (GS-III)</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper V: General Studies IV (GS-IV)</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
@@ -119,6 +174,7 @@
         </div>
     </main>
 
+    <!-- CUSTOM TOPIC MODAL -->
     <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
             <h3 class="text-lg font-black text-slate-900 heading-font mb-4">📂 Add Custom Sync Topic</h3>
@@ -327,11 +383,30 @@
             const boxes = document.querySelectorAll('input[type="checkbox"]');
             let total = boxes.length, checked = 0;
             boxes.forEach(b => { if(b.checked) checked++; });
+            
             document.getElementById("global-count-total").innerText = total;
             document.getElementById("global-count-checked").innerText = checked;
             const percentage = total > 0 ? ((checked / total) * 100).toFixed(1) : 0;
             document.getElementById("global-perc-text").innerText = percentage + "%";
             document.getElementById("global-progress-bar").style.width = percentage + "%";
+
+            // Recalculate Sections and Update CSS Pie Gradient Fill Rings dynamically
+            const prefixes = ['p1', 'p2', 'gs1', 'gs2', 'gs3', 'gs4', 'a1', 'a2'];
+            prefixes.forEach(pfx => {
+                const secBoxes = document.querySelectorAll(`input[type="checkbox"][id*="-${pfx}-"]`);
+                let sTotal = secBoxes.length, sChecked = 0;
+                secBoxes.forEach(b => { if(b.checked) sChecked++; });
+                
+                const sPct = sTotal > 0 ? Math.round((sChecked / sTotal) * 100) : 0;
+                
+                // Native gradient manipulation bypasses script network parsing blocks entirely
+                const pieEl = document.getElementById(`pie-${pfx}`);
+                const lblEl = document.getElementById(`lbl-${pfx}`);
+                if (pieEl && lblEl) {
+                    lblEl.innerText = sPct + "%";
+                    pieEl.style.background = `conic-gradient(#4f46e5 ${sPct}%, #e2e8f0 0%)`;
+                }
+            });
         }
 
         function trackLiveClockTimelines() {
