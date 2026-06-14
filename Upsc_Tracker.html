@@ -6,7 +6,7 @@
     <title>Nishant Kumar • UPSC CSE Command Center 2027</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="pyq_data.js?v=5"></script>
+    <script src="pyq_data.js?v=5" defer></script>
     <link rel="stylesheet" href="css/ai-chat.css?v=1">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap');
@@ -741,7 +741,11 @@
         buildList('box-anthro-p1', dataA1, 'a1'); buildList('box-anthro-p2', dataA2, 'a2');
         buildList('box-ca', dataCA, 'ca');
 
-        buildList('box-pyq-p1', dataPYQ_p1, 'pq1'); renderPYQTopics(); renderCSATTopics();
+        buildList('box-pyq-p1', dataPYQ_p1, 'pq1');
+        // PYQ/CSAT topic rendering deferred to when tab is opened (performance)
+        let _pyqRendered = false, _csatRendered = false;
+        function lazyRenderPYQ() { if (!_pyqRendered && typeof pyqGS1Data !== 'undefined') { renderPYQTopics(); _pyqRendered = true; } }
+        function lazyRenderCSAT() { if (!_csatRendered && typeof csatData !== 'undefined') { renderCSATTopics(); _csatRendered = true; } }
         buildList('box-pyq-gs1', dataPYQ_gs1, 'qg1'); buildList('box-pyq-gs2', dataPYQ_gs2, 'qg2'); buildList('box-pyq-gs3', dataPYQ_gs3, 'qg3'); buildList('box-pyq-gs4', dataPYQ_gs4, 'qg4');
         buildList('box-pyq-a1', dataPYQ_a1, 'qa1'); buildList('box-pyq-a2', dataPYQ_a2, 'qa2');
 
@@ -1614,6 +1618,8 @@
                 if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font"; } 
                 else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font"; }
             });
+            // Lazy render PYQ/CSAT on first open
+            if (id === 'pyq') { lazyRenderPYQ(); lazyRenderCSAT(); }
         }
 
         function activateStageTab(id) {
@@ -2152,48 +2158,41 @@
         <!-- Chat View -->
         <div id="ai-chat-view">
             <div class="ai-chat-header">
-                <h3>✨ AI Study Buddy</h3>
+                <h3>✨ Gemini Study Buddy</h3>
                 <div class="ai-chat-header-actions">
                     <button onclick="AI_CHAT.clearChat()" title="Clear Chat">🗑</button>
                     <button onclick="AI_CHAT.showSettings()" title="Settings">⚙️</button>
                     <button onclick="AI_CHAT.toggle()" title="Close">✕</button>
                 </div>
             </div>
-            <div class="ai-provider-toggle">
-                <button class="ai-provider-btn active" onclick="AI_CHAT.switchProvider('gpt')" id="btn-provider-gpt">GPT-4o</button>
-                <button class="ai-provider-btn" onclick="AI_CHAT.switchProvider('gemini')" id="btn-provider-gemini">Gemini</button>
-            </div>
             <div id="ai-chat-messages"></div>
             <div class="ai-chat-input-area">
-                <input type="text" id="ai-chat-input" placeholder="Ask anything about UPSC..." onkeydown="if(event.key==='Enter')AI_CHAT.sendMessage()">
+                <input type="text" id="ai-chat-input" placeholder="Ask Gemini about UPSC..." onkeydown="if(event.key==='Enter')AI_CHAT.sendMessage()">
                 <button class="ai-send-btn" onclick="AI_CHAT.sendMessage()">➤</button>
             </div>
         </div>
         <!-- Settings View -->
         <div id="ai-settings-panel" class="hidden">
             <div class="ai-chat-header">
-                <h3>🔑 API Keys</h3>
+                <h3>⚙️ Custom API Key</h3>
                 <div class="ai-chat-header-actions">
                     <button onclick="AI_CHAT.hideSettings()" title="Back">←</button>
                 </div>
             </div>
             <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;flex:1">
+                <p style="font-size:0.7rem;color:#94a3b8;line-height:1.5">A default Gemini key is provided. Override below only if you want to use your own key for higher limits.</p>
                 <div>
-                    <label>OpenAI API Key (GPT)</label>
-                    <input type="password" id="ai-key-gpt" placeholder="sk-...">
+                    <label>Gemini API Key (optional override)</label>
+                    <input type="password" id="ai-key-gemini" placeholder="AIza... (leave blank to use default)">
                 </div>
-                <div>
-                    <label>Google Gemini API Key</label>
-                    <input type="password" id="ai-key-gemini" placeholder="AIza...">
-                </div>
-                <p style="font-size:0.65rem;color:#64748b;line-height:1.4">Keys are stored locally in your browser and never sent to any server except OpenAI/Google.</p>
+                <p style="font-size:0.6rem;color:#475569;line-height:1.4">Get a key free at aistudio.google.com/apikey</p>
                 <div class="ai-settings-actions">
                     <button class="ai-settings-cancel" onclick="AI_CHAT.hideSettings()">Cancel</button>
-                    <button class="ai-settings-save" onclick="AI_CHAT.saveSettings()">Save Keys</button>
+                    <button class="ai-settings-save" onclick="AI_CHAT.saveSettings()">Save</button>
                 </div>
             </div>
         </div>
     </div>
-    <script src="js/ai-chat.js?v=2"></script>
+    <script src="js/ai-chat.js?v=3"></script>
 </body>
 </html>

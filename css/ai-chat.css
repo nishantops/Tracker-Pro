@@ -105,15 +105,8 @@
     color: #a5b4fc;
 }
 
-/* Provider Toggle */
-.ai-provider-toggle {
-    display: flex;
-    gap: 0.25rem;
-    padding: 0.5rem 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
-    flex-shrink: 0;
-}
+/* Provider Toggle (hidden - Gemini only now) */
+.ai-provider-toggle { display: none; }
 
 .ai-provider-btn {
     flex: 1;

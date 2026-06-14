@@ -1,100 +1,73 @@
 // =========================================================================
-// AI CHAT MODULE — GPT & Gemini integration for UPSC Command Center
-// Provides floating chat widget accessible from every section
+// AI CHAT MODULE — Gemini-powered UPSC Study Assistant
+// Lightweight, Gemini-only, persistent chat history
 // =========================================================================
 
 const AI_CHAT = (() => {
     let isOpen = false;
-    let currentProvider = 'gpt'; // 'gpt' or 'gemini'
     let chatHistory = [];
-    let currentSection = 'General';
+    const STORAGE_KEY = 'upsc_ai_chat_history';
+    const CUSTOM_KEY_STORAGE = 'upsc_ai_key_gemini_custom';
 
-    function getApiKey(provider) {
-        return localStorage.getItem(`upsc_ai_key_${provider}`) || '';
+    // Default key (free tier, shared across all users)
+    // Users can override with their own key in settings
+    const DEFAULT_KEY = ''; // Will be set when user provides it
+
+    function getApiKey() {
+        return localStorage.getItem(CUSTOM_KEY_STORAGE) || DEFAULT_KEY;
     }
 
-    function setApiKey(provider, key) {
-        localStorage.setItem(`upsc_ai_key_${provider}`, key);
+    function loadHistory() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) chatHistory = JSON.parse(saved);
+        } catch(e) { chatHistory = []; }
+    }
+
+    function saveHistory() {
+        try {
+            // Keep last 50 messages to prevent storage bloat
+            const trimmed = chatHistory.slice(-50);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+        } catch(e) { /* storage full, silent */ }
     }
 
     function getCurrentSectionContext() {
-        // Detect which section is currently visible
-        const visiblePanes = document.querySelectorAll('.master-pane-view:not(.hidden), .root-pane-view:not(.hidden)');
-        let context = 'User is on the UPSC CSE Command Center tracker app.\n';
-        
-        // Get user profile
+        let context = 'UPSC CSE Command Center tracker app.\n';
         const name = document.getElementById('user-display-name')?.textContent || 'User';
-        const age = document.getElementById('user-age-text')?.textContent || 'unknown';
-        const attempt = document.getElementById('user-attempt-text')?.textContent || 'unknown';
-        context += `Student: ${name}, Age: ${age}, Attempt: ${attempt}\n`;
-        
-        // Get progress stats
-        const checked = document.getElementById('global-count-checked')?.textContent || '0';
-        const total = document.getElementById('global-count-total')?.textContent || '0';
         const pct = document.getElementById('global-perc-text')?.textContent || '0%';
-        context += `Progress: ${checked}/${total} topics completed (${pct})\n`;
+        context += `Student: ${name}, Progress: ${pct}\n`;
 
-        // Detect active section
-        if (!document.getElementById('view-marathon')?.classList.contains('hidden')) {
-            context += 'Currently viewing: Marathon Tracker (Syllabus, CA, PYQ, Test Series)\n';
-            currentSection = 'Marathon Tracker';
-        } else if (!document.getElementById('view-planner')?.classList.contains('hidden')) {
-            context += 'Currently viewing: Strategy Planner\n';
-            currentSection = 'Strategy Planner';
-        }
-
+        const marathon = document.getElementById('view-marathon');
+        const planner = document.getElementById('view-planner');
+        if (marathon && !marathon.classList.contains('hidden')) context += 'Section: Marathon Tracker\n';
+        else if (planner && !planner.classList.contains('hidden')) context += 'Section: Strategy Planner\n';
         return context;
     }
 
-    async function callGPT(message, apiKey) {
-        const systemPrompt = `You are an expert UPSC CSE preparation assistant. Help the student with their queries about syllabus, strategy, current affairs, answer writing, and study planning. Be concise, actionable, and encouraging. Context:\n${getCurrentSectionContext()}`;
-        
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({
-                model: 'gpt-4o-mini',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    ...chatHistory.map(m => ({ role: m.role, content: m.content })),
-                    { role: 'user', content: message }
-                ],
-                max_tokens: 1000,
-                temperature: 0.7
-            })
-        });
-
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            throw new Error(err.error?.message || `GPT API error: ${response.status}`);
-        }
-        const data = await response.json();
-        return data.choices[0].message.content;
-    }
-
     async function callGemini(message, apiKey) {
-        const context = getCurrentSectionContext();
-        const systemInstruction = `You are an expert UPSC CSE preparation assistant. Help the student with their queries about syllabus, strategy, current affairs, answer writing, and study planning. Be concise, actionable, and encouraging.\n\nContext:\n${context}`;
+        const systemInstruction = `You are an expert UPSC CSE preparation assistant. Help with syllabus, strategy, current affairs, answer writing, and study planning. Be concise and actionable.\n\nContext:\n${getCurrentSectionContext()}`;
 
-        const contents = chatHistory.map(m => ({
+        // Only send last 10 messages as context to keep requests fast
+        const recentHistory = chatHistory.slice(-10).map(m => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
         }));
-        contents.push({ role: 'user', parts: [{ text: message }] });
+        recentHistory.push({ role: 'user', parts: [{ text: message }] });
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 system_instruction: { parts: [{ text: systemInstruction }] },
-                contents: contents,
-                generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+                contents: recentHistory,
+                generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
             })
         });
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.error?.message || `Gemini API error: ${response.status}`);
+            throw new Error(err.error?.message || `API error: ${response.status}`);
         }
         const data = await response.json();
         return data.candidates[0].content.parts[0].text;
@@ -106,29 +79,28 @@ const AI_CHAT = (() => {
         if (!message.trim()) return;
         if (inputEl) inputEl.value = '';
 
-        const apiKey = getApiKey(currentProvider);
+        const apiKey = getApiKey();
         if (!apiKey) {
-            appendMessage('system', `⚠️ No ${currentProvider.toUpperCase()} API key set. Click the ⚙️ icon to add your key.`);
+            appendMessage('system', '⚠️ No API key configured. Click ⚙️ to add your Gemini key.');
             return;
         }
 
         appendMessage('user', message);
         chatHistory.push({ role: 'user', content: message });
+        saveHistory();
 
         const typingEl = appendMessage('assistant', '● ● ●');
         typingEl.classList.add('typing-indicator');
 
         try {
-            const reply = currentProvider === 'gpt' 
-                ? await callGPT(message, apiKey) 
-                : await callGemini(message, apiKey);
-            
+            const reply = await callGemini(message, apiKey);
             typingEl.remove();
             appendMessage('assistant', reply);
             chatHistory.push({ role: 'assistant', content: reply });
+            saveHistory();
         } catch(e) {
             typingEl.remove();
-            appendMessage('system', `❌ Error: ${e.message}`);
+            appendMessage('system', `❌ ${e.message}`);
         }
     }
 
@@ -136,18 +108,21 @@ const AI_CHAT = (() => {
         const container = document.getElementById('ai-chat-messages');
         const div = document.createElement('div');
         div.className = `ai-msg ai-msg-${role}`;
-        
-        // Simple markdown-ish formatting
-        let formatted = content
+        div.innerHTML = content
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>')
             .replace(/\n/g, '<br>');
-        
-        div.innerHTML = formatted;
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
         return div;
+    }
+
+    function renderSavedHistory() {
+        const container = document.getElementById('ai-chat-messages');
+        if (!container || !chatHistory.length) return;
+        container.innerHTML = '';
+        chatHistory.forEach(m => appendMessage(m.role, m.content));
     }
 
     function toggle() {
@@ -158,6 +133,9 @@ const AI_CHAT = (() => {
             panel.classList.remove('hidden');
             fab.innerHTML = '✕';
             fab.style.background = 'linear-gradient(135deg, #ef4444, #f97316)';
+            if (!document.getElementById('ai-chat-messages').children.length && chatHistory.length) {
+                renderSavedHistory();
+            }
         } else {
             panel.classList.add('hidden');
             fab.innerHTML = '🤖';
@@ -165,20 +143,11 @@ const AI_CHAT = (() => {
         }
     }
 
-    function switchProvider(provider) {
-        currentProvider = provider;
-        document.getElementById('btn-provider-gpt').className = provider === 'gpt' ? 'ai-provider-btn active' : 'ai-provider-btn';
-        document.getElementById('btn-provider-gemini').className = provider === 'gemini' ? 'ai-provider-btn active' : 'ai-provider-btn';
-        document.getElementById('ai-chat-input').placeholder = `Ask ${provider === 'gpt' ? 'GPT' : 'Gemini'} about UPSC...`;
-    }
-
     function showSettings() {
-        const gptKey = getApiKey('gpt');
-        const geminiKey = getApiKey('gemini');
         document.getElementById('ai-settings-panel').classList.remove('hidden');
         document.getElementById('ai-chat-view').classList.add('hidden');
-        document.getElementById('ai-key-gpt').value = gptKey ? '••••••' + gptKey.slice(-6) : '';
-        document.getElementById('ai-key-gemini').value = geminiKey ? '••••••' + geminiKey.slice(-6) : '';
+        const customKey = localStorage.getItem(CUSTOM_KEY_STORAGE);
+        document.getElementById('ai-key-gemini').value = customKey ? '••••••' + customKey.slice(-4) : '';
     }
 
     function hideSettings() {
@@ -187,21 +156,23 @@ const AI_CHAT = (() => {
     }
 
     function saveSettings() {
-        const gptVal = document.getElementById('ai-key-gpt').value.trim();
-        const geminiVal = document.getElementById('ai-key-gemini').value.trim();
-        // Only save if it's a real key (not masked)
-        if (gptVal && !gptVal.startsWith('••••')) setApiKey('gpt', gptVal);
-        if (geminiVal && !geminiVal.startsWith('••••')) setApiKey('gemini', geminiVal);
+        const val = document.getElementById('ai-key-gemini').value.trim();
+        if (val && !val.startsWith('••••')) {
+            localStorage.setItem(CUSTOM_KEY_STORAGE, val);
+        }
         hideSettings();
-        appendMessage('system', '✅ API keys saved securely in your browser.');
+        appendMessage('system', '✅ Custom API key saved.');
     }
 
     function clearChat() {
         chatHistory = [];
+        localStorage.removeItem(STORAGE_KEY);
         document.getElementById('ai-chat-messages').innerHTML = '';
-        appendMessage('system', `🤖 Chat cleared. Ask me anything about UPSC prep! Using: ${currentProvider.toUpperCase()}`);
+        appendMessage('system', '🤖 Chat cleared. Ask me anything about UPSC prep!');
     }
 
-    // Public API
-    return { toggle, sendMessage, switchProvider, showSettings, hideSettings, saveSettings, clearChat };
+    // Load history on init
+    loadHistory();
+
+    return { toggle, sendMessage, showSettings, hideSettings, saveSettings, clearChat };
 })();
