@@ -474,10 +474,14 @@
 
     <script>
         // =========================================================================
-        // 🚨 NISHANT: YOU MUST PASTE YOUR KEY INTO THE SECOND LINE BELOW 🚨
+        // CONFIGURATION
         // =========================================================================
         const SUPABASE_URL = "https://wdbwnutkomemrciybezz.supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_HYqlB7gJZmJ-Ni8ZywKJ_w_bNZWlGGy";
+        // Superuser config: never auto-logged-out, direct login
+        const SUPERUSER_EMAIL = "sanit@upsc-admin.local";
+        const SUPERUSER_ALIAS = "sanit"; // can type this instead of full email
+        const AUTO_LOGOUT_MS = 2 * 60 * 60 * 1000; // 2 hours for non-superusers
         // =========================================================================
 
         const dataP1 = ["Current Events: Current events of national and international importance.", "History of India and Indian National Movement: Social, economic, and political aspects of ancient, medieval, and modern Indian history; structural phases of the national freedom struggle.", "Indian and World Geography: Physical, social, and economic geography of India and the global domains.", "Indian Polity and Governance: Constitution, political system, Panchayati Raj, public policy, rights issues, statutory frameworks, and structural governance architectures.", "Economic and Social Development: Sustainable development, poverty inclusion dynamics, demographics, social sector initiatives, fiscal policies, and macroeconomic foundations.", "General Issues on Environmental Ecology, Bio-diversity, and Climate Change: Global environmental challenges, conservation paradigms, ecosystem parameters (that do not require specialized academic domain expertise).", "General Science: Foundational scientific vectors encompassing physics, chemistry, biology, and contemporary technological advancements."];
@@ -588,14 +592,25 @@
             return dbClient;
         }
 
+        function isSuperuser(email) {
+            return email && (email.toLowerCase() === SUPERUSER_EMAIL || email.toLowerCase() === SUPERUSER_ALIAS);
+        }
+
+        function resolveEmail(input) {
+            // Allow "Sanit" or "sanit" as shorthand for superuser email
+            if (input.toLowerCase() === SUPERUSER_ALIAS) return SUPERUSER_EMAIL;
+            return input;
+        }
+
         async function handleLogin() {
-            const email = document.getElementById('auth-email').value.trim();
+            let email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
             const errEl = document.getElementById('auth-error');
             const btn = document.getElementById('auth-login-btn');
             
             if (!email || !password) { errEl.style.display = 'block'; errEl.textContent = 'Email and password required.'; return; }
             
+            email = resolveEmail(email);
             btn.style.opacity = '0.5'; btn.textContent = 'AUTHENTICATING...';
             errEl.style.display = 'none';
             
@@ -603,6 +618,7 @@
                 if (!ensureClient()) throw new Error('Supabase script blocked');
                 const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                await recordSession(data.user.email);
                 showApp();
             } catch(e) {
                 btn.style.opacity = '1'; btn.textContent = 'SIGN IN';
@@ -618,7 +634,7 @@
                 if (!ensureClient()) throw new Error('Supabase script blocked');
                 const { error } = await dbClient.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { redirectTo: window.location.href }
+                    options: { redirectTo: window.location.origin + window.location.pathname }
                 });
                 if (error) throw error;
             } catch(e) {
@@ -662,6 +678,7 @@
                 if (!ensureClient()) throw new Error('Supabase script blocked');
                 const { data, error } = await dbClient.auth.verifyOtp({ phone, token, type: 'sms' });
                 if (error) throw error;
+                await recordSession(data.user.email || data.user.phone);
                 showApp();
             } catch(e) {
                 errEl.style.display = 'block';
@@ -679,11 +696,63 @@
             document.getElementById('auth-otp-verify').style.display = 'none';
         }
 
+        // ===== SESSION TRACKING =====
+        async function recordSession(userEmail) {
+            if (!dbClient) return;
+            try {
+                await dbClient.from('nishant_upsc_tracker').upsert({
+                    id: 'session_active',
+                    is_checked: isSuperuser(userEmail),
+                    topic_note: JSON.stringify({ email: userEmail, login_at: new Date().toISOString(), last_active: new Date().toISOString(), is_super: isSuperuser(userEmail) }),
+                    updated_at: new Date().toISOString()
+                });
+            } catch(e) { /* non-critical */ }
+        }
+
+        async function updateSessionActivity() {
+            if (!dbClient) return;
+            try {
+                const { data: { session } } = await dbClient.auth.getSession();
+                if (!session) return;
+                await dbClient.from('nishant_upsc_tracker').upsert({
+                    id: 'session_active',
+                    is_checked: isSuperuser(session.user.email),
+                    topic_note: JSON.stringify({ email: session.user.email, login_at: null, last_active: new Date().toISOString(), is_super: isSuperuser(session.user.email) }),
+                    updated_at: new Date().toISOString()
+                });
+            } catch(e) { /* non-critical */ }
+        }
+
+        async function checkAutoLogout() {
+            if (!dbClient) return;
+            try {
+                const { data: { session } } = await dbClient.auth.getSession();
+                if (!session) return;
+                // Superuser never auto-logs out
+                if (isSuperuser(session.user.email)) return;
+                // Check session age
+                const { data } = await dbClient.from('nishant_upsc_tracker').select('topic_note').eq('id', 'session_active').single();
+                if (data && data.topic_note) {
+                    const meta = JSON.parse(data.topic_note);
+                    const lastActive = new Date(meta.last_active).getTime();
+                    if (Date.now() - lastActive > AUTO_LOGOUT_MS) {
+                        handleLogout();
+                        return;
+                    }
+                }
+            } catch(e) { /* non-critical */ }
+        }
+
+        // Update activity every 5 minutes, check auto-logout every minute
+        setInterval(updateSessionActivity, 5 * 60 * 1000);
+        setInterval(checkAutoLogout, 60 * 1000);
+
         function showApp() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
             syncLatestCloudState();
+            updateSessionActivity();
         }
 
         // Allow Enter key to submit login
@@ -700,7 +769,23 @@
             dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             // Check for existing session (handles OAuth redirect + stored sessions)
             const { data: { session } } = await dbClient.auth.getSession();
-            if (session) { showApp(); }
+            if (session) {
+                // Check auto-logout for non-superusers
+                if (!isSuperuser(session.user.email)) {
+                    const { data } = await dbClient.from('nishant_upsc_tracker').select('topic_note').eq('id', 'session_active').single();
+                    if (data && data.topic_note) {
+                        try {
+                            const meta = JSON.parse(data.topic_note);
+                            if (meta.last_active && (Date.now() - new Date(meta.last_active).getTime() > AUTO_LOGOUT_MS)) {
+                                await dbClient.auth.signOut();
+                                return;
+                            }
+                        } catch(e) {}
+                    }
+                }
+                await recordSession(session.user.email || session.user.phone);
+                showApp();
+            }
         });
 
         function toggleNoteLock(id, isChecked) {
