@@ -127,5 +127,4 @@ buildList('box-ts-p1', dataTS_p1, 'tp1'); buildList('box-ts-p2', dataTS_p2, 'tp2
 buildList('box-ts-gs1', dataTS_gs1, 'tg1'); buildList('box-ts-gs2', dataTS_gs2, 'tg2'); buildList('box-ts-gs3', dataTS_gs3, 'tg3'); buildList('box-ts-gs4', dataTS_gs4, 'tg4');
 buildList('box-ts-essay', dataTS_essay, 'te1'); buildList('box-ts-a1', dataTS_a1, 'ta1'); buildList('box-ts-a2', dataTS_a2, 'ta2');
 
-trackLiveClockTimelines();
-calculateMetricsHUD();
+// trackLiveClockTimelines & calculateMetricsHUD called from tracker.js after definitions

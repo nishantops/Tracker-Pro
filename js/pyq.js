@@ -104,11 +104,11 @@ function renderQuestionsGeneric(tIdx, sIdx, dataSource, prefix, searchId, yearId
         const optHtml = Object.entries(q.options || {}).map(([key, val]) =>
             '<label class="flex items-start gap-1.5 py-1 cursor-pointer rounded px-2 hover:bg-indigo-50 transition-all" id="' + qId + '-opt-' + key + '">' +
                 '<input type="radio" name="' + qId + '" value="' + key + '" onchange="checkAnswer(\'' + qId + '\',\'' + key + '\',\'' + (q.answer || '') + '\')" class="mt-0.5 h-4 w-4 text-indigo-600 border-gray-400 cursor-pointer">' +
-                '<span class="font-bold text-indigo-700 text-[12px]">(' + key + ')</span>' +
-                '<span class="text-[12px] text-gray-800 font-medium">' + escH(val) + '</span>' +
+                '<span class="font-bold text-[12px]" style="color:#3730a3">(' + key + ')</span>' +
+                '<span class="text-[12px] font-medium" style="color:#1e293b">' + escH(val) + '</span>' +
             '</label>'
         ).join('');
-        const clearBtn = '<button onclick="clearAnswer(\'' + qId + '\')" class="text-[10px] font-bold text-red-400 hover:text-red-600 mt-1.5 cursor-pointer">✕ Clear</button>';
+        const clearBtn = '<button onclick="clearAnswer(\'' + qId + '\')" class="text-[11px] font-bold text-red-500 hover:text-red-700 mt-1.5 cursor-pointer">✕ Clear</button>';
 
         const yearBadge = q.year ? '<span class="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">' + q.year + '</span>' : '';
 
@@ -133,20 +133,20 @@ function renderQuestionsGeneric(tIdx, sIdx, dataSource, prefix, searchId, yearId
             }
         }
 
-        qHtml += '<div class="pyq-question bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-indigo-400 hover:shadow-md transition-all" id="' + qId + '-card">' +
+        qHtml += '<div class="pyq-question rounded-xl p-4 hover:shadow-lg transition-all" style="background:#fff;border:2px solid #c7d2fe" id="' + qId + '-card">' +
             '<div class="flex items-start gap-3">' +
                 '<input type="checkbox" id="' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" onchange="handleSyncAction(this.id)" class="mt-1 h-5 w-5 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500/30 cursor-pointer shrink-0">' +
                 '<div class="flex-1 min-w-0">' +
-                    '<div class="flex items-center gap-2 mb-1.5"><span class="text-[11px] font-mono font-bold text-gray-500">Q' + q.number + '</span>' + yearBadge + (isDropped ? '<span class="text-[10px] font-mono font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded border border-orange-300">DROPPED</span>' : '') + '</div>' +
+                    '<div class="flex items-center gap-2 mb-1.5"><span class="text-[11px] font-mono font-bold" style="color:#6366f1">Q' + q.number + '</span>' + yearBadge + (isDropped ? '<span class="text-[10px] font-mono font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded border border-orange-300">DROPPED</span>' : '') + '</div>' +
                     passageHtml +
-                    '<p class="text-[13px] text-gray-900 font-semibold leading-relaxed">' + formatQText(q.question) + '</p>' +
-                    '<div class="mt-3 pl-3 border-l-3 border-indigo-200">' + optHtml + clearBtn + '</div>' +
+                    '<p class="text-[13px] font-semibold leading-relaxed" style="color:#0f172a">' + formatQText(q.question) + '</p>' +
+                    '<div class="mt-3 pl-3" style="border-left:3px solid #a5b4fc">' + optHtml + clearBtn + '</div>' +
                     feedbackDiv +
                     '<div class="mt-3"><button onclick="this.nextElementSibling.classList.toggle(\'hidden\');this.textContent=this.textContent===\'Show Answer\'?\'Hide Answer\':\'Show Answer\'" class="text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md cursor-pointer transition-all">Show Answer</button>' +
                     answerDisplay + '</div>' +
                 '</div>' +
             '</div>' +
-            '<div class="mt-3 ml-8"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" oninput="debouncedSync(\'' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '\')" placeholder="✏ Add a note..." class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-[11px] font-mono text-gray-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder-gray-400"></div>' +
+            '<div class="mt-3 ml-8"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" oninput="debouncedSync(\'' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '\')" placeholder="✏ Add a note..." class="w-full rounded-lg p-2 text-[11px] font-mono focus:outline-none transition-all" style="background:#f1f5f9;border:2px solid #cbd5e1;color:#1e293b"></div>' +
         '</div>';
     });
     qHtml += '</div>';
@@ -393,15 +393,15 @@ function renderAnthroPYQGeneric(dataSource, prefix, searchId, yearId, countId) {
             const marksBadge = q.marks ? '<span class="text-[10px] font-mono font-bold bg-violet-100 text-violet-800 px-2 py-0.5 rounded border border-violet-300">' + q.marks + 'M</span>' : '';
             const yearBadge = q.year ? '<span class="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">' + q.year + '</span>' : '';
 
-            qHtml += '<div class="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-violet-400 hover:shadow-md transition-all" id="' + qId + '-card">' +
+            qHtml += '<div class="rounded-xl p-4 hover:shadow-lg transition-all" style="background:#fff;border:2px solid #c7d2fe" id="' + qId + '-card">' +
                 '<div class="flex items-start gap-3">' +
                     '<input type="checkbox" id="' + prefix + '-cb-' + tIdx + '-' + qIdx + '" onchange="handleSyncAction(this.id)" class="mt-1 h-5 w-5 rounded border-gray-400 text-violet-600 focus:ring-violet-500/30 cursor-pointer shrink-0">' +
                     '<div class="flex-1 min-w-0">' +
-                        '<div class="flex items-center gap-2 mb-1.5"><span class="text-[11px] font-mono font-bold text-gray-500">Q' + q.number + '</span>' + yearBadge + marksBadge + '</div>' +
-                        '<p class="text-[13px] text-gray-900 font-semibold leading-relaxed">' + escH(q.question) + '</p>' +
+                        '<div class="flex items-center gap-2 mb-1.5"><span class="text-[11px] font-mono font-bold" style="color:#7c3aed">Q' + q.number + '</span>' + yearBadge + marksBadge + '</div>' +
+                        '<p class="text-[13px] font-semibold leading-relaxed" style="color:#0f172a">' + escH(q.question) + '</p>' +
                     '</div>' +
                 '</div>' +
-                '<div class="mt-3 ml-8"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + qIdx + '" oninput="debouncedSync(\'' + prefix + '-cb-' + tIdx + '-' + qIdx + '\')" placeholder="✏ Add answer notes..." class="w-full bg-gray-50 border-2 border-gray-300 rounded-lg p-2 text-[11px] font-mono text-gray-800 focus:outline-none focus:border-violet-500 focus:bg-white transition-all placeholder-gray-400"></div>' +
+                '<div class="mt-3 ml-8"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + qIdx + '" oninput="debouncedSync(\'' + prefix + '-cb-' + tIdx + '-' + qIdx + '\')" placeholder="✏ Add answer notes..." class="w-full rounded-lg p-2 text-[11px] font-mono focus:outline-none transition-all" style="background:#f1f5f9;border:2px solid #cbd5e1;color:#1e293b"></div>' +
             '</div>';
         });
         qHtml += '</div>';

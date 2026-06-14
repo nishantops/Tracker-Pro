@@ -166,6 +166,26 @@ function handleAssignmentCheck(fullId) {
     asnData.userNote = noteInput ? noteInput.value : '';
     asnData.feedback = feedbackInput ? feedbackInput.value : '';
     const noteJson = JSON.stringify(asnData);
+
+    // Lock/unlock all text fields when assignment is checked/unchecked
+    if (noteInput) {
+        noteInput.readOnly = isChecked;
+        if (isChecked) noteInput.classList.add('locked-note'); else noteInput.classList.remove('locked-note');
+    }
+    if (feedbackInput) {
+        feedbackInput.readOnly = isChecked;
+        if (isChecked) feedbackInput.classList.add('locked-note'); else feedbackInput.classList.remove('locked-note');
+    }
+    // Strike-through title
+    const card = document.getElementById(fullId);
+    if (card) {
+        const h4 = card.querySelector('h4');
+        if (h4) {
+            if (isChecked) { h4.classList.add('line-through', 'text-slate-500'); h4.classList.remove('text-slate-100'); }
+            else { h4.classList.remove('line-through', 'text-slate-500'); h4.classList.add('text-slate-100'); }
+        }
+    }
+
     calculateMetricsHUD();
     if (!dbClient) return;
     dbClient.from('upsc_tracker_progress').upsert({ id: fullId, user_id: currentUserId, is_checked: isChecked, topic_note: noteJson, updated_at: new Date().toISOString() }, { onConflict: 'id,user_id' });

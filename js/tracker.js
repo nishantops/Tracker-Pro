@@ -137,10 +137,16 @@ function trackLiveClockTimelines() {
     const mDate = new Date(ENV.MAINS_DATE).getTime();
     function update() {
         const now = new Date();
-        document.getElementById("live-date-hud").innerText = now.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+        const dateStr = now.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+        const timeStr = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', hour12:true});
+        document.getElementById("live-date-hud").innerText = dateStr + ' • ' + timeStr;
         const ms = now.getTime();
         document.getElementById("prelims-countdown-live").innerText = pDate > ms ? Math.floor((pDate - ms) / (1000*60*60*24)) + " Days" : "Passed";
         document.getElementById("mains-countdown-live").innerText = mDate > ms ? Math.floor((mDate - ms) / (1000*60*60*24)) + " Days" : "Executed";
     }
-    update(); setInterval(update, 60000);
+    update(); setInterval(update, 30000);
 }
+
+// Initialize (called here after function definitions to avoid script-order issues)
+trackLiveClockTimelines();
+calculateMetricsHUD();
