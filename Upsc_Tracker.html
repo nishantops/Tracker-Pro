@@ -882,10 +882,8 @@
             if (body.classList.contains('hidden')) {
                 body.classList.remove('hidden');
                 arrow.style.transform = 'rotate(90deg)';
-                if (!body.dataset.rendered) {
-                    renderSubtopicQuestions(tIdx, sIdx);
-                    body.dataset.rendered = 'true';
-                }
+                // Always re-render to respect current filter
+                renderSubtopicQuestions(tIdx, sIdx);
             } else {
                 body.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
@@ -894,7 +892,16 @@
 
         function renderSubtopicQuestions(tIdx, sIdx) {
             const container = document.getElementById('pyq-st-body-' + tIdx + '-' + sIdx);
-            const questions = pyqGS1Data[tIdx].subtopics[sIdx].questions;
+            const allQuestions = pyqGS1Data[tIdx].subtopics[sIdx].questions;
+            
+            // Apply active filter
+            const search = (document.getElementById('pyq-search').value || '').toLowerCase();
+            const year = document.getElementById('pyq-year-filter').value;
+            const questions = allQuestions.filter(q => {
+                const matchSearch = !search || (q.question || '').toLowerCase().includes(search);
+                const matchYear = !year || q.year === year;
+                return matchSearch && matchYear;
+            });
             
             let qHtml = '<div class="space-y-2">';
             questions.forEach((q, qIdx) => {
@@ -930,11 +937,57 @@
         function filterPYQ() {
             const search = (document.getElementById('pyq-search').value || '').toLowerCase();
             const year = document.getElementById('pyq-year-filter').value;
-            document.querySelectorAll('.pyq-question').forEach(el => {
-                const qText = (el.dataset.qtext || '').toLowerCase();
-                const qYear = el.dataset.year || '';
-                el.style.display = ((!search || qText.includes(search)) && (!year || qYear === year)) ? '' : 'none';
+            
+            if (!search && !year) {
+                // No filter - show all topics/subtopics with original counts
+                renderPYQTopics();
+                return;
+            }
+            
+            // Filter through the data and rebuild the view
+            const container = document.getElementById('pyq-topics-container');
+            if (!container) return;
+            let totalFiltered = 0;
+            let topicHtml = '';
+            
+            pyqGS1Data.forEach((topic, tIdx) => {
+                let topicMatch = 0;
+                let subtopicsHtml = '';
+                
+                topic.subtopics.forEach((st, sIdx) => {
+                    const matchingQs = st.questions.filter(q => {
+                        const matchSearch = !search || (q.question || '').toLowerCase().includes(search);
+                        const matchYear = !year || q.year === year;
+                        return matchSearch && matchYear;
+                    });
+                    
+                    if (matchingQs.length > 0) {
+                        topicMatch += matchingQs.length;
+                        subtopicsHtml += '<div class="pyq-subtopic border-b border-slate-50 last:border-b-0">' +
+                            '<button onclick="togglePYQSubtopic(' + tIdx + ',' + sIdx + ')" class="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 transition-all cursor-pointer">' +
+                                '<div class="flex items-center gap-2"><span class="text-slate-300 text-xs transition-transform duration-200" id="arrow-st-' + tIdx + '-' + sIdx + '">&#9654;</span>' +
+                                '<span class="font-semibold text-xs text-slate-600">' + st.name + '</span></div>' +
+                                '<span class="text-[9px] font-mono text-amber-600 font-bold">' + matchingQs.length + '/' + st.questions.length + ' Q</span>' +
+                            '</button>' +
+                            '<div id="pyq-st-body-' + tIdx + '-' + sIdx + '" class="hidden px-4 pb-3"></div></div>';
+                    }
+                });
+                
+                if (topicMatch > 0) {
+                    totalFiltered += topicMatch;
+                    topicHtml += '<div class="pyq-topic border border-slate-200 rounded-2xl overflow-hidden shadow-sm">' +
+                        '<button onclick="togglePYQTopic(' + tIdx + ')" class="w-full flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-white hover:from-indigo-50 hover:to-white transition-all cursor-pointer">' +
+                            '<div class="flex items-center gap-3"><span class="text-slate-400 transition-transform duration-200" id="arrow-topic-' + tIdx + '">&#9654;</span>' +
+                            '<span class="font-bold text-sm text-slate-800">' + topic.name + '</span></div>' +
+                            '<span class="text-[10px] font-mono font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded-md">' + topicMatch + ' Q</span>' +
+                        '</button>' +
+                        '<div id="pyq-topic-body-' + tIdx + '" class="hidden border-t border-slate-100">' + subtopicsHtml + '</div></div>';
+                }
             });
+            
+            container.innerHTML = topicHtml;
+            const countEl = document.getElementById('pyq-total-count');
+            if (countEl) countEl.textContent = totalFiltered + (year || search ? ' (filtered)' : '');
         }
     </script>
 </body>
