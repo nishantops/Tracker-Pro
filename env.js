@@ -10,7 +10,7 @@ const ENV = Object.freeze({
     SUPABASE_ANON_KEY: "sb_publishable_HYqlB7gJZmJ-Ni8ZywKJ_w_bNZWlGGy",
 
     // Superuser
-    SUPERUSER_EMAIL: "sanit@upsc-admin.local",
+    SUPERUSER_EMAIL: "sanit@upsc-nishant.me",
     SUPERUSER_ALIAS: "sanit",
 
     // Session
