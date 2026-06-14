@@ -461,13 +461,23 @@ def parse_questions_csat(lines):
     CSAT parser: questions start with N.\\t or N.\\n pattern.
     Options use (a)\\t or (a)      format.
     Year format: (CSAT-YYYY)
+    Also detects "Directions for the following N items" blocks and attaches
+    the directions text as a 'passage' field to the subsequent N questions.
     """
     questions = []
     current_q_num = 0
     current_q_lines = []
     saw_option_d = True
     
+    # Track directions blocks: (directions_text, num_items_remaining)
+    current_directions = ""
+    directions_remaining = 0
+    
     filtered_lines = []
+    directions_lines = []
+    collecting_directions = False
+    directions_count = 0
+    
     for line in lines:
         stripped = line.strip()
         # Skip standalone page numbers
@@ -487,10 +497,46 @@ def parse_questions_csat(lines):
             continue
         filtered_lines.append(line)
     
+    # First pass: detect "Directions for the following N items" and extract them
+    # Map question numbers to their directions text
+    directions_map = {}  # q_num -> directions_text
+    
+    full_text = '\n'.join(filtered_lines)
+    # Pattern: "Directions for the following N (N) items:" followed by content until first question
+    dir_pattern = re.compile(
+        r'Directions?\s+for\s+the\s+following\s+(\d+)\s*\([^)]*\)\s*items?\s*:?\s*\n(.*?)(?=\n\d+\.\t)',
+        re.DOTALL | re.IGNORECASE
+    )
+    
+    for m in dir_pattern.finditer(full_text):
+        n_items = int(m.group(1))
+        dir_text = m.group(2).strip()
+        # Clean directions text
+        dir_text = re.sub(r'\t+', ' ', dir_text)
+        dir_text = re.sub(r'\n+', ' ', dir_text)
+        dir_text = re.sub(r'\s+', ' ', dir_text).strip()
+        
+        # Find the question number that follows this directions block
+        after_pos = m.end()
+        q_match = re.search(r'\n(\d+)\.\t', full_text[m.start():])
+        if q_match:
+            first_q_num = int(q_match.group(1))
+            # Assign this directions text to the next N questions
+            for i in range(n_items):
+                directions_map[first_q_num + i] = dir_text
+    
+    # Second pass: parse questions normally
     for line in filtered_lines:
         stripped = line.strip()
         if not stripped:
             if current_q_lines:
+                current_q_lines.append(line)
+            continue
+        
+        # Skip "Directions for the following..." lines (already extracted)
+        if re.match(r'Directions?\s+for\s+the\s+following\s+\d+', stripped, re.IGNORECASE):
+            # If we're in the middle of a question, still append (shouldn't happen)
+            if current_q_lines and not saw_option_d:
                 current_q_lines.append(line)
             continue
         
@@ -502,6 +548,9 @@ def parse_questions_csat(lines):
             if current_q_lines and current_q_num > 0:
                 q = parse_single_question_csat(current_q_lines, current_q_num)
                 if q:
+                    # Attach directions if this question is in the map
+                    if current_q_num in directions_map:
+                        q['passage'] = directions_map[current_q_num]
                     questions.append(q)
             current_q_num = num
             current_q_lines = [line]
@@ -518,6 +567,8 @@ def parse_questions_csat(lines):
     if current_q_lines and current_q_num > 0:
         q = parse_single_question_csat(current_q_lines, current_q_num)
         if q:
+            if current_q_num in directions_map:
+                q['passage'] = directions_map[current_q_num]
             questions.append(q)
     
     return questions
@@ -847,6 +898,18 @@ def extract_gs1():
                 # If question has no year, try to get it from answers page
                 if not q["year"] and q["number"] in answer_years:
                     q["year"] = answer_years[q["number"]]
+            
+            # Year propagation: for questions still missing year, use nearest neighbor's year
+            # Questions are ordered by number (newest year first in the PDF).
+            # Propagate from previous question (same year group) as primary strategy.
+            for i, q in enumerate(questions):
+                if not q["year"]:
+                    # Try previous question first (more likely same year)
+                    if i > 0 and questions[i - 1]["year"]:
+                        q["year"] = questions[i - 1]["year"]
+                    # Then try next question
+                    elif i + 1 < len(questions) and questions[i + 1]["year"]:
+                        q["year"] = questions[i + 1]["year"]
             
             subtopic_data = {"name": subtopic["name"], "questions": questions}
             topic_data["subtopics"].append(subtopic_data)
