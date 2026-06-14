@@ -69,6 +69,12 @@ function activateSubTab(groupClass, panelId, btnElement) {
         btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent`;
     });
     btnElement.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500`;
+    // Lazy-render trend panels
+    if (panelId === 'panel-prelims-trend') renderPrelimsTrend();
+    if (panelId === 'panel-mains-trend-gs1') renderMainsGS1Trend();
+    if (panelId === 'panel-mains-trend-gs2') renderMainsGS2Trend();
+    if (panelId === 'panel-mains-trend-gs3') renderMainsGS3Trend();
+    if (panelId === 'panel-mains-trend-gs4') renderMainsGS4Trend();
 }
 
 function activateSubTab_PYQ(groupClass, panelId, btnElement) {

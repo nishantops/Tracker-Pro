@@ -213,9 +213,15 @@
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
                         <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-indigo-600 text-white shadow-sm border border-indigo-500">GS Paper I</button>
                         <button onclick="activateSubTab('prelims', 'panel-prelims-csat', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">CSAT Paper II</button>
+                        <button onclick="activateSubTab('prelims', 'panel-prelims-trend', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">📊 Trend</button>
                     </div>
                     <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
                     <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
+                    <div id="panel-prelims-trend" class="sub-pane-prelims hidden neo-card rounded-3xl p-6">
+                        <h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">📊 Prelims GS1: Topic-wise Trend (2013-2025)</h2>
+                        <p class="text-[10px] text-slate-400 font-mono mb-3">Number of questions per subject per year. Source: Unacademy</p>
+                        <div id="trend-prelims-container"></div>
+                    </div>
                 </div>
                 <div id="deck-mains" class="stage-pane-view hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
@@ -226,6 +232,10 @@
                         <button onclick="activateSubTab('mains', 'panel-mains-essay', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Essay</button>
                         <button onclick="activateSubTab('mains', 'panel-mains-lang-a', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Lang A</button>
                         <button onclick="activateSubTab('mains', 'panel-mains-lang-b', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">Lang B</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-trend-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">📊 GS1 Trend</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-trend-gs2', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">📊 GS2 Trend</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-trend-gs3', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">📊 GS3 Trend</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-trend-gs4', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-300 hover:text-white hover:bg-white/10 border border-transparent">📊 GS4 Trend</button>
                     </div>
                     <div id="panel-mains-gs1" class="sub-pane-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies I Blueprint</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
                     <div id="panel-mains-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: General Studies II Blueprint</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
@@ -234,6 +244,26 @@
                     <div id="panel-mains-essay" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
                     <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
                     <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
+                    <div id="panel-mains-trend-gs1" class="sub-pane-mains hidden neo-card rounded-3xl p-6">
+                        <h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">📊 GS-I: Subject-wise Trend (2013-2023)</h2>
+                        <p class="text-[10px] text-slate-400 font-mono mb-3">Marks weightage per topic per year. Source: Unacademy</p>
+                        <div id="trend-mains-gs1-container"></div>
+                    </div>
+                    <div id="panel-mains-trend-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6">
+                        <h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">📊 GS-II: Subject-wise Trend (2013-2022)</h2>
+                        <p class="text-[10px] text-slate-400 font-mono mb-3">Marks weightage per topic per year. Source: Unacademy</p>
+                        <div id="trend-mains-gs2-container"></div>
+                    </div>
+                    <div id="panel-mains-trend-gs3" class="sub-pane-mains hidden neo-card rounded-3xl p-6">
+                        <h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">📊 GS-III: Subject-wise Trend (2013-2022)</h2>
+                        <p class="text-[10px] text-slate-400 font-mono mb-3">Marks weightage per topic per year. Source: Unacademy</p>
+                        <div id="trend-mains-gs3-container"></div>
+                    </div>
+                    <div id="panel-mains-trend-gs4" class="sub-pane-mains hidden neo-card rounded-3xl p-6">
+                        <h2 class="heading-font text-xl font-black border-b border-violet-500/20 pb-3 mb-4">📊 GS-IV: Subject-wise Trend (2013-2022)</h2>
+                        <p class="text-[10px] text-slate-400 font-mono mb-3">Marks weightage per topic per year. Source: Unacademy</p>
+                        <div id="trend-mains-gs4-container"></div>
+                    </div>
                 </div>
                 <div id="deck-anthro" class="stage-pane-view hidden space-y-4">
                     <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-800/50 p-1.5 rounded-xl border border-violet-500/20">
@@ -683,9 +713,10 @@
     <script src="js/tracker.js?v=2"></script>
     <script src="js/plans.js?v=1"></script>
     <script src="js/assignments.js?v=2"></script>
-    <script src="js/tabs.js?v=1"></script>
+    <script src="js/tabs.js?v=2"></script>
     <script src="js/sources.js?v=1"></script>
     <script src="js/pyq.js?v=3"></script>
+    <script src="js/trends.js?v=1"></script>
     <script src="js/profile.js?v=1"></script>
     <script src="js/auth.js?v=1"></script>
 
