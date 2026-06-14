@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="pyq_data.js?v=5"></script>
+    <link rel="stylesheet" href="css/ai-chat.css?v=1">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap');
         
@@ -848,6 +849,8 @@
 
         function openProfileEdit() {
             document.getElementById('profile-menu').classList.add('hidden');
+            // Clear cache so new values get saved
+            if (currentUserId) localStorage.removeItem('upsc_profile_' + currentUserId);
             // Show profile setup screen with pre-filled values
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('profile-setup-screen').style.display = 'flex';
@@ -919,15 +922,48 @@
         setInterval(checkAutoLogout, 60 * 1000);
 
         async function showApp() {
-            // Check if profile exists
+            // Get current user email to check superuser
+            let userEmail = null;
+            try {
+                const { data: { session } } = await dbClient.auth.getSession();
+                if (session) userEmail = session.user.email;
+            } catch(e) {}
+
+            // Superuser bypasses profile setup entirely
+            if (isSuperuser(userEmail)) {
+                applyProfileToUI({ display_name: 'Sanit', age: null, attempt: null });
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('profile-setup-screen').style.display = 'none';
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
+                syncLatestCloudState();
+                updateSessionActivity();
+                return;
+            }
+
+            // Check localStorage cache first (avoids DB call on every reload)
+            const cachedProfile = localStorage.getItem('upsc_profile_' + currentUserId);
+            if (cachedProfile) {
+                const profile = JSON.parse(cachedProfile);
+                applyProfileToUI(profile);
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('profile-setup-screen').style.display = 'none';
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
+                syncLatestCloudState();
+                updateSessionActivity();
+                return;
+            }
+
+            // No cache — check DB
             const profile = await getUserProfile();
             if (!profile) {
-                // Show profile setup screen
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('profile-setup-screen').style.display = 'flex';
                 return;
             }
-            // Profile exists — show main app
+            // Cache it locally so we don't ask again
+            localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
             applyProfileToUI(profile);
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('profile-setup-screen').style.display = 'none';
@@ -994,6 +1030,7 @@
 
             saveUserProfile(name, age, attempt).then(() => {
                 const profile = { display_name: name, age, attempt };
+                localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
                 applyProfileToUI(profile);
                 document.getElementById('profile-setup-screen').style.display = 'none';
                 document.getElementById('app-container').classList.remove('hidden');
@@ -1961,6 +1998,57 @@
             if (countEl) countEl.textContent = totalFiltered + (year || search ? ' (filtered)' : '');
         }
     </script>
+
+    <!-- AI CHAT WIDGET -->
+    <div id="ai-chat-fab" onclick="AI_CHAT.toggle()" title="AI Study Assistant">🤖</div>
+    <div id="ai-chat-panel" class="hidden">
+        <!-- Chat View -->
+        <div id="ai-chat-view">
+            <div class="ai-chat-header">
+                <h3>✨ AI Study Buddy</h3>
+                <div class="ai-chat-header-actions">
+                    <button onclick="AI_CHAT.clearChat()" title="Clear Chat">🗑</button>
+                    <button onclick="AI_CHAT.showSettings()" title="Settings">⚙️</button>
+                    <button onclick="AI_CHAT.toggle()" title="Close">✕</button>
+                </div>
+            </div>
+            <div class="ai-provider-toggle">
+                <button class="ai-provider-btn active" onclick="AI_CHAT.switchProvider('gpt')" id="btn-provider-gpt">GPT-4o</button>
+                <button class="ai-provider-btn" onclick="AI_CHAT.switchProvider('gemini')" id="btn-provider-gemini">Gemini</button>
+            </div>
+            <div id="ai-chat-messages"></div>
+            <div class="ai-chat-input-area">
+                <input type="text" id="ai-chat-input" placeholder="Ask anything about UPSC..." onkeydown="if(event.key==='Enter')AI_CHAT.sendMessage()">
+                <button class="ai-send-btn" onclick="AI_CHAT.sendMessage()">➤</button>
+            </div>
+        </div>
+        <!-- Settings View -->
+        <div id="ai-settings-panel" class="hidden">
+            <div class="ai-chat-header">
+                <h3>🔑 API Keys</h3>
+                <div class="ai-chat-header-actions">
+                    <button onclick="AI_CHAT.hideSettings()" title="Back">←</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;flex:1">
+                <div>
+                    <label>OpenAI API Key (GPT)</label>
+                    <input type="password" id="ai-key-gpt" placeholder="sk-...">
+                </div>
+                <div>
+                    <label>Google Gemini API Key</label>
+                    <input type="password" id="ai-key-gemini" placeholder="AIza...">
+                </div>
+                <p style="font-size:0.65rem;color:#64748b;line-height:1.4">Keys are stored locally in your browser and never sent to any server except OpenAI/Google.</p>
+                <div class="ai-settings-actions">
+                    <button class="ai-settings-cancel" onclick="AI_CHAT.hideSettings()">Cancel</button>
+                    <button class="ai-settings-save" onclick="AI_CHAT.saveSettings()">Save Keys</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/ai-chat.js?v=1"></script>
+
     </div><!-- END app-container -->
 </body>
 </html>
