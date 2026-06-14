@@ -6,7 +6,7 @@
     <title>Nishant Kumar • UPSC CSE Command Center 2027</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="pyq_data.js?v=3"></script>
+    <script src="pyq_data.js?v=4"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@700;800;900&display=swap');
         
@@ -959,11 +959,25 @@
                 // Feedback container
                 const feedbackDiv = '<div id="' + qId + '-feedback" class="hidden mt-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold"></div>';
                 
+                // Passage display for comprehension questions
+                let passageHtml = '';
+                if (q.passage) {
+                    // Show passage in a collapsible section - only show once per passage group
+                    const prevQ = qIdx > 0 ? questions[qIdx - 1] : null;
+                    const samePassage = prevQ && prevQ.passage === q.passage;
+                    if (!samePassage) {
+                        passageHtml = '<div class="mb-2 bg-blue-50/50 border border-blue-100 rounded-lg p-2.5">' +
+                            '<button onclick="this.nextElementSibling.classList.toggle(\'hidden\');this.querySelector(\'span\').textContent=this.nextElementSibling.classList.contains(\'hidden\')?\'Show Passage ▸\':\'Hide Passage ▾\'" class="text-[10px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"><span>Show Passage ▸</span></button>' +
+                            '<div class="hidden mt-2 text-[11px] text-slate-600 leading-relaxed">' + q.passage + '</div></div>';
+                    }
+                }
+                
                 qHtml += '<div class="pyq-question bg-white border border-slate-100 rounded-xl p-3 hover:border-indigo-200 transition-all" id="' + qId + '-card">' +
                     '<div class="flex items-start gap-2">' +
                         '<input type="checkbox" id="' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" onchange="handleSyncAction(this.id)" class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer shrink-0">' +
                         '<div class="flex-1 min-w-0">' +
                             '<div class="flex items-center gap-2 mb-1"><span class="text-[10px] font-mono font-bold text-slate-400">Q' + q.number + '</span>' + yearBadge + (isDropped ? '<span class="text-[9px] font-mono font-bold bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded">DROPPED</span>' : '') + '</div>' +
+                            passageHtml +
                             '<p class="text-xs text-slate-700 font-medium leading-relaxed">' + formatQText(q.question) + '</p>' +
                             '<div class="mt-2 pl-2 border-l-2 border-slate-100">' + optHtml + clearBtn + '</div>' +
                             feedbackDiv +
