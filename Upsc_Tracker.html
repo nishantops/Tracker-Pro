@@ -87,7 +87,11 @@
                     <label style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#475569;">Password</label>
                     <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
                 </div>
-                <button id="auth-login-btn" onclick="handleLogin()" style="margin-top:1.25rem; width:100%; padding:0.8rem; background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7); color:white; border:none; border-radius:0.75rem; font-size:0.8rem; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 15px -3px rgba(139,92,246,0.5); transition: all 0.2s;">Sign In</button>
+                <div style="display:flex; gap:0.5rem; margin-top:1.25rem;">
+                    <button id="auth-login-btn" onclick="handleLogin()" style="flex:1; padding:0.8rem; background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7); color:white; border:none; border-radius:0.75rem; font-size:0.75rem; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 15px -3px rgba(139,92,246,0.5); transition: all 0.2s;">Sign In</button>
+                    <button id="auth-signup-btn" onclick="handleSignup()" style="flex:1; padding:0.8rem; background:linear-gradient(135deg,#059669,#10b981,#34d399); color:white; border:none; border-radius:0.75rem; font-size:0.75rem; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow:0 4px 15px -3px rgba(16,185,129,0.4); transition: all 0.2s;">Sign Up</button>
+                </div>
+                <p style="font-size:0.6rem; color:#94a3b8; text-align:center; margin-top:0.75rem;">Sign Up creates a new account. Sign In for existing users.</p>
             </div>
 
             <!-- Phone OTP Section -->
@@ -560,6 +564,7 @@
         }
 
         let dbClient = null;
+        let currentUserId = null; // Stores authenticated user's UUID for DB operations
 
         // ===== AUTH UI HELPERS =====
         function switchAuthTab(tab) {
@@ -611,19 +616,57 @@
             if (!email || !password) { errEl.style.display = 'block'; errEl.textContent = 'Email and password required.'; return; }
             
             email = resolveEmail(email);
-            btn.style.opacity = '0.5'; btn.textContent = 'AUTHENTICATING...';
+            btn.style.opacity = '0.5'; btn.textContent = 'SIGNING IN...';
             errEl.style.display = 'none';
             
             try {
                 if (!ensureClient()) throw new Error('Supabase script blocked');
                 const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                currentUserId = data.user.id;
                 await recordSession(data.user.email);
                 showApp();
             } catch(e) {
                 btn.style.opacity = '1'; btn.textContent = 'SIGN IN';
                 errEl.style.display = 'block'; 
                 errEl.textContent = e.message || 'Authentication failed.';
+            }
+        }
+
+        async function handleSignup() {
+            let email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errEl = document.getElementById('auth-error');
+            const btn = document.getElementById('auth-signup-btn');
+            
+            if (!email || !password) { errEl.style.display = 'block'; errEl.textContent = 'Email and password required.'; return; }
+            if (password.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters.'; return; }
+            
+            email = resolveEmail(email);
+            btn.style.opacity = '0.5'; btn.textContent = 'CREATING...';
+            errEl.style.display = 'none';
+            
+            try {
+                if (!ensureClient()) throw new Error('Supabase script blocked');
+                const { data, error } = await dbClient.auth.signUp({ email, password });
+                if (error) throw error;
+                if (data.user && data.session) {
+                    // Auto-confirmed (email confirmation disabled in Supabase settings)
+                    currentUserId = data.user.id;
+                    await recordSession(data.user.email);
+                    showApp();
+                } else {
+                    // Email confirmation required
+                    btn.style.opacity = '1'; btn.textContent = 'SIGN UP';
+                    errEl.style.display = 'block';
+                    errEl.style.color = '#059669';
+                    errEl.textContent = '✓ Account created! Check your email to confirm, then sign in.';
+                }
+            } catch(e) {
+                btn.style.opacity = '1'; btn.textContent = 'SIGN UP';
+                errEl.style.display = 'block';
+                errEl.style.color = '#e11d48';
+                errEl.textContent = e.message || 'Signup failed.';
             }
         }
 
@@ -678,6 +721,7 @@
                 if (!ensureClient()) throw new Error('Supabase script blocked');
                 const { data, error } = await dbClient.auth.verifyOtp({ phone, token, type: 'sms' });
                 if (error) throw error;
+                currentUserId = data.user.id;
                 await recordSession(data.user.email || data.user.phone);
                 showApp();
             } catch(e) {
@@ -689,6 +733,7 @@
         async function handleLogout() {
             if (dbClient) { await dbClient.auth.signOut(); }
             dbClient = null;
+            currentUserId = null;
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('auth-screen').style.display = 'flex';
             document.getElementById('auth-password').value = '';
@@ -698,28 +743,30 @@
 
         // ===== SESSION TRACKING =====
         async function recordSession(userEmail) {
-            if (!dbClient) return;
+            if (!dbClient || !currentUserId) return;
             try {
                 await dbClient.from('nishant_upsc_tracker').upsert({
                     id: 'session_active',
+                    user_id: currentUserId,
                     is_checked: isSuperuser(userEmail),
                     topic_note: JSON.stringify({ email: userEmail, login_at: new Date().toISOString(), last_active: new Date().toISOString(), is_super: isSuperuser(userEmail) }),
                     updated_at: new Date().toISOString()
-                });
+                }, { onConflict: 'id,user_id' });
             } catch(e) { /* non-critical */ }
         }
 
         async function updateSessionActivity() {
-            if (!dbClient) return;
+            if (!dbClient || !currentUserId) return;
             try {
                 const { data: { session } } = await dbClient.auth.getSession();
                 if (!session) return;
                 await dbClient.from('nishant_upsc_tracker').upsert({
                     id: 'session_active',
+                    user_id: currentUserId,
                     is_checked: isSuperuser(session.user.email),
                     topic_note: JSON.stringify({ email: session.user.email, login_at: null, last_active: new Date().toISOString(), is_super: isSuperuser(session.user.email) }),
                     updated_at: new Date().toISOString()
-                });
+                }, { onConflict: 'id,user_id' });
             } catch(e) { /* non-critical */ }
         }
 
@@ -770,6 +817,7 @@
             // Check for existing session (handles OAuth redirect + stored sessions)
             const { data: { session } } = await dbClient.auth.getSession();
             if (session) {
+                currentUserId = session.user.id;
                 // Check auto-logout for non-superusers
                 if (!isSuperuser(session.user.email)) {
                     const { data } = await dbClient.from('nishant_upsc_tracker').select('topic_note').eq('id', 'session_active').single();
@@ -868,7 +916,7 @@
 
             if(!dbClient) return;
             try {
-                const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ id: elementId, is_checked: isChecked, topic_note: noteText, updated_at: new Date().toISOString() });
+                const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ id: elementId, user_id: currentUserId, is_checked: isChecked, topic_note: noteText, updated_at: new Date().toISOString() }, { onConflict: 'id,user_id' });
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
                 await Promise.race([pushPromise, timeoutPromise]);
                 document.getElementById("sync-status-text").innerText = "CLOUD SYNCED ACROSS DEVICES";
@@ -938,7 +986,7 @@
             if(confirm("Permanently erase this from the cloud database?")) {
                 btnElement.closest('.task-row').remove();
                 calculateMetricsHUD(); calculatePlanPies();
-                if(dbClient) { await dbClient.from('nishant_upsc_tracker').delete().eq('id', id); }
+                if(dbClient) { await dbClient.from('nishant_upsc_tracker').delete().eq('id', id).eq('user_id', currentUserId); }
             }
         }
 
@@ -953,7 +1001,7 @@
             const encodedName = btoa(unescape(encodeURIComponent(title)));
             buildPlanCardDOM(title, encodedName, type);
 
-            if(dbClient) { await dbClient.from('nishant_upsc_tracker').upsert({ id: `plan_meta_${encodedName}`, is_checked: false, topic_note: type, updated_at: new Date().toISOString() }); }
+            if(dbClient) { await dbClient.from('nishant_upsc_tracker').upsert({ id: `plan_meta_${encodedName}`, user_id: currentUserId, is_checked: false, topic_note: type, updated_at: new Date().toISOString() }, { onConflict: 'id,user_id' }); }
             closePlannerModal();
         }
 
