@@ -17,16 +17,9 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
         
-        .pie-chart-frame { 
-            width: 48px; 
-            height: 48px; 
-            border-radius: 50%; 
-            transition: all 0.5s ease-out; 
-            border: 2px solid rgba(255,255,255,0.8);
-        }
-        
-        /* Hide element class for tabs */
+        .pie-chart-frame { width: 48px; height: 48px; border-radius: 50%; transition: all 0.5s ease-out; border: 2px solid rgba(255,255,255,0.8); }
         .hidden { display: none !important; }
+        .locked-note { opacity: 0.6; pointer-events: none; background-color: #f1f5f9 !important; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
@@ -48,9 +41,6 @@
             </div>
             
             <div class="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto font-mono text-xs font-bold">
-                <button onclick="openCustomTopicModal()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2">
-                    Add Custom Topic
-                </button>
                 <div class="bg-slate-100 rounded-xl p-1 flex border border-slate-200">
                     <span class="px-2.5 py-1 text-slate-500">System Time:</span>
                     <span id="live-date-hud" class="px-2.5 py-1 bg-white rounded-lg text-slate-900 shadow-xs">---</span>
@@ -59,155 +49,195 @@
         </div>
     </header>
 
-    <!-- MAIN DASHBOARD METRICS -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
-        <!-- TOP STATS -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="neo-card rounded-3xl p-6 border-l-4 border-indigo-600 flex flex-col justify-between relative overflow-hidden">
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">Global Syllabus Absorption</h3>
-                        <span id="global-perc-badge" class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono">0% MATRIX</span>
-                    </div>
-                    <div class="heading-font text-5xl font-black text-slate-900 tracking-tight my-1" id="global-perc-text">0.0%</div>
-                </div>
-                <div class="mt-4">
-                    <div class="w-full bg-slate-200/60 rounded-full h-2.5 overflow-hidden mb-2">
-                        <div id="global-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-500 shadow-[0_0_12px_rgba(79,70,229,0.3)]"></div>
-                    </div>
-                    <div class="text-[11px] text-slate-500 flex justify-between items-center font-mono">
-                        <span>CHECKED UNITS: <strong id="global-count-checked" class="text-slate-900 font-bold">0</strong> / <span id="global-count-total">0</span></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-amber-500">
-                <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
-                    <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Prelims 2027</div>
-                    <p class="text-xs text-slate-500 mt-0.5">Target Horizon: May 23, 2027</p>
-                </div>
-                <div class="mt-6 pt-3 border-t border-slate-100 flex items-baseline justify-between">
-                    <div class="text-4xl font-mono font-black text-amber-600 tracking-tight" id="prelims-countdown-live">--- Days</div>
-                </div>
-            </div>
-
-            <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-rose-500">
-                <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
-                    <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Mains Phase 2027</div>
-                    <p class="text-xs text-slate-500 mt-0.5">Estimated Inception: August 20, 2027</p>
-                </div>
-                <div class="mt-6 pt-3 border-t border-slate-100 flex items-baseline justify-between">
-                    <div class="text-4xl font-mono font-black text-rose-600 tracking-tight" id="mains-countdown-live">--- Days</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FULL COLOR PIE CHART GRAPHICAL HUB -->
-        <div class="neo-card rounded-3xl p-6">
-            <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono mb-4 border-b border-slate-100 pb-2">SECTIONAL SYLLABUS PIE COMPLETION MATRIX</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS Paper I</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-p2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P2 <span id="lbl-p2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">CSAT Paper II</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-gs1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS1 <span id="lbl-gs1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS-I Blueprint</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-gs2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS2 <span id="lbl-gs2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS-II Blueprint</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-gs3" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS3 <span id="lbl-gs3" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS-III Blueprint</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-gs4" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS4 <span id="lbl-gs4" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS-IV Ethics</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-a1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P1 <span id="lbl-a1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper I Focus</div></div></div>
-                <div class="bg-white/80 border border-slate-200/60 p-3.5 rounded-2xl flex items-center gap-3.5 shadow-sm transition hover:shadow-md"><div id="pie-a2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P2 <span id="lbl-a2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper II Focus</div></div></div>
-            </div>
-        </div>
-
-        <!-- LEVEL 1: MASTER NAVIGATION TABS -->
-        <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm">
-            <button onclick="activateMasterTab('syllabus')" id="btn-master-syllabus" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font">1. Syllabus Tracker</button>
-            <button onclick="activateMasterTab('pyq')" id="btn-master-pyq" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">2. PYQ Tracker</button>
-            <button onclick="activateMasterTab('testseries')" id="btn-master-testseries" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">3. Test-Series</button>
+        
+        <!-- ROOT NAVIGATION: MARATHON VS PLANNER -->
+        <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 bg-slate-200/50 rounded-2xl border border-slate-300/50">
+            <button onclick="activateRootTab('marathon')" id="btn-root-marathon" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all bg-indigo-600 text-white shadow-lg heading-font border border-indigo-500">⚔️ Marathon Tracker</button>
+            <button onclick="activateRootTab('planner')" id="btn-root-planner" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-transparent">📅 Strategy Planner</button>
         </div>
 
         <!-- ============================================== -->
-        <!-- MASTER TRACK 1: SYLLABUS HUB -->
+        <!-- ROOT 1: MARATHON VIEW -->
         <!-- ============================================== -->
-        <div id="master-syllabus" class="master-pane-view block space-y-6">
+        <div id="view-marathon" class="root-pane-view block space-y-8">
             
-            <!-- LEVEL 2: SYLLABUS STAGE TABS -->
-            <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
-                <button onclick="activateStageTab('prelims')" id="btn-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
-                <button onclick="activateStageTab('mains')" id="btn-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font">Stage II: Mains</button>
-                <button onclick="activateStageTab('anthro')" id="btn-stage-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font">Stage III: Anthro</button>
+            <!-- TOP STATS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="neo-card rounded-3xl p-6 border-l-4 border-indigo-600 flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">Global Syllabus Absorption</h3>
+                            <span id="global-perc-badge" class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono">0% MATRIX</span>
+                        </div>
+                        <div class="heading-font text-5xl font-black text-slate-900 tracking-tight my-1" id="global-perc-text">0.0%</div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-slate-200/60 rounded-full h-2.5 overflow-hidden mb-2"><div id="global-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-500 shadow-[0_0_12px_rgba(79,70,229,0.3)]"></div></div>
+                        <div class="text-[11px] text-slate-500 flex justify-between items-center font-mono">
+                            <span>CHECKED UNITS: <strong id="global-count-checked" class="text-slate-900 font-bold">0</strong> / <span id="global-count-total">0</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-amber-500">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
+                        <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Prelims 2027</div>
+                        <p class="text-xs text-slate-500 mt-0.5">Target Horizon: May 23, 2027</p>
+                    </div>
+                    <div class="mt-6 pt-3 border-t border-slate-100 flex items-baseline justify-between"><div class="text-4xl font-mono font-black text-amber-600 tracking-tight" id="prelims-countdown-live">--- Days</div></div>
+                </div>
+                <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-rose-500">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-widest font-mono block mb-1">Live Target Delta</span>
+                        <div class="heading-font text-xl font-black text-slate-900">UPSC CSE Mains Phase 2027</div>
+                        <p class="text-xs text-slate-500 mt-0.5">Estimated Inception: August 20, 2027</p>
+                    </div>
+                    <div class="mt-6 pt-3 border-t border-slate-100 flex items-baseline justify-between"><div class="text-4xl font-mono font-black text-rose-600 tracking-tight" id="mains-countdown-live">--- Days</div></div>
+                </div>
             </div>
 
-            <!-- LEVEL 3: PRELIMS PANELS -->
-            <div id="deck-prelims" class="stage-pane-view block space-y-4">
-                <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                    <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
-                    <button onclick="activateSubTab('prelims', 'panel-prelims-csat', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">CSAT Paper II</button>
+            <!-- PIE CHART GRAPHICAL HUB -->
+            <div class="neo-card rounded-3xl p-6">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                    <h3 class="text-xs font-bold tracking-widest text-slate-400 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>
+                    <button onclick="openCustomTopicModal()" class="cursor-pointer bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-sm font-mono">+ ADD CUSTOM TOPIC</button>
                 </div>
-                <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
-                <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">GS Paper I</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-p2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P2 <span id="lbl-p2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">CSAT</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS1 <span id="lbl-gs1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">History/Geo</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS2 <span id="lbl-gs2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Polity/IR</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs3" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS3 <span id="lbl-gs3" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Economy/Tech</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-gs4" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Mains GS4 <span id="lbl-gs4" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Ethics</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-a1" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P1 <span id="lbl-a1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper I</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-a2" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">Anthro P2 <span id="lbl-a2" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Paper II</div></div></div>
+                    <div class="bg-white/80 border border-slate-200/60 p-3 rounded-2xl flex items-center gap-3 shadow-sm transition hover:shadow-md"><div id="pie-ca" class="pie-chart-frame bg-slate-200"></div><div><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase flex items-center gap-1.5">CA Matrix <span id="lbl-ca" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="text-xs sm:text-sm font-black text-slate-800 mt-0.5 leading-tight">Current Affairs</div></div></div>
+                </div>
             </div>
 
-            <!-- LEVEL 3: MAINS PANELS -->
-            <div id="deck-mains" class="stage-pane-view hidden space-y-4">
-                <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                    <button onclick="activateSubTab('mains', 'panel-mains-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-gs2', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-II</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-gs3', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-III</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-gs4', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-IV</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-essay', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Essay</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-lang-a', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang A</button>
-                    <button onclick="activateSubTab('mains', 'panel-mains-lang-b', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang B</button>
-                </div>
-                <div id="panel-mains-gs1" class="sub-pane-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies I Blueprint</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
-                <div id="panel-mains-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies II Blueprint</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
-                <div id="panel-mains-gs3" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies III Blueprint</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
-                <div id="panel-mains-gs4" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies IV Ethics</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
-                <div id="panel-mains-essay" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
-                <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
-                <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
+            <!-- LEVEL 1: MASTER NAVIGATION TABS -->
+            <div class="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm border border-slate-200">
+                <button onclick="activateMasterTab('syllabus')" id="btn-master-syllabus" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font">1. Syllabus</button>
+                <button onclick="activateMasterTab('ca')" id="btn-master-ca" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">2. CA Tracker</button>
+                <button onclick="activateMasterTab('pyq')" id="btn-master-pyq" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">3. PYQ</button>
+                <button onclick="activateMasterTab('testseries')" id="btn-master-testseries" class="cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font">4. Test-Series</button>
             </div>
 
-            <!-- LEVEL 3: ANTHROPOLOGY PANELS -->
-            <div id="deck-anthro" class="stage-pane-view hidden space-y-4">
-                <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
-                    <button onclick="activateSubTab('anthro', 'panel-anthro-p1', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">Paper I Focus</button>
-                    <button onclick="activateSubTab('anthro', 'panel-anthro-p2', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Paper II Focus</button>
-                    <button onclick="activateSubTab('anthro', 'panel-anthro-asn', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent text-indigo-900 bg-indigo-50 border-indigo-200 hover:bg-indigo-100">Assignments</button>
+            <!-- ======================= -->
+            <!-- TRACK 1: SYLLABUS HUB -->
+            <!-- ======================= -->
+            <div id="master-syllabus" class="master-pane-view block space-y-6">
+                <!-- LEVEL 2: SYLLABUS STAGE TABS -->
+                <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
+                    <button onclick="activateStageTab('prelims')" id="btn-stage-prelims" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font">Stage I: Prelims</button>
+                    <button onclick="activateStageTab('mains')" id="btn-stage-mains" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage II: Mains</button>
+                    <button onclick="activateStageTab('anthro')" id="btn-stage-anthro" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200">Stage III: Anthro</button>
                 </div>
-                <div id="panel-anthro-p1" class="sub-pane-anthro block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper I</h2><div class="space-y-3" id="box-anthro-p1"></div></div>
-                <div id="panel-anthro-p2" class="sub-pane-anthro hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper II</h2><div class="space-y-3" id="box-anthro-p2"></div></div>
-                <div id="panel-anthro-asn" class="sub-pane-anthro hidden neo-card rounded-3xl p-6 border-l-4 border-indigo-500"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4 text-indigo-900">Anthropology Custom Assignments</h2><div class="space-y-3" id="box-anthro-asn"></div></div>
+
+                <!-- LEVEL 3: PRELIMS PANELS -->
+                <div id="deck-prelims" class="stage-pane-view block space-y-4">
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
+                        <button onclick="activateSubTab('prelims', 'panel-prelims-gs', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS Paper I</button>
+                        <button onclick="activateSubTab('prelims', 'panel-prelims-csat', this)" class="sub-tab-prelims inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">CSAT Paper II</button>
+                    </div>
+                    <div id="panel-prelims-gs" class="sub-pane-prelims block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: GS Paper I Matrix</h2><div class="space-y-3" id="box-prelims-gs"></div></div>
+                    <div id="panel-prelims-csat" class="sub-pane-prelims hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Prelims: CSAT Paper II Matrix</h2><div class="space-y-3" id="box-prelims-csat"></div></div>
+                </div>
+
+                <!-- LEVEL 3: MAINS PANELS -->
+                <div id="deck-mains" class="stage-pane-view hidden space-y-4">
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs1', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">GS-I</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs2', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-II</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs3', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-III</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-gs4', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">GS-IV</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-essay', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Essay</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-lang-a', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang A</button>
+                        <button onclick="activateSubTab('mains', 'panel-mains-lang-b', this)" class="sub-tab-mains inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Lang B</button>
+                    </div>
+                    <div id="panel-mains-gs1" class="sub-pane-mains block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies I Blueprint</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
+                    <div id="panel-mains-gs2" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies II Blueprint</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
+                    <div id="panel-mains-gs3" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies III Blueprint</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
+                    <div id="panel-mains-gs4" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: General Studies IV Ethics</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
+                    <div id="panel-mains-essay" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
+                    <div id="panel-mains-lang-a" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
+                    <div id="panel-mains-lang-b" class="sub-pane-mains hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Mains: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
+                </div>
+
+                <!-- LEVEL 3: ANTHROPOLOGY PANELS -->
+                <div id="deck-anthro" class="stage-pane-view hidden space-y-4">
+                    <div class="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/60">
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-p1', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200">Paper I Focus</button>
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-p2', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent">Paper II Focus</button>
+                        <button onclick="activateSubTab('anthro', 'panel-anthro-asn', this)" class="sub-tab-anthro inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent text-indigo-900 bg-indigo-50 border-indigo-200 hover:bg-indigo-100">Assignments</button>
+                    </div>
+                    <div id="panel-anthro-p1" class="sub-pane-anthro block neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper I</h2><div class="space-y-3" id="box-anthro-p1"></div></div>
+                    <div id="panel-anthro-p2" class="sub-pane-anthro hidden neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Anthropology Optional: Paper II</h2><div class="space-y-3" id="box-anthro-p2"></div></div>
+                    <div id="panel-anthro-asn" class="sub-pane-anthro hidden neo-card rounded-3xl p-6 border-l-4 border-indigo-500">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                            <h2 class="heading-font text-xl font-black text-indigo-900">Custom Assignments</h2>
+                            <button onclick="openAssignmentModal()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm font-mono">+ ADD ASSIGNMENT</button>
+                        </div>
+                        <div class="space-y-3" id="box-anthro-asn"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- TRACK 2: CA TRACKER -->
+            <!-- ======================= -->
+            <div id="master-ca" class="master-pane-view hidden space-y-8">
+                <div class="neo-card rounded-3xl p-6">
+                    <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">Current Affairs (CA) Matrix</h2>
+                    <div class="space-y-3" id="box-ca"></div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- TRACK 3: PYQ TRACKER -->
+            <!-- ======================= -->
+            <div id="master-pyq" class="master-pane-view hidden space-y-8">
+                <div class="neo-card rounded-3xl p-6">
+                    <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">PYQ Execution Matrix</h2>
+                    <div class="space-y-3" id="box-pyq"></div>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- TRACK 4: TEST SERIES -->
+            <!-- ======================= -->
+            <div id="master-testseries" class="master-pane-view hidden space-y-8">
+                <div class="neo-card rounded-3xl p-6">
+                    <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">Test-Series Execution Matrix</h2>
+                    <div class="space-y-3" id="box-ts"></div>
+                </div>
             </div>
         </div>
 
         <!-- ============================================== -->
-        <!-- MASTER TRACK 2: PYQ TRACKER -->
+        <!-- ROOT 2: PLANNER VIEW -->
         <!-- ============================================== -->
-        <div id="master-pyq" class="master-pane-view hidden space-y-8">
-            <div class="neo-card rounded-3xl p-6">
-                <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">PYQ Execution Matrix</h2>
-                <div class="space-y-3" id="box-pyq"></div>
+        <div id="view-planner" class="root-pane-view hidden space-y-8">
+            <div class="neo-card rounded-3xl p-6 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="heading-font text-2xl font-black">Strategic Mission Planner</h2>
+                    <p class="text-sm text-slate-300 mt-1 font-medium">Create custom dynamic plans (Daily, Weekly, Monthly) with isolated progress tracking.</p>
+                </div>
+                <button onclick="openPlannerModal()" class="cursor-pointer bg-emerald-500 hover:bg-emerald-400 text-white font-black px-6 py-3 rounded-xl transition-all shadow-lg heading-font whitespace-nowrap">+ CREATE NEW PLAN</button>
             </div>
-        </div>
-
-        <!-- ============================================== -->
-        <!-- MASTER TRACK 3: TEST SERIES -->
-        <!-- ============================================== -->
-        <div id="master-testseries" class="master-pane-view hidden space-y-8">
-            <div class="neo-card rounded-3xl p-6">
-                <h2 class="heading-font text-2xl font-black border-b border-slate-100 pb-3 mb-4">Test-Series Execution Matrix</h2>
-                <div class="space-y-3" id="box-ts"></div>
-            </div>
+            
+            <!-- DYNAMIC PLAN CARDS WILL INJECT HERE -->
+            <div id="planner-container" class="space-y-6"></div>
         </div>
     </main>
 
-    <!-- CUSTOM TOPIC MODAL -->
+    <!-- CUSTOM TOPIC/TASK MODAL -->
     <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
-            <h3 class="text-lg font-black text-slate-900 heading-font mb-4">📂 Add Custom Sync Topic</h3>
+            <h3 id="modal-title-display" class="text-lg font-black text-slate-900 heading-font mb-4">📂 Add Custom Entry</h3>
             <div class="space-y-4">
-                <div>
+                <div id="modal-target-wrapper">
                     <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Target Subject Scope</label>
                     <select id="modal-select-panel" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500">
                         <option value="box-prelims-gs">Syllabus: Prelims GS I</option>
@@ -218,18 +248,46 @@
                         <option value="box-mains-gs4">Syllabus: Mains GS-IV</option>
                         <option value="box-anthro-p1">Syllabus: Anthro Paper I</option>
                         <option value="box-anthro-p2">Syllabus: Anthro Paper II</option>
+                        <option value="box-anthro-asn">Stage III: Custom Assignments</option>
+                        <option value="box-ca">Tracker: Current Affairs</option>
                         <option value="box-pyq">Tracker: PYQ Directory</option>
                         <option value="box-ts">Tracker: Test Series</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Custom Topic Description</label>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Entry Description</label>
                     <textarea id="modal-text-content" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500 custom-scrollbar"></textarea>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-2 text-xs font-bold font-mono">
                 <button onclick="closeCustomTopicModal()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-3 rounded-xl">Cancel</button>
-                <button onclick="executeInjectCustomNode()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl">Add Topic</button>
+                <button onclick="executeInjectCustomNode()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl">Save Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE PLAN MODAL -->
+    <div id="plan-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-lg font-black text-slate-900 heading-font mb-4">📅 Create New Strategic Plan</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Plan Title</label>
+                    <input type="text" id="modal-plan-title" placeholder="e.g., June Week 1 Target" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Plan Type / Duration</label>
+                    <select id="modal-plan-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
+                        <option value="Weekly Sprint">Weekly Sprint</option>
+                        <option value="Daily Routine">Daily Routine</option>
+                        <option value="Monthly Overview">Monthly Overview</option>
+                        <option value="Custom Block">Custom Block</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2 text-xs font-bold font-mono">
+                <button onclick="closePlannerModal()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-3 rounded-xl">Cancel</button>
+                <button onclick="executeCreatePlan()" class="cursor-pointer bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-3 rounded-xl shadow-md">Build Plan</button>
             </div>
         </div>
     </div>
@@ -254,7 +312,8 @@
         const dataA1 = ["1.1 Meaning, Scope and Development of Anthropology.", "1.2 Relationships with other disciplines: Social Sciences, Behavioural Sciences, Life Sciences, Medical Sciences, Earth Sciences and Humanities.", "1.3 Main branches of Anthropology, their scope and relevance: (a) Social-cultural Anthropology. (b) Biological Anthropology. (c) Archaeological Anthropology. (d) Linguistic Anthropology.", "1.4 Human Evolution and emergence of Man: (a) Biological and Cultural factors in human evolution. (b) Theories of Organic Evolution (Pre- Darwinian, Darwinian and Post-Darwinian). (c) Synthetic theory of evolution; Brief outline of terms and concepts of evolutionary biology (Doll's rule, Cope's rule, Gause's rule, parallelism, convergence, adaptive radiation, and mosaic evolution).", "1.5 Characteristics of Primates; Evolutionary Trend and Primate Taxonomy; Primate Adaptations; (Arboreal and Terrestrial) Primate Behaviour; Tertiary and Quaternary fossil primates; Living Major Primates; Comparative Anatomy of Man and Apes; Skeletal changes due to erect posture and bipedalism.", "1.6 Phylogenetic status, characteristics and geographical distribution of the following: (a) Plio-pleistocene hominids in South and East Africa - Australopithecines. (b) Homo erectus: Africa (Homo ergaster), Europe (Homo heidelbergensis), Asia (Homo erectus pekinensis, Homo erectus javanicus). (c) Neanderthal Man - La-Chapelle-aux-Saints (Classical type), Mt. Carmel (Progressive type). (d) Rhodesian man. (e) Homo sapiens Cro-Magnon, Grimaldi and Chancelade.", "1.7 The biological basis of Life: Cell, DNA structure and replication, Protein Synthesis, Gene, Mutation, Chromosomes, and Cell Division.", "1.8 Principles of Prehistoric Archaeology: Chronology: Relative and Absolute dating methods. Cultural Evolution- Broad Outlines of Prehistoric cultures: (e) Paleolithic (b) Mesolithic (c) Neolithic (d) Chalcolithic (e) Copper-Bronze Age (f) Iron Age.", "2.1 The Nature of Culture: The concept and characteristics of culture and civilization; Ethnocentrism vis-a-vis Cultural Relativism.", "2.2 The Nature of Society: Concept of society; Society and Culture; Social Institutions; Social groups; and Social stratification.", "2.3 Marriage: Definition and universality; Laws of marriage (endogamy, exogamy, hypergamy, hypogamy, incest taboo); Types of marriage (monogamy, polygamy, polyandry, group marriage); Functions of marriage; Marriage regulations (preferential, prescriptive and proscriptive); Marriage payments (bride wealth and dowry).", "2.4 Family: Definition and universality; Family, household and domestic group; functions of family; Types of family (from the perspectives of structure, blood relation, marriage, residence and succession); Impact of urbanization, industrialization and feminist movements on family.", "2.5 Kinship: Consanguinity and Affinity; Principles and types of descent (Unilineal, Double, Bilateral, Ambilineal); Forms of descent groups (lineage, clan, phratry, moiety and kindred); Kinship terminology (descriptive and classificatory); Descent-Alliance networks.", "3. Economic Organization: Meaning, scope and relevance of economic anthropology; Formalist and Substantivist debate; Principles governing production, distribution and exchange (reciprocity, redistribution and market) in communities, subsisting on hunting and gathering, fishing, pastoralism, horticulture and agriculture; globalization and indigenous economic systems.", "4. Political Organization and Social Control: Band, tribe, chiefdom, kingdom and state; concepts of power, authority and legitimacy; social control, law and justice in simple societies.", "5. Religion: Anthropological approaches to the study of religion (evolutionary, psychological and functional); Monotheism and Polytheism; Sacred and profane; Myths and rituals; Forms of religion in tribal and peasant societies (animism, animatism, fetishism, naturism and totemism); Religion, magic and science distinguished; Magico-religious functionaries (priest, shaman, medicine man, sorcerer and witch).", "6. Anthropological Theories: (a) Classical Evolutionism (Tylor, Morgan and Frazer) (b) Historical Particularism (Boas); Diffusionism (British, German-Austrian and American) (c) Functionalism (Malinowski); Structural-functionalism (Radcliffe-Brown) (d) Structuralism (Lévi-Strauss and Leach) (e) Culture and Personality (Benedict, Mead, Linton, Kardiner and Cora-du Bois) (f) Neo - Evolutionism (Childe, White, Steward, Sahlins and Service) (g) Cultural Materialism (Harris) (h) Symbolic and Interpretive theories (Turner, Schneider and Geertz) (i) Cognitive Anthropology (Tyler, Conklin) (j) Post-modernism in Anthropology", "7. Culture, Language and Communication: Nature, origin and characteristics of language; verbal and non-verbal communication; social-context of language use.", "8. Research Methods in Anthropology: (a) Fieldwork tradition in anthropology (b) Distinction between technique, method and methodology (c) Tools of data collection: observation, interview, schedules, questionnaire, Case study, Strategies, life history, oral history, secondary sources of data, genealogical method. (d) Analysis, interpretation and presentation of data.", "9.1 Human Genetics: Methods and Application: Methods for study of genetic principles in man- family study (pedigree analysis, twin study, foster child, co-twin method, cytogenetic method, chromosomal and karyo-type analysis), biochemical methods, immunological methods, D.N.A. technology and recombinant technologies.", "9.2 Mendelian genetics in man-marriage and disease: Single locus inheritance (Autosomal dominant and recessive, sex-linked, sex-limited and sex-influenced traits); Linkage and crossing-over, sex determination and differentiation; Biochemical genetics (Rh, ABO blood groups, HLA, Gm, blood enzymes, Inborn errors of metabolism).", "9.3 Chromosomal aberrations in Man: numerical and structural aberrations (disorders); (a) Autosomal aberrations: Down's, Patau's, Edward's and Cri-du-chat syndromes. (b) Sex chromosomal aberrations: Klinefelter's, Turner's, Super female, XYY syndrome. (c) Genetic imprints in human disease, genetic screening, genetic counseling, forensics.", "9.4 Race and Racism: Biological concept of race, criteria of racial classification; race and intelligence, racism; race cross-breeding, genetic markers in racial classification.", "9.5 Ecological Anthropology: Bio-cultural adaptations to cold, heat, high altitude, and nutritional stresses.", "9.6 Epidemiological Anthropology: Infectious and non-infectious diseases; Nutritional deficiencies.", "10. Concept of Human Growth and Development: Stages of growth prenatal, natal, infant, childhood, adolescence, maturity, senescence; Factors affecting growth and development; Methodology of growth studies (cross-sectional, longitudinal, mixed longitudinal); Human physique and somatotyping.", "11.1 Relevance of menarche, menopause and other bioevents to fertility. Fertility patterns and differentials.", "11.2 Demographic theories - biological, social and cultural.", "11.3 Biological and socio-ecological factors influencing fecundity, fertility, natality and mortality.", "12. Applications of Anthropology: Anthropology of sports, Nutritional anthropology, Anthropology in designing of defence and other equipments, Forensic Anthropology, Methods and principles of personal identification and reconstruction, Applied human genetics Paternity diagnosis, genetic counseling and eugenics, DNA profiling, Gene mapping."];
         const dataA2 = ["1.1 Evolution of the Indian Culture and Civilization: Prehistoric (Paleolithic, Mesolithic, Neolithic and Chalcolithic); Protohistoric (Indus Valley Civilization); Islamic impacts; Westernization and Modernization trends.", "1.2 Paleoanthropological evidences from India with special reference to Ramapithecus, Sivapithecus and Narmada Man.", "1.3 Ethno-archaeology in India: The concept of ethno-archaeology; Survivals and Parallels among the hunter-gatherers, pastoralists, nomadic communities, agriculturalists and artisan communities.", "2. Demographic profile of India: Ethnic and linguistic elements in the Indian population and their distribution; Social and economic characteristics of the ethnographic elements.", "3.1 The structure and nature of traditional Indian social system: Varnashrama, Purushartha, Karma, Rina and Rebirth concepts.", "3.2 Caste system in India: Structure and characteristics; Varna and Caste; Theories of origin of caste system; Dominant Caste; Caste mobility; Future of caste system; Jajmani system; Jati Panchayat.", "3.3 Sacred Complex and Nature-Man-Spirit Complex.", "3.4 Impact of Buddhism, Jainism, Islam and Christianity on Indian society.", "4. Emergence and Growth of Anthropology in India: Contributions of the 18th, 19th and early 20th Century scholar-administrators; Contributions of Indian anthropologists to tribal and peasant studies.", "5.1 Indian Village: Significance of village study in India; Indian village as a social system; Traditional and changing patterns of settlement and inter-caste relations; Agrarian relations in Indian villages; Impact of globalization on Indian villages.", "5.2 Linguistic and religious minorities and their social, political and economic problems.", "5.3 Indigenous and exogenous processes of socio-cultural change in Indian society: Sanskritization, Westernization, Modernization; Inter-play of Little and Great Traditions; Panchayati Raj and social change.", "6.1 Tribal situation in India: Bio-genetic variability, linguistic and socio-economic characteristics of tribal populations and their distribution.", "6.2 Problems of the tribal Communities: Land alienation, poverty, indebtedness, low literacy, poor health, malnutrition, underemployment; Tribal unrest and Left-Wing Extremism.", "6.3 Developmental projects and their impact on tribal displacement and rehabilitation problems; Development of forest policy and tribals.", "7.1 Problems of exploitation and deprivation of Scheduled Castes, Scheduled Tribes and Other Backward Classes; Constitutional safeguards for Scheduled Tribes and Scheduled Castes.", "7.2 Social change and contemporary tribal societies: Impact of modern democratic institutions, development programmes and welfare measures on tribals and weaker sections.", "7.3 The concept of PTGs (Particularly Vulnerable Tribal Groups) and their distribution; Special programmes for their development; Role of NGOs in tribal development.", "8.1 Impact of Hinduism, Buddhism, Christianity, Islam and other religions on tribal societies.", "8.2 Tribe and nation state: Comparative study of tribal communities in India and other democratic countries; issues of integration and autonomy.", "9.1 History of administration of tribal areas: Tribal policies and plans during British rule and post- independence; 5th and 6th Schedules of the Constitution; Panchayati Raj provisions for tribal areas (PESA); Tribal Sub-Plan framework.", "9.2 Role of Anthropology in tribal and rural development.", "9.3 Contributions of anthropology to the understanding of regionalism, communalism, and ethnic conflicts."];
         
-        // NEW MASTER TAB DATA
+        // CA Matrix pre-fill
+        const dataCA = ["June 2026 Monthly Compilation", "July 2026 Monthly Compilation", "August 2026 Monthly Compilation", "September 2026 Monthly Compilation", "October 2026 Monthly Compilation", "November 2026 Monthly Compilation", "December 2026 Monthly Compilation", "January 2027 Monthly Compilation", "February 2027 Monthly Compilation", "March 2027 Monthly Compilation", "April 2027 Monthly Compilation", "May 2027 (Pre-Exam Update)"];
         const dataPYQ = ["Prelims GS Paper I (2013-Present)", "Prelims CSAT Paper II (2013-Present)", "Mains GS-I (2013-Present)", "Mains GS-II (2013-Present)", "Mains GS-III (2013-Present)", "Mains GS-IV Ethics (2013-Present)", "Anthropology Paper I", "Anthropology Paper II"];
         const dataTS = ["Prelims FLT Test 01", "Prelims FLT Test 02", "Prelims FLT Test 03", "Mains GS-I Sectional Test", "Mains GS-II Sectional Test", "Mains GS-III Sectional Test", "Mains GS-IV Sectional Test", "Anthro P1 Sectional Test", "Anthro P2 Sectional Test"];
 
@@ -262,10 +321,11 @@
             'p1':  { hex: '#6366f1', bg: '#e0e7ff', text: '#4f46e5' }, 'p2':  { hex: '#10b981', bg: '#d1fae5', text: '#059669' },
             'gs1': { hex: '#f59e0b', bg: '#fef3c7', text: '#d97706' }, 'gs2': { hex: '#f43f5e', bg: '#ffe4e6', text: '#e11d48' },
             'gs3': { hex: '#a855f7', bg: '#f3e8ff', text: '#9333ea' }, 'gs4': { hex: '#06b6d4', bg: '#cffafe', text: '#0891b2' },
-            'a1':  { hex: '#d946ef', bg: '#fae8ff', text: '#c026d3' }, 'a2':  { hex: '#f97316', bg: '#ffedd5', text: '#ea580c' }
+            'a1':  { hex: '#d946ef', bg: '#fae8ff', text: '#c026d3' }, 'a2':  { hex: '#f97316', bg: '#ffedd5', text: '#ea580c' },
+            'ca':  { hex: '#14b8a6', bg: '#ccfbf1', text: '#0d9488' } 
         };
 
-        // Initialize All Core Lists
+        // Initialize Native DOM elements
         buildList('box-prelims-gs', dataP1, 'p1');
         buildList('box-prelims-csat', dataP2, 'p2');
         buildList('box-mains-lang-a', dataLA, 'la');
@@ -277,11 +337,9 @@
         buildList('box-mains-gs4', dataGS4, 'gs4');
         buildList('box-anthro-p1', dataA1, 'a1');
         buildList('box-anthro-p2', dataA2, 'a2');
+        buildList('box-ca', dataCA, 'ca');
         buildList('box-pyq', dataPYQ, 'pyq');
         buildList('box-ts', dataTS, 'ts');
-
-        // Special Initializer for Editable Assignments List (Renders 10 slots)
-        buildEditableAssignmentsList('box-anthro-asn', 10, 'asn');
 
         trackLiveClockTimelines();
         calculateMetricsHUD();
@@ -296,31 +354,15 @@
                         <span class="text-slate-700 font-medium ml-2 break-words group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through transition-all">${text}</span>
                     </label>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors placeholder-slate-300">
+                        <input type="text" id="note-uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300">
                     </div>
                 </div>
             `).join('');
         }
 
-        function buildEditableAssignmentsList(domId, count, prefix) {
-            const el = document.getElementById(domId);
-            if(!el) return;
-            let html = "";
-            for(let idx=0; idx<count; idx++) {
-                html += `
-                <div class="task-row flex flex-col p-3.5 bg-white border border-slate-200/80 hover:border-indigo-500/20 rounded-2xl transition duration-200 group relative shadow-2xs">
-                    <div class="flex items-start w-full">
-                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
-                        <input type="text" id="title-uid-${prefix}-${idx}" onchange="handleTitleSync('title-uid-${prefix}-${idx}')" placeholder="[Click to name assignment ${idx+1}]" class="flex-1 bg-transparent font-bold text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-b focus:border-indigo-300 transition-all group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through">
-                    </div>
-                    <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" placeholder="Add notes for this assignment..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors placeholder-slate-300">
-                    </div>
-                </div>`;
-            }
-            el.innerHTML = html;
-        }
-
+        // ==========================
+        // SAFE CLOUD INTEGRATION 
+        // ==========================
         let dbClient = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -329,7 +371,6 @@
                 document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
                 return;
             }
-
             document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
             
             if (window.supabase) {
@@ -341,6 +382,16 @@
             }
         });
 
+        // Toggle UI lock on Notes when checked
+        function toggleNoteLock(id, isChecked) {
+            const noteInput = document.getElementById('note-' + id);
+            if(noteInput) {
+                noteInput.readOnly = isChecked;
+                if(isChecked) { noteInput.classList.add('locked-note'); } 
+                else { noteInput.classList.remove('locked-note'); }
+            }
+        }
+
         async function syncLatestCloudState() {
             if(!dbClient) return;
             try {
@@ -351,6 +402,16 @@
                 if (response.error) throw response.error;
                 
                 if (response.data) {
+                    // First pass: Build dynamic structures (Planner Cards)
+                    response.data.forEach(row => {
+                        if(row.id.startsWith('plan_meta_')) {
+                            const encodedName = row.id.substring(10);
+                            const decodedName = decodeURIComponent(escape(atob(encodedName)));
+                            buildPlanCardDOM(decodedName, encodedName, row.topic_note);
+                        }
+                    });
+
+                    // Second pass: Populate all states, notes, and tasks
                     response.data.forEach(row => {
                         const noteValue = row.topic_note || '';
                         
@@ -363,10 +424,19 @@
                                 buildCustomTopicNode(targetBox, decodedText, row.id, row.is_checked, noteValue);
                             } catch(e) {}
                         } 
-                        else if (row.id.startsWith('title-uid-asn-')) {
-                            // Syncing the Assignment Editable Titles
-                            const titleInput = document.getElementById(row.id);
-                            if (titleInput) titleInput.value = noteValue;
+                        else if (row.id.startsWith('plan_meta_')) { /* Handled in pass 1 */ }
+                        else if (row.id.startsWith('plan_card_')) {
+                            const noteInput = document.getElementById('note-' + row.id);
+                            if (noteInput) noteInput.value = noteValue;
+                        }
+                        else if (row.id.startsWith('plan_task_')) {
+                            const parts = row.id.split('_');
+                            const planB64 = parts[2];
+                            const taskB64 = parts[3];
+                            try {
+                                const decodedTask = decodeURIComponent(escape(atob(taskB64)));
+                                buildPlanTaskDOM(planB64, decodedTask, row.id, row.is_checked, noteValue);
+                            } catch(e) {}
                         }
                         else {
                             const box = document.getElementById(row.id);
@@ -374,37 +444,35 @@
                             if (box) box.checked = row.is_checked;
                             if (noteInput) noteInput.value = noteValue;
                         }
+
+                        // Apply the UI lock if the box was checked in the cloud
+                        if(row.is_checked && row.id && !row.id.startsWith('plan_meta_')) {
+                            toggleNoteLock(row.id, true);
+                        }
                     });
+
                     document.getElementById("sync-status-text").innerText = "CLOUD SYNCED ACROSS DEVICES";
                     document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
                     calculateMetricsHUD();
+                    calculatePlanPies();
                 }
             } catch(e) {
-                document.getElementById("sync-status-text").innerText = "OFFLINE: DB REJECTED CONNECTION";
+                document.getElementById("sync-status-text").innerText = "OFFLINE: DB CONNECTION REJECTED";
                 document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
             }
         }
 
-        // Separate function to sync the Assignment Titles securely into the same DB column
-        async function handleTitleSync(titleId) {
-            if(!dbClient) return;
-            const titleInput = document.getElementById(titleId);
-            const titleText = titleInput ? titleInput.value : '';
-            try {
-                await dbClient.from('nishant_upsc_tracker').upsert({ 
-                    id: titleId, is_checked: false, topic_note: titleText, updated_at: new Date().toISOString() 
-                });
-            } catch(e) {}
-        }
-
         async function handleSyncAction(elementId) {
-            calculateMetricsHUD(); 
-            if(!dbClient) return;
-            
-            const isChecked = document.getElementById(elementId).checked;
+            const isChecked = document.getElementById(elementId) ? document.getElementById(elementId).checked : false;
             const noteInput = document.getElementById('note-' + elementId);
             const noteText = noteInput ? noteInput.value : '';
 
+            // Lock or unlock the note instantly locally
+            toggleNoteLock(elementId, isChecked);
+            calculateMetricsHUD(); 
+            calculatePlanPies();
+
+            if(!dbClient) return;
             try {
                 const pushPromise = dbClient.from('nishant_upsc_tracker').upsert({ 
                     id: elementId, is_checked: isChecked, topic_note: noteText, updated_at: new Date().toISOString() 
@@ -420,7 +488,20 @@
             }
         }
 
-        function openCustomTopicModal() { document.getElementById("custom-modal").classList.remove('hidden'); }
+        // ==========================
+        // DYNAMIC INJECTION (MODALS)
+        // ==========================
+        function openCustomTopicModal() { 
+            document.getElementById('modal-target-wrapper').classList.remove('hidden');
+            document.getElementById("modal-title-display").innerText = "📂 Add Custom Entry";
+            document.getElementById("custom-modal").classList.remove('hidden'); 
+        }
+        function openAssignmentModal() { 
+            document.getElementById('modal-select-panel').value = 'box-anthro-asn';
+            document.getElementById('modal-target-wrapper').classList.add('hidden'); // Lock target to assignments
+            document.getElementById("modal-title-display").innerText = "🎓 Add New Assignment";
+            document.getElementById("custom-modal").classList.remove('hidden'); 
+        }
         function closeCustomTopicModal() { document.getElementById("custom-modal").classList.add('hidden'); document.getElementById("modal-text-content").value = ""; }
 
         function executeInjectCustomNode() {
@@ -441,27 +522,144 @@
             if(!container || document.getElementById(fullId)) return;
             
             const checkAttr = isChecked ? 'checked' : '';
+            const isAssignment = targetBoxId === 'box-anthro-asn';
+            const badgeStr = isAssignment ? 'Assignment' : 'Added Task';
+            const colorStr = isAssignment ? 'bg-rose-500' : 'bg-indigo-600';
+
             const htmlNode = `
                 <div class="task-row flex flex-col p-3.5 bg-indigo-50/50 border border-indigo-200/80 rounded-2xl transition group relative">
-                    <label for="${fullId}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
-                        <input type="checkbox" id="${fullId}" onchange="handleSyncAction('${fullId}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-indigo-300 text-indigo-600 cursor-pointer" ${checkAttr}>
-                        <span class="text-indigo-900 group-has-[:checked]:text-indigo-400 group-has-[:checked]:line-through break-words font-medium flex items-center flex-wrap gap-2">
-                            <span class="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-black">Added Task</span>
-                            ${text}
-                        </span>
-                    </label>
+                    <div class="flex justify-between items-start w-full">
+                        <label for="${fullId}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
+                            <input type="checkbox" id="${fullId}" onchange="handleSyncAction('${fullId}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-indigo-300 text-indigo-600 cursor-pointer" ${checkAttr}>
+                            <span class="text-indigo-900 group-has-[:checked]:text-indigo-400 group-has-[:checked]:line-through break-words font-medium flex items-center flex-wrap gap-2">
+                                <span class="${colorStr} text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-black shadow-sm">${badgeStr}</span>
+                                ${text}
+                            </span>
+                        </label>
+                        <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition cursor-pointer ml-4" title="Delete from Cloud">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-${fullId}" onchange="handleSyncAction('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-white/60 border border-indigo-200 rounded-lg p-2 text-[11px] font-mono text-indigo-800 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors placeholder-indigo-300">
+                        <input type="text" id="note-${fullId}" onchange="handleSyncAction('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-white/60 border border-indigo-200 rounded-lg p-2 text-[11px] font-mono text-indigo-800 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-indigo-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', htmlNode);
             calculateMetricsHUD();
         }
 
+        async function eraseCustomNode(id, btnElement) {
+            if(confirm("Permanently erase this from the cloud database?")) {
+                btnElement.closest('.task-row').remove();
+                calculateMetricsHUD(); calculatePlanPies();
+                if(dbClient) { await dbClient.from('nishant_upsc_tracker').delete().eq('id', id); }
+            }
+        }
+
+        // ==========================
+        // DYNAMIC PLANNER ENGINE
+        // ==========================
+        function openPlannerModal() { document.getElementById('plan-modal').classList.remove('hidden'); }
+        function closePlannerModal() { document.getElementById('plan-modal').classList.add('hidden'); document.getElementById('modal-plan-title').value = ""; }
+
+        async function executeCreatePlan() {
+            const title = document.getElementById('modal-plan-title').value.trim();
+            const type = document.getElementById('modal-plan-type').value;
+            if(!title) return alert("Plan Title required");
+
+            const encodedName = btoa(unescape(encodeURIComponent(title)));
+            buildPlanCardDOM(title, encodedName, type);
+
+            if(dbClient) {
+                await dbClient.from('nishant_upsc_tracker').upsert({ id: `plan_meta_${encodedName}`, is_checked: false, topic_note: type, updated_at: new Date().toISOString() });
+            }
+            closePlannerModal();
+        }
+
+        function buildPlanCardDOM(title, encodedName, type) {
+            if(document.getElementById(`plan_card_wrapper_${encodedName}`)) return;
+
+            const html = `
+                <div id="plan_card_wrapper_${encodedName}" class="neo-card rounded-3xl p-6 border-l-4 border-emerald-500 shadow-sm relative group">
+                    <button onclick="eraseCustomNode('plan_meta_${encodedName}', this)" class="absolute right-4 top-4 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition cursor-pointer" title="Delete Entire Plan"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <div class="flex justify-between items-center mb-4 pr-6">
+                        <div>
+                            <h3 class="heading-font text-xl font-black text-slate-900">${title}</h3>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">${type}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-right"><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Completion</div><div id="lbl-plan-${encodedName}" class="text-sm font-black text-slate-800">0%</div></div>
+                            <div id="pie-plan-${encodedName}" class="pie-chart-frame bg-slate-200 w-10 h-10 border-emerald-500"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <textarea id="note-plan_card_${encodedName}" onchange="handleSyncAction('plan_card_${encodedName}')" rows="2" placeholder="Master Strategy / Goals for this plan..." class="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-600 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all custom-scrollbar"></textarea>
+                    </div>
+                    <div id="target-list-${encodedName}" class="space-y-3 mb-4"></div>
+                    <button onclick="addPlanTaskPrompt('${encodedName}')" class="cursor-pointer text-xs font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-500 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Add Sub-Target</button>
+                </div>
+            `;
+            document.getElementById('planner-container').insertAdjacentHTML('afterbegin', html);
+        }
+
+        function addPlanTaskPrompt(planEncodedName) {
+            const taskName = prompt("Enter specific target or task:");
+            if(!taskName) return;
+            const taskEncoded = btoa(unescape(encodeURIComponent(taskName)));
+            const fullId = `plan_task_${planEncodedName}_${taskEncoded}`;
+            buildPlanTaskDOM(planEncodedName, taskName, fullId, false, "");
+            handleSyncAction(fullId);
+        }
+
+        function buildPlanTaskDOM(planEncodedName, taskText, fullId, isChecked, noteText) {
+            const container = document.getElementById(`target-list-${planEncodedName}`);
+            if(!container || document.getElementById(fullId)) return;
+
+            const checkAttr = isChecked ? 'checked' : '';
+            const htmlNode = `
+                <div class="task-row flex flex-col p-3 bg-white border border-slate-200 hover:border-emerald-300 rounded-xl transition group relative shadow-2xs">
+                    <div class="flex justify-between items-start w-full">
+                        <label for="${fullId}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
+                            <input type="checkbox" id="${fullId}" onchange="handleSyncAction('${fullId}')" class="plan-task-box-${planEncodedName} mt-0.5 mr-3 h-4 w-4 rounded border-slate-300 text-emerald-500 cursor-pointer" ${checkAttr}>
+                            <span class="text-slate-700 group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through break-words font-medium transition-all">${taskText}</span>
+                        </label>
+                        <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition cursor-pointer ml-4"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    </div>
+                    <div class="mt-2 ml-7 w-[calc(100%-1.75rem)]">
+                        <input type="text" id="note-${fullId}" onchange="handleSyncAction('${fullId}')" value="${noteText || ''}" placeholder="Task note..." class="w-full bg-slate-50 border border-slate-100 rounded-md p-1.5 text-[10px] font-mono text-slate-500 focus:outline-none focus:border-emerald-300 focus:bg-white transition-all placeholder-slate-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', htmlNode);
+            calculatePlanPies();
+        }
+
+        function calculatePlanPies() {
+            // Find all plan pie charts on screen and recalculate
+            document.querySelectorAll('[id^="pie-plan-"]').forEach(pieEl => {
+                const encodedName = pieEl.id.replace('pie-plan-', '');
+                const taskBoxes = document.querySelectorAll(`.plan-task-box-${encodedName}`);
+                const lblEl = document.getElementById(`lbl-plan-${encodedName}`);
+                
+                let sTotal = taskBoxes.length, sChecked = 0;
+                taskBoxes.forEach(b => { if(b.checked) sChecked++; });
+                
+                const sPct = sTotal > 0 ? Math.round((sChecked / sTotal) * 100) : 0;
+                
+                if (lblEl) lblEl.innerText = sPct + "%";
+                pieEl.style.background = `conic-gradient(#10b981 ${sPct}%, #e2e8f0 0%)`;
+            });
+        }
+
+        // ==========================
+        // UI HELPERS & CALCS
+        // ==========================
         function calculateMetricsHUD() {
-            const boxes = document.querySelectorAll('input[type="checkbox"]');
-            let total = boxes.length, checked = 0;
-            boxes.forEach(b => { if(b.checked) checked++; });
+            // Global syllabus tracker only counts standard boxes (not planner items)
+            const allBoxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+            const syllabusBoxes = allBoxes.filter(b => !b.id.startsWith('plan_'));
+            
+            let total = syllabusBoxes.length, checked = 0;
+            syllabusBoxes.forEach(b => { if(b.checked) checked++; });
             
             document.getElementById("global-count-total").innerText = total;
             document.getElementById("global-count-checked").innerText = checked;
@@ -469,7 +667,8 @@
             document.getElementById("global-perc-text").innerText = percentage + "%";
             document.getElementById("global-progress-bar").style.width = percentage + "%";
 
-            const prefixes = ['p1', 'p2', 'gs1', 'gs2', 'gs3', 'gs4', 'a1', 'a2'];
+            // Visual Matrix Update
+            const prefixes = ['p1', 'p2', 'gs1', 'gs2', 'gs3', 'gs4', 'a1', 'a2', 'ca'];
             prefixes.forEach(pfx => {
                 const secBoxes = document.querySelectorAll(`input[type="checkbox"][id*="-${pfx}-"]`);
                 let sTotal = secBoxes.length, sChecked = 0;
@@ -485,8 +684,7 @@
                     lblEl.style.backgroundColor = theme.bg;
                     lblEl.style.color = theme.text;
                     pieEl.style.background = `conic-gradient(${theme.hex} ${sPct}%, #e2e8f0 0%)`;
-                    if (sPct > 0) { pieEl.style.boxShadow = `0 0 12px -2px ${theme.hex}80`; } 
-                    else { pieEl.style.boxShadow = 'none'; }
+                    if (sPct > 0) { pieEl.style.border = 'none'; } else { pieEl.style.border = '2px solid rgba(255,255,255,0.8)'; }
                 }
             });
         }
@@ -507,43 +705,41 @@
         // ==========================
         // 3-TIER NAVIGATION LOGIC
         // ==========================
+        function activateRootTab(id) {
+            document.querySelectorAll('.root-pane-view').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`view-${id}`).classList.remove('hidden');
+            ['marathon', 'planner'].forEach(k => {
+                const btn = document.getElementById(`btn-root-${k}`);
+                if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all bg-indigo-600 text-white shadow-lg heading-font border border-indigo-500"; } 
+                else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-transparent"; }
+            });
+        }
 
-        // Level 1: Master Tabs (Syllabus, PYQ, Test-Series)
         function activateMasterTab(id) {
             document.querySelectorAll('.master-pane-view').forEach(p => p.classList.add('hidden'));
             document.getElementById(`master-${id}`).classList.remove('hidden');
-            ['syllabus', 'pyq', 'testseries'].forEach(k => {
+            ['syllabus', 'ca', 'pyq', 'testseries'].forEach(k => {
                 const btn = document.getElementById(`btn-master-${k}`);
                 if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all bg-slate-900 text-white shadow-md heading-font"; } 
                 else { btn.className = "cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font"; }
             });
         }
 
-        // Level 2: Syllabus Stages (Prelims, Mains, Anthro)
         function activateStageTab(id) {
             document.querySelectorAll('.stage-pane-view').forEach(p => p.classList.add('hidden'));
             document.getElementById(`deck-${id}`).classList.remove('hidden');
             ['prelims', 'mains', 'anthro'].forEach(k => {
                 const btn = document.getElementById(`btn-stage-${k}`);
-                btn.className = `deck-${k}` === `deck-${id}` ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font";
+                btn.className = `deck-${k}` === `deck-${id}` ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all bg-indigo-600 text-white shadow-md heading-font border border-transparent" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider transition-all text-slate-500 hover:text-slate-900 hover:bg-white/80 heading-font border border-slate-200";
             });
         }
 
-        // Level 3: Individual Papers Sub-Tabs (GS1, CSAT, Essay, etc.)
         function activateSubTab(groupClass, panelId, btnElement) {
             document.querySelectorAll('.sub-pane-' + groupClass).forEach(p => p.classList.add('hidden'));
             document.getElementById(panelId).classList.remove('hidden');
-
             document.querySelectorAll('.sub-tab-' + groupClass).forEach(btn => {
-                // Determine if it's the Anthro Assignments button for special styling
-                if (btn.id === 'btn-anthro-asn') {
-                    btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
-                } else {
-                    btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
-                }
+                btn.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent`;
             });
-            
-            // Apply active state specifically
             btnElement.className = `sub-tab-${groupClass} inline-block py-2.5 px-5 rounded-lg font-bold text-xs uppercase transition-all bg-white text-indigo-700 shadow-sm border border-slate-200`;
         }
     </script>
