@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS nishant_upsc_tracker CASCADE;
 CREATE TABLE upsc_user_profiles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     display_name TEXT NOT NULL DEFAULT 'User',
+    email TEXT,
     age INTEGER,
     attempt INTEGER DEFAULT 1,
     created_at TIMESTAMPTZ DEFAULT now()
