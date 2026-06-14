@@ -52,7 +52,7 @@
                     </h1>
                     <p class="text-xs text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1.5">
                         <span id="sync-status-indicator" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> 
-                        <span id="sync-status-text">CONNECTING CLOUD REGIME...</span>
+                        <span id="sync-status-text">INITIALIZING CORE CLOUD CONFIG...</span>
                     </p>
                 </div>
             </div>
@@ -62,9 +62,6 @@
                     <span class="px-2.5 py-1 text-slate-500">System Time:</span>
                     <span id="live-date-hud" class="px-2.5 py-1 bg-white rounded-lg text-slate-900 shadow-xs">---</span>
                 </div>
-                <button onclick="clearAndResetSystem()" class="cursor-pointer text-xs font-bold bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 px-4 py-2.5 rounded-xl transition-all">
-                    Reset Cloud States
-                </button>
             </div>
         </div>
     </header>
@@ -148,7 +145,7 @@
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Core Text Datasets matching flat rows exactly
+        // Standard flat structural database mappings
         const dataP1 = ["Current events of national and international importance.","History of India: Ancient, medieval structural socio-economic histories.","Indian National Movement: Freedom struggle phases.","Physical Geography of India and global domains.","Social and Economic Geography of the World.","Indian Polity: Constitution, systems, design.","Panchayati Raj, public policy, rights issues.","Economic Development: Planning, sustainable frameworks.","Social Sector Initiatives: Poverty, inclusion markers.","General Issues on Environmental Ecology & Bio-diversity.","Climate Change vectors, global commitments tracker.","General Science: Foundational physics, chemistry, biology."];
         const dataP2 = ["Comprehension structural text analysis.","Interpersonal modules with focus on communication.","Logical reasoning and high analytical testing.","Decision-making mechanics & strategic problem solving.","General mental ability matrix validations.","Basic Numeracy: Numbers & scales of magnitude (Class X floor).","Data Interpretation: Charts, graphs, tables sufficiency (Class X floor)."];
         const dataLA = ["Comprehension of designated Indian text reading passages.","Precis Writing structural summarizations.","Usage and Vocabulary expression validation.","Short Essay composition writing frameworks.","Translation rules: English to Indian language & reverse."];
@@ -160,4 +157,113 @@
         const dataGS3 = ["Indian Economy planning tracks, employment metrics, capital profiles.","Inclusive Growth indicators, micro-financial structural layouts.","Fiscal Architectures: FRBM targets tracking, GST layout mechanisms.","Industrial adjustments: Deregulatory impacts, processing codes.","Logistics infrastructure layout: National Grids, shipping corridors.","Investment vehicles: PPP build variations, Hybrid annuity layouts.","State cropping indices, micro-irrigation layout systems.","Supply chain tracking: APMC updates, direct farm e-markets.","Subsidy economics: MSP fiscal impacts, fertilizer leakage tracking.","Public Distribution System (PDS): Inventory, leakage patches.","Animal husbandry economics, live-stock processing frameworks.","Food Processing Value Chains: Upstream collection, downstream retail.","Land Reform implementations: Historical state footprints, digitized codes.","Frontier technology tracks: Quantum computing, AI governance codes.","Indigenization of critical tech: Space launch systems, payload models.","Intellectual Property Rights: Patent compliance codes, TRIPS lines.","Conservation indices: Carbon sinks, pollution remediation benchmarks.","Environmental Impact Assessment (EIA): Regulatory framework checks.","Disaster Management matrices: Sendai framework compliance matching.","Development deficits correlation map vs. spread of extreme radicalism.","Hostile border management: Countering asymmetric warfare proxies.","Cyber Warfare structures: Critical info grids defense, encryption rules.","Money-laundering vectors: FIU-IND tracking networks, block algorithms.","Organized crime linkages tracking vs. transnational drug cartels.","Paramilitary forces commands: Operational lines for specialized forces."];
         const dataGS4 = ["Ethics interface essence: Action boundaries, private vs. public rules.","Imparting values frameworks: Structural inputs of educational nodes.","Attitude Formulations: Psychological content mapping, persuasion waves.","Civil Service values: Impartiality benchmarks, crisis management loops.","Philosophical inputs: Lessons from moral administrators & philosophers.","Administrative integrity profiles: Resolving ethical dilemmas.","Global funding ethics, corporate social governance compliance codes.","Probity parameters: RTI tracking, Code of Conduct matching, Charters.","Anti-corruption mechanics: Public fund audit architectures.","Applied Public Case Studies: Resolution models for administrative crisis matrices."];
 
-        const dataA1 = ["1.1 Meaning, Scope and Development of Anthropology.","1.2 Relationship tracking with Social Sciences, Life Sciences, Earth fields.","1.3 Core branches definition: Socio-cultural, Biological, Archaeological, Linguistic.","1.4 Human Evolution mechanics: Organic evolution theories, Synthetic code.","1.5 Primates Taxonomy: Behavioral characteristics, living apes comparison.","1.6 Phylogenetic status analysis: Australopithecines, Homo erectus, Neanderthal.","1.7 Biological metrics: Cell structures, DNA replication loops, protein systems.","1.8 Prehistoric Archaeology Chronologies: Dating systems, Paleolithic to Iron maps.","2.1 Culture concept: Civilization parameters, Relativism models.","2.2 Society frameworks: Social configurations, institutional layers.","2.3 Marriage systems: Endo/exogamy rules, incest taboos, payments structures.","2.4 Family setups: Household typologies, corporate units functions, urban shifts.","2.5 Kinship lines: Descent groups systems, terminology frameworks.","3. Economic Anthropology: Formalist vs. Substantivist configuration debates.","4. Political Architectures: Power/legitimacy; simple justice execution rules.","5. Religion parameters: Theories, animism, magic vs. science functional borders.","6. Anthropological Thought: Classical Evolutionism, Particularism, Structuralism.","7. Language & Communication: Verbal/non-verbal communication parameters.","8. Research Methodologies: Fieldwork tracking methods, Genealogical tools.","9.1 Human Genetics: Twin study methods, pedigree models, DNA setups.","9.2 Mendelian patterns in human disease tracking: ABO, Rh, HLA configurations.","9.3 Chromosomal aberrations anomalies: Down syndrome configuration, Turner setups.","9.4 Race & Racism concepts: Polytypic human variations sorting, marker tracking.","9.5 Ecological Adaptations: Bio-cultural responses mapping heat, cold stresses.
+        const dataA1 = ["1.1 Meaning, Scope and Development of Anthropology.","1.2 Relationship tracking with Social Sciences, Life Sciences, Earth fields.","1.3 Core branches definition: Socio-cultural, Biological, Archaeological, Linguistic.","1.4 Human Evolution mechanics: Organic evolution theories, Synthetic code.","1.5 Primates Taxonomy: Behavioral characteristics, living apes comparison.","1.6 Phylogenetic status analysis: Australopithecines, Homo erectus, Neanderthal.","1.7 Biological metrics: Cell structures, DNA replication loops, protein systems.","1.8 Prehistoric Archaeology Chronologies: Dating systems, Paleolithic to Iron maps.","2.1 Culture concept: Civilization parameters, Relativism models.","2.2 Society frameworks: Social configurations, institutional layers.","2.3 Marriage systems: Endo/exogamy rules, incest taboos, payments structures.","2.4 Family setups: Household typologies, corporate units functions, urban shifts.","2.5 Kinship lines: Descent groups systems, terminology frameworks.","3. Economic Anthropology: Formalist vs. Substantivist configuration debates.","4. Political Architectures: Power/legitimacy; simple justice execution rules.","5. Religion parameters: Theories, animism, magic vs. science functional borders.","6. Anthropological Thought: Classical Evolutionism, Particularism, Structuralism.","7. Language & Communication: Verbal/non-verbal communication parameters.","8. Research Methodologies: Fieldwork tracking methods, Genealogical tools.","9.1 Human Genetics: Twin study methods, pedigree models, DNA setups.","9.2 Mendelian patterns in human disease tracking: ABO, Rh, HLA configurations.","9.3 Chromosomal aberrations anomalies: Down syndrome configuration, Turner setups.","9.4 Race & Racism concepts: Polytypic human variations sorting, marker tracking.","9.5 Ecological Adaptations: Bio-cultural responses mapping heat, cold stresses.","9.6 Epidemiological tracking: Infectious vectors footprints vs. chronic patterns.","10. Human Growth & Development stages: Pre-natal/natal markers, somatotyping.","11. Demography theories: Biological/social frameworks, fertility variables.","12. Applied Anthropology applications: Ergonomics, forensic metrics, DNA profiling."];
+        const dataA2 = ["1.1 Indian Culture Evolution: Prehistoric to Chalcolithic grids, IVC, shifts.","1.2 Paleoanthropological nodes in India: Ramapithecus, Narmada Man logs.","1.3 Ethno-archaeological parallels mapping: Hunter-gatherer survivals matching.","2. Demographic Profile of India: Spatial layout of ethnic markers, language sets.","3.1 Traditional Social Systems: Varnashrama tracking, Purushartha targets.","3.2 Caste system layers: Theories of origin, mobility indexes, Jajmani setups.","3.3 Sacred Complex models and Nature-Man-Spirit Complex frameworks.","3.4 Impact of World Religions on Indian society: Buddhism, Islam, Christianity.","4. Indian Anthropological Growth: Scholar-administrator foundational records.","5.1 Indian Village setups: Inter-caste dependency tracking, globalization impacts.","5.2 Minorities sorting: Linguistic and religious minority groups tracking.","5.3 Structural Change processes: Sanskritization parameters, Modernization trends.","6.1 Tribal Situation in India: Biogenetic variation clustering, configurations.","6.2 Tribal Hardships: Land alienation vectors tracking, multi-dimensional debt, LWE.","6.3 Forest Policy actions: Historical forest codes tracking vs. tribal rights.","7.1 Exploitation protections: Constitutional safeguards for SC and ST.","7.2 Social Change vectors: Modern democratic institutional footprints.","7.3 PVTGs (Particularly Vulnerable Tribal Groups): Structural parameters tracking.","8.1 Religious shifts: Syncretic adjustments, tribal conversions dynamics tracking.","8.2 Tribe and Nation-State integration metrics, regional autonomy friction points.","9.1 Tribal Administration Architectures: Fifth and Sixth Schedule tracking, PESA.","9.2 Anthropology applications inside structural grass-roots rural planning.","9.3 Resolving frictions: Anthropological analytical tracks exploring conflicts."];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            buildDOM('box-prelims-gs', dataP1, 'p1');
+            buildDOM('box-prelims-csat', dataP2, 'p2');
+            buildDOM('box-mains-lang-a', dataLA, 'la');
+            buildDOM('box-mains-lang-b', dataLB, 'lb');
+            buildDOM('box-mains-essay', dataES, 'es');
+            
+            buildDOM('box-mains-gs1', dataGS1, 'gs1');
+            buildDOM('box-mains-gs2', dataGS2, 'gs2');
+            buildDOM('box-mains-gs3', dataGS3, 'gs3');
+            buildDOM('box-mains-gs4', dataGS4, 'gs4');
+
+            buildDOM('box-anthro-p1', dataA1, 'a1');
+            buildDOM('box-anthro-p2', dataA2, 'a2');
+
+            trackLiveClockTimelines();
+            await syncLatestCloudState();
+        });
+
+        function buildDOM(domId, dataArr, prefix) {
+            const el = document.getElementById(domId);
+            el.innerHTML = dataArr.map((text, idx) => `
+                <div class="task-row flex items-start justify-between p-3.5 bg-white border border-slate-200/80 hover:border-indigo-500/20 rounded-2xl transition duration-200 group relative">
+                    <label for="uid-${prefix}-${idx}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
+                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="commitCloudCheckedUpdate('uid-${prefix}-${idx}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
+                        <span class="text-slate-700 group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through break-words transition-all font-medium">${text}</span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        async function commitCloudCheckedUpdate(elementUuid) {
+            document.getElementById("sync-status-text").innerText = "COMMITTING STATE...";
+            const isChecked = document.getElementById(elementUuid).checked;
+
+            await supabase
+                .from('nishant_upsc_tracker')
+                .upsert({ id: elementUuid, is_checked: isChecked, updated_at: new Date().toISOString() });
+
+            document.getElementById("sync-status-text").innerText = "CLOUD CHANNELS SYNCED";
+            calculateMetricsHUD();
+        }
+
+        async function syncLatestCloudState() {
+            const { data, error } = await supabase.from('nishant_upsc_tracker').select('*');
+            if (!error && data) {
+                data.forEach(row => {
+                    const box = document.getElementById(row.id);
+                    if (box) box.checked = row.is_checked;
+                });
+                document.getElementById("sync-status-text").innerText = "CLOUD DATABASE SYNCED & AGNOSTIC";
+                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+            }
+            calculateMetricsHUD();
+        }
+
+        function calculateMetricsHUD() {
+            const boxes = document.querySelectorAll('input[type="checkbox"]');
+            let total = boxes.length, checked = 0;
+            boxes.forEach(b => { if(b.checked) checked++; });
+
+            document.getElementById("global-count-total").innerText = total;
+            document.getElementById("global-count-checked").innerText = checked;
+
+            const percentage = total > 0 ? ((checked / total) * 100).toFixed(1) : 0;
+            document.getElementById("global-perc-text").innerText = percentage + "%";
+            document.getElementById("global-perc-badge").innerText = Math.floor(percentage) + "% COMPLETED";
+            document.getElementById("global-progress-bar").style.width = percentage + "%";
+
+            const label = document.getElementById("tracker-status-text");
+            if (percentage == 0) label.innerText = "MATRIX CORE SEGMENT INITIALIZED";
+            else if (percentage < 35) label.innerText = "RUNWAY THRESHOLD ACCELERATING";
+            else label.innerText = "RANK SELECTION COMPETITIVE METRIC";
+        }
+
+        function trackLiveClockTimelines() {
+            const pDate = new Date("May 23, 2027 09:00:00").getTime();
+            const mDate = new Date("August 20, 2027 09:00:00").getTime();
+            function update() {
+                const now = new Date();
+                document.getElementById("live-date-hud").innerText = now.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                const ms = now.getTime();
+                document.getElementById("prelims-countdown-live").innerText = pDate > ms ? Math.floor((pDate - ms) / (1000*60*60*24)) + " Days" : "Passed";
+                document.getElementById("mains-countdown-live").innerText = mDate > ms ? Math.floor((mDate - ms) / (1000*60*60*24)) + " Days" : "Executed";
+            }
+            update(); setInterval(update, 60000);
+        }
+
+        function activateTab(id) {
+            document.querySelectorAll('.tab-pane-view').forEach(p => p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            const keys = ['prelims', 'mains', 'anthro'];
+            keys.forEach(k => {
+                const btn = document.getElementById(`btn-deck-${k}`);
+                btn.className = `deck-${k}` === id ? "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider bg-indigo-600 text-white shadow-md heading-font" : "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 heading-font";
+            });
+        }
+
+        async function clearAndResetSystem() {
+            if(confirm("Confirm hard clean state reset?")) {
+                await supabase.from('nishant_upsc_tracker').delete().neq('id', 'null-lock');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
