@@ -762,7 +762,7 @@
                         <span class="text-slate-700 font-medium ml-2 break-words group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through transition-all">${text}</span>
                     </label>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-uid-${prefix}-${idx}" onchange="handleSyncAction('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300">
+                        <input type="text" id="note-uid-${prefix}-${idx}" oninput="debouncedSync('uid-${prefix}-${idx}')" placeholder="Add a note or reminder here (e.g., 'Half done', 'Revise NCERT')..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300">
                     </div>
                 </div>
             `).join('');
@@ -866,7 +866,8 @@
             }
         }
 
-        async function handleLogout() {
+        async function handleLogout(force) {
+            if (!force && !confirm('Are you sure you want to logout? Your progress is auto-saved.')) return;
             if (dbClient) { await dbClient.auth.signOut(); }
             dbClient = null;
             currentUserId = null;
@@ -944,7 +945,7 @@
                 const { data } = await dbClient.from('upsc_user_sessions').select('last_active').eq('user_id', currentUserId).single();
                 if (data && data.last_active) {
                     if (Date.now() - new Date(data.last_active).getTime() > AUTO_LOGOUT_MS) {
-                        handleLogout();
+                        handleLogout(true);
                     }
                 }
             } catch(e) { /* non-critical */ }
@@ -1210,6 +1211,18 @@
             }
         }
 
+        // Debounced auto-save for note inputs (saves 1.5s after user stops typing)
+        const _syncTimers = {};
+        function debouncedSync(elementId) {
+            if (_syncTimers[elementId]) clearTimeout(_syncTimers[elementId]);
+            document.getElementById("sync-status-text").innerText = "SAVING...";
+            document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+            _syncTimers[elementId] = setTimeout(() => {
+                handleSyncAction(elementId);
+                delete _syncTimers[elementId];
+            }, 1500);
+        }
+
         async function handleSyncAction(elementId) {
             const isChecked = document.getElementById(elementId) ? document.getElementById(elementId).checked : false;
             const noteInput = document.getElementById('note-' + elementId);
@@ -1279,7 +1292,7 @@
                         <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition cursor-pointer ml-4"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                     </div>
                     <div class="mt-2 ml-10 w-[calc(100%-2.5rem)]">
-                        <input type="text" id="note-${fullId}" onchange="handleSyncAction('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-white/60 border border-indigo-200 rounded-lg p-2 text-[11px] font-mono text-indigo-800 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-indigo-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
+                        <input type="text" id="note-${fullId}" oninput="debouncedSync('${fullId}')" value="${noteText || ''}" placeholder="Add a note or reminder here..." class="w-full bg-white/60 border border-indigo-200 rounded-lg p-2 text-[11px] font-mono text-indigo-800 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-indigo-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', htmlNode);
@@ -1335,7 +1348,7 @@
                             <div id="pie-plan-${encodedName}" class="pie-chart-frame bg-slate-200 w-10 h-10 border-emerald-500"></div>
                         </div>
                     </div>
-                    <div class="mb-4"><textarea id="note-plan_card_${encodedName}" onchange="handleSyncAction('plan_card_${encodedName}')" rows="2" placeholder="Master Strategy / Goals for this plan..." class="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-600 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all custom-scrollbar"></textarea></div>
+                    <div class="mb-4"><textarea id="note-plan_card_${encodedName}" oninput="debouncedSync('plan_card_${encodedName}')" rows="2" placeholder="Master Strategy / Goals for this plan..." class="w-full bg-slate-50/50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-600 focus:outline-none focus:border-emerald-400 focus:bg-white transition-all custom-scrollbar"></textarea></div>
                     <div id="target-list-${encodedName}" class="space-y-3 mb-4"></div>
                     <button onclick="addPlanTaskPrompt('${encodedName}')" class="cursor-pointer text-xs font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-500 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Add Sub-Target</button>
                 </div>
@@ -1366,7 +1379,7 @@
                         <button onclick="eraseCustomNode('${fullId}', this)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition cursor-pointer ml-4"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                     </div>
                     <div class="mt-2 ml-7 w-[calc(100%-1.75rem)]">
-                        <input type="text" id="note-${fullId}" onchange="handleSyncAction('${fullId}')" value="${noteText || ''}" placeholder="Task note..." class="w-full bg-slate-50 border border-slate-100 rounded-md p-1.5 text-[10px] font-mono text-slate-500 focus:outline-none focus:border-emerald-300 focus:bg-white transition-all placeholder-slate-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
+                        <input type="text" id="note-${fullId}" oninput="debouncedSync('${fullId}')" value="${noteText || ''}" placeholder="Task note..." class="w-full bg-slate-50 border border-slate-100 rounded-md p-1.5 text-[10px] font-mono text-slate-500 focus:outline-none focus:border-emerald-300 focus:bg-white transition-all placeholder-slate-300 ${isChecked ? 'locked-note' : ''}" ${isChecked ? 'readonly' : ''}>
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', htmlNode);
@@ -1904,7 +1917,7 @@
                             answerDisplay + '</div>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="mt-2 ml-6"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" onchange="handleSyncAction(\'' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '\')" placeholder="Add a note..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-1.5 text-[10px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300"></div>' +
+                    '<div class="mt-2 ml-6"><input type="text" id="note-' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '" oninput="debouncedSync(\'' + prefix + '-cb-' + tIdx + '-' + sIdx + '-' + qIdx + '\')" placeholder="Add a note..." class="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-1.5 text-[10px] font-mono text-slate-600 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-300"></div>' +
                 '</div>';
             });
             qHtml += '</div>';
