@@ -27,17 +27,9 @@
             background: linear-gradient(90deg, rgba(79, 70, 229, 0.05) 0%, rgba(255, 255, 255, 0.5) 100%) !important;
             border-color: rgba(16, 185, 129, 0.3) !important;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 99px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
@@ -51,13 +43,17 @@
                         Nishant Kumar <span class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-full uppercase font-mono">Mission 2027</span>
                     </h1>
                     <p class="text-xs text-slate-500 font-semibold uppercase tracking-widest flex items-center gap-1.5">
-                        <span id="sync-status-indicator" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 
-                        <span id="sync-status-text">SYLLABUS COMPLETION TRACKER</span>
+                        <span id="sync-status-indicator" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> 
+                        <span id="sync-status-text">BOOTING HYBRID ENGINE...</span>
                     </p>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto font-mono text-xs font-bold">
+                <button onclick="openCustomTopicModal()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    Add Custom Topic
+                </button>
                 <div class="bg-slate-100 rounded-xl p-1 flex border border-slate-200">
                     <span class="px-2.5 py-1 text-slate-500">System Time:</span>
                     <span id="live-date-hud" class="px-2.5 py-1 bg-white rounded-lg text-slate-900 shadow-xs">---</span>
@@ -126,9 +122,9 @@
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper A: Compulsory Indian Language</h2><div class="space-y-3" id="box-mains-lang-a"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper B: Compulsory English Language</h2><div class="space-y-3" id="box-mains-lang-b"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper I: Essay Framework</h2><div class="space-y-3" id="box-mains-essay"></div></div>
-                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper II: General Studies I (GS-1 Blueprint)</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
-                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper III: General Studies II (GS-2 Blueprint)</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
-                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper IV: General Studies III (GS-3 Blueprint)</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
+                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper II: General Studies I (GS-1)</h2><div class="space-y-3" id="box-mains-gs1"></div></div>
+                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper III: General Studies II (GS-2)</h2><div class="space-y-3" id="box-mains-gs2"></div></div>
+                <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper IV: General Studies III (GS-3)</h2><div class="space-y-3" id="box-mains-gs3"></div></div>
                 <div class="neo-card rounded-3xl p-6"><h2 class="heading-font text-xl font-black border-b border-slate-100 pb-3 mb-4">Paper V: General Studies IV (GS-4 Ethics)</h2><div class="space-y-3" id="box-mains-gs4"></div></div>
             </div>
 
@@ -139,13 +135,43 @@
         </div>
     </main>
 
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-lg font-black text-slate-900 heading-font mb-4 flex items-center gap-2">📂 Add Custom Sync Topic</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Target Subject Scope</label>
+                    <select id="modal-select-panel" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500">
+                        <option value="box-prelims-gs">Prelims - General Studies I</option>
+                        <option value="box-prelims-csat">Prelims - CSAT Paper II</option>
+                        <option value="box-mains-gs1">Mains GS1 - History & Geo</option>
+                        <option value="box-mains-gs2">Mains GS2 - Polity & IR</option>
+                        <option value="box-mains-gs3">Mains GS3 - Economy & Tech</option>
+                        <option value="box-mains-gs4">Mains GS4 - Ethics</option>
+                        <option value="box-anthro-p1">Anthropology - Paper I</option>
+                        <option value="box-anthro-p2">Anthropology - Paper II</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Custom Topic Description</label>
+                    <textarea id="modal-text-content" rows="3" placeholder="Enter custom syllabus topic, current affairs node, or sub-task..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:border-indigo-500 custom-scrollbar"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2 text-xs font-bold font-mono">
+                <button onclick="closeCustomTopicModal()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-3 rounded-xl transition-all">Cancel</button>
+                <button onclick="executeInjectCustomNode()" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl transition-all shadow-md">Add & Sync</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://wdbwnutkomemrciybezz.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkYndudXRrb21lbXJjaXliZXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzMTU4NTgsImV4cCI6MjA1NzkwMzg1OH0.8y6xYpM3PbyL2-zS3g7yT6fT8uS_w8H9H6M_9w6E5mI";
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Global DB Client variable
+        let dbClient = null;
 
-        // Raw datasets for list injection
+        // Base Hardcoded Arrays
         const dataP1 = ["Current events of national and international importance.","History of India: Ancient, medieval structural socio-economic histories.","Indian National Movement: Freedom struggle phases.","Physical Geography of India and global domains.","Social and Economic Geography of the World.","Indian Polity: Constitution, systems, design.","Panchayati Raj, public policy, rights issues.","Economic Development: Planning, sustainable frameworks.","Social Sector Initiatives: Poverty, inclusion markers.","General Issues on Environmental Ecology & Bio-diversity.","Climate Change vectors, global commitments tracker.","General Science: Foundational physics, chemistry, biology."];
         const dataP2 = ["Comprehension structural text analysis.","Interpersonal modules with focus on communication.","Logical reasoning and high analytical testing.","Decision-making mechanics & strategic problem solving.","General mental ability matrix validations.","Basic Numeracy: Numbers & scales of magnitude (Class X floor).","Data Interpretation: Charts, graphs, tables sufficiency (Class X floor)."];
         const dataLA = ["Comprehension of designated Indian text reading passages.","Precis Writing structural summarizations.","Usage and Vocabulary expression validation.","Short Essay composition writing frameworks.","Translation rules: English to Indian language & reverse."];
@@ -158,65 +184,165 @@
         const dataA1 = ["1.1 Meaning, Scope and Development of Anthropology.","1.2 Relationship tracking with Social Sciences, Life Sciences, Earth fields.","1.3 Core branches definition: Socio-cultural, Biological, Archaeological, Linguistic.","1.4 Human Evolution mechanics: Organic evolution theories, Synthetic code.","1.5 Primates Taxonomy: Behavioral characteristics, living apes comparison.","1.6 Phylogenetic status analysis: Australopithecines, Homo erectus, Neanderthal.","1.7 Biological metrics: Cell structures, DNA replication loops, protein systems.","1.8 Prehistoric Archaeology Chronologies: Dating systems, Paleolithic to Iron maps.","2.1 Culture concept: Civilization parameters, Relativism models.","2.2 Society frameworks: Social configurations, institutional layers.","2.3 Marriage systems: Endo/exogamy rules, incest taboos, payments structures.","2.4 Family setups: Household typologies, corporate units functions, urban shifts.","2.5 Kinship lines: Descent groups systems, terminology frameworks.","3. Economic Anthropology: Formalist vs. Substantivist configuration debates.","4. Political Architectures: Power/legitimacy; simple justice execution rules.","5. Religion parameters: Theories, animism, magic vs. science functional borders.","6. Anthropological Thought: Classical Evolutionism, Particularism, Structuralism.","7. Language & Communication: Verbal/non-verbal communication parameters.","8. Research Methodologies: Fieldwork tracking methods, Genealogical tools.","9.1 Human Genetics: Twin study methods, pedigree models, DNA setups.","9.2 Mendelian patterns in human disease tracking: ABO, Rh, HLA configurations.","9.3 Chromosomal aberrations anomalies: Down syndrome configuration, Turner setups.","9.4 Race & Racism concepts: Polytypic human variations sorting, marker tracking.","9.5 Ecological Adaptations: Bio-cultural responses mapping heat, cold stresses.","9.6 Epidemiological tracking: Infectious vectors footprints vs. chronic patterns.","10. Human Growth & Development stages: Pre-natal/natal markers, somatotyping.","11. Demography theories: Biological/social frameworks, fertility variables.","12. Applied Anthropology applications: Ergonomics, forensic metrics, DNA profiling."];
         const dataA2 = ["1.1 Indian Culture Evolution: Prehistoric to Chalcolithic grids, IVC, shifts.","1.2 Paleoanthropological nodes in India: Ramapithecus, Narmada Man logs.","1.3 Ethno-archaeological parallels mapping: Contemporary hunter-gatherer survivals matching.","2. Demographic Profile of India: Spatial layout of ethnic markers, language sets.","3.1 Traditional Social Systems: Varnashrama tracking, Purushartha targets.","3.2 Caste system layers: Theories of origin, mobility indexes, Jati Panchayat frameworks.","3.3 Sacred Complex models and Nature-Man-Spirit Complex conceptual frameworks.","3.4 Impact of World Religions on Indian society: Buddhism, Islam, Christianity.","4. Growth of Anthropology in India: Scholar-administrator foundational records.","5.1 Indian Village setups: Inter-caste dependency tracking, globalization impacts.","5.2 Minorities sorting: Linguistic and religious minority groups tracking.","5.3 Structural Change processes: Sanskritization parameters, Modernization trends.","6.1 Tribal Situation in India: Biogenetic variation clustering, configurations.","6.2 Tribal Hardships: Land alienation vectors tracking, multi-dimensional debt, LWE.","6.3 Forest Policy actions: Historical forest codes tracking vs. tribal rights.","7.1 Exploitation protections: Constitutional safeguards for SC and ST.","7.2 Social Change vectors: Modern democratic institutional footprints.","7.3 PVTGs (Particularly Vulnerable Tribal Groups): Structural parameters tracking.","8.1 Religious shifts: Syncretic adjustments, tribal conversions dynamics tracking.","8.2 Tribe and Nation-State integration metrics, regional autonomy friction points.","9.1 Tribal Administration Architectures: Fifth and Sixth Schedule tracking, PESA regulations.","9.2 Anthropology applications inside structural grass-roots rural planning.","9.3 Resolving frictions: Anthropological analytical tracks exploring conflicts."];
 
-        // CRITICAL FIX: BOOT CLOCK TIMERS INSTANTLY BEFORE ANY NETWORK CALLS
+        // CRASH-PROOF BOOT SEQUENCE
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. Fire up hardware timing routines immediately
-            trackLiveClockTimelines();
+            // 1. Instantly start hardware clock (Cannot be blocked)
+            try { trackLiveClockTimelines(); } catch(e) {}
 
-            // 2. Generate local UI containers from flat arrays
-            buildDOM('box-prelims-gs', dataP1, 'p1');
-            buildDOM('box-prelims-csat', dataP2, 'p2');
-            buildDOM('box-mains-lang-a', dataLA, 'la');
-            buildDOM('box-mains-lang-b', dataLB, 'lb');
-            buildDOM('box-mains-essay', dataES, 'es');
-            buildDOM('box-mains-gs1', dataGS1, 'gs1');
-            buildDOM('box-mains-gs2', dataGS2, 'gs2');
-            buildDOM('box-mains-gs3', dataGS3, 'gs3');
-            buildDOM('box-mains-gs4', dataGS4, 'gs4');
-            buildDOM('box-anthro-p1', dataA1, 'a1');
-            buildDOM('box-anthro-p2', dataA2, 'a2');
+            // 2. Render standard arrays (Cannot be blocked)
+            try {
+                buildStandardList('box-prelims-gs', dataP1, 'p1');
+                buildStandardList('box-prelims-csat', dataP2, 'p2');
+                buildStandardList('box-mains-lang-a', dataLA, 'la');
+                buildStandardList('box-mains-lang-b', dataLB, 'lb');
+                buildStandardList('box-mains-essay', dataES, 'es');
+                buildStandardList('box-mains-gs1', dataGS1, 'gs1');
+                buildStandardList('box-mains-gs2', dataGS2, 'gs2');
+                buildStandardList('box-mains-gs3', dataGS3, 'gs3');
+                buildStandardList('box-mains-gs4', dataGS4, 'gs4');
+                buildStandardList('box-anthro-p1', dataA1, 'a1');
+                buildStandardList('box-anthro-p2', dataA2, 'a2');
+                calculateMetricsHUD();
+            } catch(e) { console.error("Rendering error:", e); }
 
-            // 3. Initialize metrics count framework out of base data array totals
-            calculateMetricsHUD();
-
-            // 4. Safe background promise call to fetch checked inputs state asynchronously
-            syncLatestCloudState().catch(err => console.error("Database connection deferred: ", err));
+            // 3. Connect to Supabase safely inside a try-catch block
+            try {
+                if(window.supabase) {
+                    dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    syncLatestCloudState();
+                }
+            } catch(e) {
+                document.getElementById("sync-status-text").innerText = "OFFLINE MODE: CDN BLOCKED";
+                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
+            }
         });
 
-        function buildDOM(domId, dataArr, prefix) {
+        // ==========================
+        // UI BUILDERS
+        // ==========================
+        function buildStandardList(domId, dataArr, prefix) {
             const el = document.getElementById(domId);
+            if(!el) return;
             el.innerHTML = dataArr.map((text, idx) => `
-                <div class="task-row flex items-start justify-between p-3.5 bg-white border border-slate-200/80 hover:border-indigo-500/20 rounded-2xl transition duration-200 group relative">
+                <div class="task-row flex items-start justify-between p-3.5 bg-white border border-slate-200/80 hover:border-indigo-500/20 rounded-2xl transition duration-200 group relative shadow-2xs">
                     <label for="uid-${prefix}-${idx}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
-                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="commitCloudCheckedUpdate('uid-${prefix}-${idx}')" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
+                        <input type="checkbox" id="uid-${prefix}-${idx}" onchange="commitCloudCheckedUpdate(this.id, this.checked)" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
                         <span class="text-slate-700 font-medium ml-2 break-words group-has-[:checked]:text-slate-400 group-has-[:checked]:line-through transition-all">${text}</span>
                     </label>
                 </div>
             `).join('');
         }
 
-        async function commitCloudCheckedUpdate(elementUuid) {
-            const isChecked = document.getElementById(elementUuid).checked;
-            calculateMetricsHUD();
-
-            await supabase
-                .from('nishant_upsc_tracker')
-                .upsert({ id: elementUuid, is_checked: isChecked, updated_at: new Date().toISOString() });
+        // ==========================
+        // CLOUD SYNC LOGIC
+        // ==========================
+        async function commitCloudCheckedUpdate(elementId, isChecked) {
+            calculateMetricsHUD(); // Update UI immediately locally
+            if(!dbClient) return;
+            try {
+                await dbClient.from('nishant_upsc_tracker')
+                    .upsert({ id: elementId, is_checked: isChecked, updated_at: new Date().toISOString() });
+            } catch(e) { console.error("Sync block", e); }
         }
 
         async function syncLatestCloudState() {
-            const { data, error } = await supabase.from('nishant_upsc_tracker').select('*');
-            if (!error && data) {
-                data.forEach(row => {
-                    const box = document.getElementById(row.id);
-                    if (box) box.checked = row.is_checked;
-                });
-                document.getElementById("sync-status-text").innerText = "CLOUD DATABASE SYNCED & AGNOSTIC";
-                document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+            if(!dbClient) return;
+            try {
+                const { data, error } = await dbClient.from('nishant_upsc_tracker').select('*');
+                if (!error && data) {
+                    data.forEach(row => {
+                        // Logic to handle custom injected topics natively decoded from DB
+                        if(row.id.startsWith('custom_')) {
+                            const parts = row.id.split('_');
+                            const targetBox = parts[1];
+                            const encodedPayload = parts.slice(2).join('_');
+                            try {
+                                const decodedText = decodeURIComponent(escape(atob(encodedPayload)));
+                                buildCustomTopicNode(targetBox, decodedText, row.id, row.is_checked);
+                            } catch(e) { console.error("Parse custom error"); }
+                        } else {
+                            // Standard static topics
+                            const box = document.getElementById(row.id);
+                            if (box) box.checked = row.is_checked;
+                        }
+                    });
+                    document.getElementById("sync-status-text").innerText = "CLOUD DATABASE SYNCED & AGNOSTIC";
+                    document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+                    calculateMetricsHUD();
+                }
+            } catch(e) { console.error("Fetch block", e); }
+        }
+
+        // ==========================
+        // CUSTOM TOPIC INJECTION SYSTEM
+        // ==========================
+        function openCustomTopicModal() {
+            document.getElementById("custom-modal").classList.remove('hidden');
+        }
+
+        function closeCustomTopicModal() {
+            document.getElementById("custom-modal").classList.add('hidden');
+            document.getElementById("modal-text-content").value = "";
+        }
+
+        function executeInjectCustomNode() {
+            const targetBox = document.getElementById("modal-select-panel").value;
+            const textValue = document.getElementById("modal-text-content").value.trim();
+
+            if (!textValue) {
+                alert("Topic content parameter cannot be empty.");
+                return;
             }
+
+            // Ingenious schema trick: We encode the text into base64 and make it the primary key ID. 
+            // This prevents needing to alter the Supabase table format for custom strings.
+            const encodedSafeText = btoa(unescape(encodeURIComponent(textValue)));
+            const generatedCloudId = `custom_${targetBox}_${encodedSafeText}`;
+
+            buildCustomTopicNode(targetBox, textValue, generatedCloudId, false);
+            commitCloudCheckedUpdate(generatedCloudId, false);
+            closeCustomTopicModal();
+        }
+
+        function buildCustomTopicNode(targetBoxId, text, fullId, isChecked) {
+            const container = document.getElementById(targetBoxId);
+            if(!container) return;
+            
+            // Check if it already exists (prevents duplicates on sync)
+            if(document.getElementById(fullId)) return;
+
+            const checkAttr = isChecked ? 'checked' : '';
+            const htmlNode = `
+                <div class="task-row flex items-start justify-between p-3.5 bg-indigo-50/50 border border-indigo-200/80 hover:border-indigo-500/40 rounded-2xl transition duration-200 group relative shadow-2xs">
+                    <label for="${fullId}" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold tracking-tight select-none">
+                        <input type="checkbox" id="${fullId}" onchange="commitCloudCheckedUpdate(this.id, this.checked)" class="mt-0.5 mr-3.5 h-5 w-5 rounded-md border-indigo-300 text-indigo-600 focus:ring-indigo-500/20 cursor-pointer" ${checkAttr}>
+                        <span class="text-indigo-900 group-has-[:checked]:text-indigo-400 group-has-[:checked]:line-through break-words transition-all font-medium flex items-center flex-wrap gap-2">
+                            <span class="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-black shadow-md">Added Task</span>
+                            ${text}
+                        </span>
+                    </label>
+                    <button onclick="eraseCustomNode('${fullId}', this)" class="absolute right-3 top-3.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition cursor-pointer" title="Delete from Cloud">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', htmlNode);
             calculateMetricsHUD();
         }
 
+        async function eraseCustomNode(id, btnElement) {
+            if(confirm("Permanently erase this custom node from the cloud database?")) {
+                btnElement.closest('.task-row').remove();
+                calculateMetricsHUD();
+                if(dbClient) {
+                    await dbClient.from('nishant_upsc_tracker').delete().eq('id', id);
+                }
+            }
+        }
+
+        // ==========================
+        // HARDWARE CLOCKS & UI 
+        // ==========================
         function calculateMetricsHUD() {
             const boxes = document.querySelectorAll('input[type="checkbox"]');
             let total = boxes.length, checked = 0;
@@ -229,11 +355,6 @@
             document.getElementById("global-perc-text").innerText = percentage + "%";
             document.getElementById("global-perc-badge").innerText = Math.floor(percentage) + "% COMPLETED";
             document.getElementById("global-progress-bar").style.width = percentage + "%";
-
-            const label = document.getElementById("tracker-status-text");
-            if (percentage == 0) label.innerText = "MATRIX INITIALIZED";
-            else if (percentage < 35) label.innerText = "RUNWAY SPEEDS ACCELERATING";
-            else label.innerText = "RANK SELECTION THRESHOLD";
         }
 
         function trackLiveClockTimelines() {
@@ -241,12 +362,18 @@
             const mDate = new Date("August 20, 2027 09:00:00").getTime();
             function update() {
                 const now = new Date();
-                document.getElementById("live-date-hud").innerText = now.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                const hud = document.getElementById("live-date-hud");
+                if(hud) hud.innerText = now.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+                
                 const ms = now.getTime();
-                document.getElementById("prelims-countdown-live").innerText = pDate > ms ? Math.floor((pDate - ms) / (1000*60*60*24)) + " Days" : "Passed";
-                document.getElementById("mains-countdown-live").innerText = mDate > ms ? Math.floor((mDate - ms) / (1000*60*60*24)) + " Days" : "Executed";
+                const pBox = document.getElementById("prelims-countdown-live");
+                const mBox = document.getElementById("mains-countdown-live");
+                
+                if(pBox) pBox.innerText = pDate > ms ? Math.floor((pDate - ms) / (1000*60*60*24)) + " Days" : "Passed";
+                if(mBox) mBox.innerText = mDate > ms ? Math.floor((mDate - ms) / (1000*60*60*24)) + " Days" : "Executed";
             }
-            update(); setInterval(update, 60000);
+            update(); 
+            setInterval(update, 60000); // Check once per minute
         }
 
         function activateTab(id) {
