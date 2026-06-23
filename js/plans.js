@@ -3,29 +3,42 @@
 // =========================================================================
 
 function openPlannerModal() { document.getElementById('plan-modal').classList.remove('hidden'); }
-function closePlannerModal() { document.getElementById('plan-modal').classList.add('hidden'); document.getElementById('modal-plan-title').value = ""; }
+function closePlannerModal() {
+    document.getElementById('plan-modal').classList.add('hidden');
+    document.getElementById('modal-plan-title').value = "";
+    document.getElementById('modal-plan-start-date').value = "";
+    document.getElementById('modal-plan-end-date').value = "";
+}
 
 async function executeCreatePlan() {
     const title = document.getElementById('modal-plan-title').value.trim();
     const type = document.getElementById('modal-plan-type').value;
+    const startDate = document.getElementById('modal-plan-start-date').value || null;
+    const endDate = document.getElementById('modal-plan-end-date').value || null;
     if(!title) return alert("Plan Title required");
 
     const encodedName = btoa(unescape(encodeURIComponent(title)));
-    buildPlanCardDOM(title, encodedName, type);
+    buildPlanCardDOM(title, encodedName, type, startDate, endDate);
 
-    if(dbClient) { await dbClient.from('upsc_custom_plans').upsert({ plan_id: encodedName, user_id: currentUserId, plan_title: title, plan_type: type }, { onConflict: 'plan_id,user_id' }); }
+    if(dbClient) { await dbClient.from('upsc_custom_plans').upsert({ plan_id: encodedName, user_id: currentUserId, plan_title: title, plan_type: type, start_date: startDate, end_date: endDate }, { onConflict: 'plan_id,user_id' }); }
     closePlannerModal();
 }
 
-function buildPlanCardDOM(title, encodedName, type) {
+function buildPlanCardDOM(title, encodedName, type, startDate, endDate) {
     if(document.getElementById(`plan_card_wrapper_${encodedName}`)) return;
+    const dateBadge = (startDate || endDate) ? `
+        <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            ${startDate ? `<span class="plan-date-badge">📅 ${formatPlanDate(startDate)}</span>` : ''}
+            ${startDate && endDate ? `<span class="text-[10px] text-slate-400">→</span>` : ''}
+            ${endDate ? `<span class="plan-date-badge">🏁 ${formatPlanDate(endDate)}</span>` : ''}
+        </div>` : '';
     const html = `
         <div id="plan_card_wrapper_${encodedName}" class="neo-card rounded-3xl p-6 border-l-4 border-emerald-500 shadow-sm relative group">
             <button onclick="eraseCustomNode('plan_meta_${encodedName}', this)" class="absolute right-4 top-4 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition cursor-pointer" title="Delete Entire Plan"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             <div class="flex justify-between items-center mb-4 pr-6">
                 <div>
                     <h3 class="heading-font text-xl font-black text-slate-900">${title}</h3>
-                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">${type}</span>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">${type}</span>${dateBadge}
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-right"><div class="text-[10px] font-bold text-slate-400 font-mono tracking-wide uppercase">Completion</div><div id="lbl-plan-${encodedName}" class="text-sm font-black text-slate-800">0%</div></div>
@@ -81,4 +94,12 @@ function calculatePlanPies() {
         if (lblEl) lblEl.innerText = sPct + "%";
         pieEl.style.background = `conic-gradient(#10b981 ${sPct}%, rgba(51,65,85,0.6) 0%)`;
     });
+}
+
+function formatPlanDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch(e) { return dateStr; }
 }

@@ -16,7 +16,7 @@ async function syncLatestCloudState() {
 
         if (plansRes.data) {
             plansRes.data.forEach(plan => {
-                buildPlanCardDOM(plan.plan_title, plan.plan_id, plan.plan_type);
+                buildPlanCardDOM(plan.plan_title, plan.plan_id, plan.plan_type, plan.start_date, plan.end_date);
             });
         }
 

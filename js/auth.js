@@ -95,6 +95,9 @@ async function handleGoogleLogin() {
 
 async function handleLogout(force) {
     if (!force && !confirm('Are you sure you want to logout? Your progress is auto-saved.')) return;
+    // Stop any active focus session before logout
+    if (typeof stopFocusMode === 'function' && focusSessionId) await stopFocusMode();
+    stopSessionBadge();
     if (dbClient) { await dbClient.auth.signOut(); }
     dbClient = null;
     currentUserId = null;
@@ -102,10 +105,39 @@ async function handleLogout(force) {
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('auth-password').value = '';
     document.getElementById('profile-menu').classList.add('hidden');
+    const badge = document.getElementById('session-badge');
+    if (badge) badge.classList.add('hidden');
 }
 
 function toggleProfileMenu() {
     document.getElementById('profile-menu').classList.toggle('hidden');
+}
+
+// ===== SESSION BADGE (shows "Session active for X min/hrs" in header) =====
+let _sessionBadgeInterval = null;
+let _sessionStartTs = null;
+
+function startSessionBadge() {
+    _sessionStartTs = Date.now();
+    const badge = document.getElementById('session-badge');
+    if (badge) badge.classList.remove('hidden');
+    if (_sessionBadgeInterval) clearInterval(_sessionBadgeInterval);
+    _sessionBadgeInterval = setInterval(() => {
+        const el = document.getElementById('session-duration-text');
+        if (!el || !_sessionStartTs) return;
+        const secs = Math.floor((Date.now() - _sessionStartTs) / 1000);
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        el.textContent = h > 0 ? `Session: ${h}h ${m}m` : m > 0 ? `Session: ${m}m` : 'Session: just started';
+    }, 30000); // update every 30s
+    // Set immediately too
+    const el = document.getElementById('session-duration-text');
+    if (el) el.textContent = 'Session: just started';
+}
+
+function stopSessionBadge() {
+    if (_sessionBadgeInterval) { clearInterval(_sessionBadgeInterval); _sessionBadgeInterval = null; }
+    _sessionStartTs = null;
 }
 
 // Close profile menu when clicking outside

@@ -34,6 +34,8 @@ async function showApp(knownEmail) {
         document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
         syncLatestCloudState();
         updateSessionActivity();
+        startSessionBadge();
+        initFocusMode();
         return;
     }
 
@@ -48,6 +50,8 @@ async function showApp(knownEmail) {
         document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
         syncLatestCloudState();
         updateSessionActivity();
+        startSessionBadge();
+        initFocusMode();
         return;
     }
 
@@ -66,6 +70,8 @@ async function showApp(knownEmail) {
     document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
     syncLatestCloudState();
     updateSessionActivity();
+    startSessionBadge();
+    initFocusMode();
 }
 
 function applyProfileToUI(profile) {

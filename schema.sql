@@ -84,6 +84,8 @@ CREATE TABLE upsc_custom_plans (
     plan_title TEXT NOT NULL,
     plan_type TEXT DEFAULT 'monthly',
     plan_note TEXT DEFAULT '',
+    start_date DATE,
+    end_date DATE,
     created_at TIMESTAMPTZ DEFAULT now(),
     PRIMARY KEY (plan_id, user_id)
 );
@@ -127,3 +129,36 @@ CREATE POLICY "Users update own sources" ON upsc_user_sources
     FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users delete own sources" ON upsc_user_sources
     FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- TABLE 6: Focus Sessions (cross-device study time tracking)
+-- ============================================================================
+DROP TABLE IF EXISTS upsc_focus_sessions CASCADE;
+
+CREATE TABLE upsc_focus_sessions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ended_at TIMESTAMPTZ,
+    duration_seconds INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_focus_user_id ON upsc_focus_sessions(user_id);
+CREATE INDEX idx_focus_started ON upsc_focus_sessions(user_id, started_at DESC);
+ALTER TABLE upsc_focus_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read own focus sessions" ON upsc_focus_sessions
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own focus sessions" ON upsc_focus_sessions
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own focus sessions" ON upsc_focus_sessions
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own focus sessions" ON upsc_focus_sessions
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- MIGRATIONS (run these if upgrading an existing database — safe to re-run)
+-- ============================================================================
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS start_date DATE;
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS end_date DATE;
