@@ -183,31 +183,27 @@ async function showApp(knownEmail) {
         return;
     }
 
-    // Check localStorage cache first
-    const cachedProfile = localStorage.getItem('upsc_profile_' + currentUserId);
-    if (cachedProfile) {
-        const profile = JSON.parse(cachedProfile);
-        applyProfileToUI(profile);
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('profile-setup-screen').style.display = 'none';
-        document.getElementById('app-container').classList.remove('hidden');
-        document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
-        syncLatestCloudState();
-        updateSessionActivity();
-        startSessionBadge();
-        initFocusMode();
-        setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
-        setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
-        return;
+    // Apply cached profile for instant UI rendering (avatar, name etc.)
+    // but ALWAYS verify against DB — catches deleted/admin-removed profiles
+    const cachedStr = currentUserId ? localStorage.getItem('upsc_profile_' + currentUserId) : null;
+    let cachedProfile = null;
+    if (cachedStr) {
+        try { cachedProfile = JSON.parse(cachedStr); } catch(e) {}
+        if (cachedProfile) applyProfileToUI(cachedProfile); // fast render while DB loads
     }
 
-    // No cache — check DB
+    // Always check DB (protects against deleted rows, locked accounts, etc.)
     const profile = await getUserProfile();
     if (!profile) {
+        // Profile not in DB — clear stale cache and show profile setup
+        if (currentUserId) localStorage.removeItem('upsc_profile_' + currentUserId);
         document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-container').classList.add('hidden');
         document.getElementById('profile-setup-screen').style.display = 'flex';
         return;
     }
+
+    // Profile confirmed in DB — refresh cache and show app
     localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
     applyProfileToUI(profile);
     document.getElementById('auth-screen').style.display = 'none';
