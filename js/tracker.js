@@ -35,7 +35,10 @@ async function syncLatestCloudState() {
                 }
                 else if (row.id.startsWith('plan_card_')) {
                     const noteInput = document.getElementById('note-' + row.id);
-                    if (noteInput) noteInput.value = noteValue;
+                    if (noteInput) {
+                        noteInput.value = noteValue;
+                        if (window.RTE) RTE.populate('note-' + row.id, noteValue);
+                    }
                 }
                 else if (row.id.startsWith('plan_task_')) {
                     const parts = row.id.split('_');
@@ -55,7 +58,10 @@ async function syncLatestCloudState() {
                     const box = document.getElementById(row.id);
                     const noteInput = document.getElementById('note-' + row.id);
                     if (box) box.checked = row.is_checked;
-                    if (noteInput) noteInput.value = noteValue;
+                    if (noteInput) {
+                        if (window.RTE) RTE.populate('note-' + row.id, noteValue);
+                        else noteInput.value = noteValue;
+                    }
                 }
 
                 if(row.is_checked && row.id && !row.id.startsWith('plan_card_')) { toggleNoteLock(row.id, true); }

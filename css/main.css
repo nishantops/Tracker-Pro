@@ -2911,3 +2911,156 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 [data-theme="light"] .ca-note-card { background: #fff; }
 [data-theme="light"] .ca-note-card-header { background: rgba(99,102,241,0.03); }
 
+
+/* ====================================================================
+   Generic RTE module styles  (js/rte.js)
+   Used for compact (floating toolbar) and full (always-visible toolbar)
+   rich text note fields across plans, assignments, tracker, PYQ etc.
+   ==================================================================== */
+.rte-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Toolbar ----------------------------------------------------------- */
+.rte-tb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.3rem 0.45rem;
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-bottom: none;
+  border-radius: 0.45rem 0.45rem 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  z-index: 30;
+  position: relative;
+}
+.rte-tb::-webkit-scrollbar { display: none; }
+
+.rte-tb-sep {
+  width: 1px; height: 1rem;
+  background: var(--bdr);
+  flex-shrink: 0; margin: 0 0.1rem;
+}
+
+.rte-tb-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--t2);
+  font-family: inherit;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.rte-tb-btn:hover {
+  background: rgba(99,102,241,0.12);
+  border-color: rgba(99,102,241,0.25);
+  color: var(--t1);
+}
+
+.rte-clr-swatch {
+  width: 0.9rem; height: 0.9rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.rte-clr-swatch:hover {
+  transform: scale(1.3);
+  border-color: rgba(255,255,255,0.55);
+}
+
+.rte-clr-pick {
+  width: 1rem; height: 1rem;
+  border-radius: 50%;
+  border: 1px dashed var(--bdr);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.12s;
+}
+.rte-clr-pick:hover { transform: scale(1.25); }
+.rte-clr-pick input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* Editor ------------------------------------------------------------ */
+.rte-editor {
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  border: 1px solid var(--bdr);
+  border-radius: 0 0 0.45rem 0.45rem;
+  color: var(--t1);
+  background: var(--surf);
+  caret-color: var(--accent1, #6366f1);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  transition: border-color 0.15s;
+}
+.rte-editor:focus {
+  border-color: rgba(99,102,241,0.38);
+  background: rgba(15,15,30,0.55);
+}
+.rte-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--t3, #64748b);
+  font-style: italic;
+  pointer-events: none;
+}
+.rte-editor-compact {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.71rem;
+  line-height: 1.5;
+}
+.rte-editor-full {
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.rte-editor ul { list-style: disc; padding-left: 1.3rem; }
+.rte-editor ol { list-style: decimal; padding-left: 1.3rem; }
+.rte-editor li { margin: 0.15rem 0; }
+
+/* Compact: toolbar hidden until focus, no top-border-radius on editor alone */
+.rte-compact .rte-editor { border-radius: 0.4rem; }
+.rte-compact .rte-tb    { border-radius: 0.4rem 0.4rem 0 0; }
+.rte-compact .rte-tb ~ .rte-editor { border-radius: 0 0 0.4rem 0.4rem; }
+
+/* Full: toolbar always visible */
+.rte-full .rte-tb { position: sticky; top: 0; }
+
+/* Locked state */
+.rte-editor.locked-note {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(15,15,30,0.3) !important;
+}
+
+/* Light mode */
+[data-theme="light"] .rte-tb    { background: #f5f5fb; border-color: #dde; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+[data-theme="light"] .rte-editor { background: #fff; border-color: #dde; color: #18181b; }
+[data-theme="light"] .rte-editor:focus { background: #fafafa; border-color: rgba(99,102,241,0.4); }
+[data-theme="light"] .rte-tb-btn  { color: #374151; }
+[data-theme="light"] .rte-tb-btn:hover { background: rgba(99,102,241,0.09); }

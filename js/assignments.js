@@ -94,6 +94,11 @@ function buildCustomTopicNode(targetBoxId, text, fullId, isChecked, noteText) {
             </div>
         </div>`;
         container.insertAdjacentHTML('beforeend', htmlNode);
+        if (window.RTE) {
+            RTE.init('note-' + fullId, { minH: '1.8rem' });
+            RTE.init('feedback-' + fullId, { full: true, minH: '90px' });
+            if (isChecked) { RTE.lock('note-' + fullId, true); RTE.lock('feedback-' + fullId, true); }
+        }
     } else {
         const badgeStr = 'Added Task';
         const colorStr = 'bg-indigo-600';
@@ -114,6 +119,10 @@ function buildCustomTopicNode(targetBoxId, text, fullId, isChecked, noteText) {
             </div>
         </div>`;
         container.insertAdjacentHTML('beforeend', htmlNode);
+        if (window.RTE) {
+            RTE.init('note-' + fullId, { minH: '1.8rem' });
+            if (isChecked) RTE.lock('note-' + fullId, true);
+        }
     }
     calculateMetricsHUD();
 }
@@ -179,13 +188,12 @@ function handleAssignmentCheck(fullId) {
     const noteJson = JSON.stringify(asnData);
 
     // Lock/unlock all text fields when assignment is checked/unchecked
-    if (noteInput) {
-        noteInput.readOnly = isChecked;
-        if (isChecked) noteInput.classList.add('locked-note'); else noteInput.classList.remove('locked-note');
-    }
-    if (feedbackInput) {
-        feedbackInput.readOnly = isChecked;
-        if (isChecked) feedbackInput.classList.add('locked-note'); else feedbackInput.classList.remove('locked-note');
+    if (window.RTE) {
+        RTE.lock('note-' + fullId, isChecked);
+        RTE.lock('feedback-' + fullId, isChecked);
+    } else {
+        if (noteInput) { noteInput.readOnly = isChecked; if (isChecked) noteInput.classList.add('locked-note'); else noteInput.classList.remove('locked-note'); }
+        if (feedbackInput) { feedbackInput.readOnly = isChecked; if (isChecked) feedbackInput.classList.add('locked-note'); else feedbackInput.classList.remove('locked-note'); }
     }
     // Strike-through title
     const card = document.getElementById(fullId);

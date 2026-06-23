@@ -195,13 +195,42 @@ function openPlanDrawer(encodedName) {
 
     // Note section (hidden by default, toggle with 📝 button)
     var noteEl  = document.getElementById('note-plan_card_' + encodedName);
-    var noteVal = noteEl ? (noteEl.value || '').replace(/\"/g, '&quot;') : '';
+    var noteHtml = noteEl ? (noteEl.value || '') : '';
     drawerBody.insertAdjacentHTML('beforeend',
         '<div id="plan-drawer-note-sec" class="plan-drawer-note-sec" style="display:none;">'
-        + '<textarea id="plan-drawer-note-ta" rows="3" placeholder="Strategy note for this plan\u2026" '
-        + 'oninput="(function(){var ni=document.getElementById(\'note-plan_card_' + encodedName + '\');if(ni)ni.value=this.value;debouncedSync(\'plan_card_' + encodedName + '\')}).call(this)">'
-        + (noteEl ? noteEl.value : '')
-        + '</textarea></div>');
+        + '<div class="ca-rte-toolbar">'
+        + '<div class="ca-rte-group">'
+        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"bold\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Bold (Ctrl+B)"><b>B</b></button>'
+        + '<button class="ca-rte-btn ca-rte-italic" onmousedown="event.preventDefault();document.execCommand(\"italic\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Italic (Ctrl+I)"><i>I</i></button>'
+        + '<button class="ca-rte-btn ca-rte-underline" onmousedown="event.preventDefault();document.execCommand(\"underline\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Underline (Ctrl+U)"><u>U</u></button>'
+        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"strikeThrough\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Strikethrough"><s>S</s></button>'
+        + '</div><span class="ca-rte-sep"></span>'
+        + '<div class="ca-rte-group">'
+        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"insertUnorderedList\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Bullets">&#8226; List</button>'
+        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"insertOrderedList\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Numbered">1. List</button>'
+        + '</div><span class="ca-rte-sep"></span>'
+        + '<div class="ca-rte-group ca-rte-colors">'
+        + '<button class="ca-rte-clr" style="background:#ef4444" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#ef4444\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Red"></button>'
+        + '<button class="ca-rte-clr" style="background:#f59e0b" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#f59e0b\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Amber"></button>'
+        + '<button class="ca-rte-clr" style="background:#10b981" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#10b981\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Green"></button>'
+        + '<button class="ca-rte-clr" style="background:#3b82f6" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#3b82f6\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Blue"></button>'
+        + '<button class="ca-rte-clr" style="background:#8b5cf6" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#8b5cf6\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Purple"></button>'
+        + '</div><span class="ca-rte-sep"></span>'
+        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"removeFormat\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Clear formatting">&#8856; Clear</button>'
+        + '<span id="plan-drawer-note-status" class="ca-rte-status"></span>'
+        + '</div>'
+        + '<div id="plan-drawer-note-editor" contenteditable="true" class="ca-word-editor" style="min-height:100px;font-size:0.82rem;" data-placeholder="Strategy note for this plan\u2026"></div>'
+        + '</div>');
+    var drawerNoteEditor = document.getElementById('plan-drawer-note-editor');
+    if (drawerNoteEditor) {
+        drawerNoteEditor.innerHTML = noteHtml;
+        drawerNoteEditor.oninput = function () {
+            if (noteEl) noteEl.value = drawerNoteEditor.innerHTML;
+            var statusEl = document.getElementById('plan-drawer-note-status');
+            if (statusEl) { statusEl.textContent = 'saving\u2026'; clearTimeout(window._planNoteTimer); window._planNoteTimer = setTimeout(function() { debouncedSync('plan_card_' + encodedName); if(statusEl) statusEl.textContent = '\u2713 Saved'; setTimeout(function(){if(statusEl)statusEl.textContent='';},1500); }, 800); }
+            else debouncedSync('plan_card_' + encodedName);
+        };
+    }
 
     // Auto-setup panel (shown when plan has dates but no tasks yet)
     var taskPane = document.getElementById('plan-pane-tasks-' + encodedName);
@@ -268,9 +297,10 @@ function closePlanDrawer() {
     }
 
     // Sync note value back to hidden note input
-    var noteTa  = document.getElementById('plan-drawer-note-ta');
+    var drawerNoteEditor = document.getElementById('plan-drawer-note-editor');
     var noteInp = document.getElementById('note-plan_card_' + enc);
-    if (noteTa && noteInp) noteInp.value = noteTa.value;
+    if (drawerNoteEditor && noteInp) noteInp.value = drawerNoteEditor.innerHTML;
+    if (window.RTE) RTE.populate('note-plan_card_' + enc, noteInp ? noteInp.value : '');
 
     // Clear drawer body
     var drawerBody = document.getElementById('plan-drawer-body');
@@ -509,10 +539,9 @@ function buildPlanTaskDOM(planEncodedName, taskText, fullId, isChecked, noteText
         +   '</button>'
         + '</div>';
     container.appendChild(div);
+    if (window.RTE) RTE.init('note-' + fullId, { minH: '1.8rem' });
     calculatePlanPies();
 }
-
-// ── Sub-task functions ───────────────────────────────────────────────────────
 function buildSubTaskRow(planEnc, parentId, subText, subId, isChecked, noteText) {
     var stRows = document.getElementById('plan-strows-' + parentId);
     if (!stRows || document.getElementById('plan-strow-' + subId)) return;
@@ -526,6 +555,7 @@ function buildSubTaskRow(planEnc, parentId, subText, subId, isChecked, noteText)
         + '<input type="text" id="note-' + subId + '" oninput="debouncedSync(\'' + subId + '\')" value="' + noteVal + '" placeholder="Note\u2026" class="plan-strow-note' + (isChecked ? ' locked-note' : '') + '"' + (isChecked ? ' readonly' : '') + '>'
         + '<button class="plan-strow-del" onclick="deletePlanSubTask(\'' + subId + '\',\'' + parentId + '\',this)" title="Delete">\xd7</button>';
     stRows.appendChild(div);
+    if (window.RTE) RTE.init('note-' + subId, { minH: '1.5rem' });
     calculatePlanPies();
 }
 

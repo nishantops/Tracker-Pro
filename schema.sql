@@ -84,6 +84,11 @@ CREATE TABLE upsc_custom_plans (
     plan_title TEXT NOT NULL,
     plan_type TEXT DEFAULT 'monthly',
     plan_note TEXT DEFAULT '',
+    plan_subject TEXT,
+    plan_category TEXT DEFAULT 'common',
+    plan_division TEXT DEFAULT 'both',
+    notif_enabled BOOLEAN DEFAULT TRUE,
+    content_type TEXT DEFAULT 'both',
     start_date DATE,
     end_date DATE,
     created_at TIMESTAMPTZ DEFAULT now(),
@@ -160,6 +165,23 @@ CREATE POLICY "Users delete own focus sessions" ON upsc_focus_sessions
 -- ============================================================================
 -- MIGRATIONS (run these if upgrading an existing database — safe to re-run)
 -- ============================================================================
+
+-- v1: date range + subject columns
 ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS start_date DATE;
 ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS end_date DATE;
 ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS plan_subject TEXT;
+
+-- v2: category / division / notification / content-type columns
+--     (these were live in production but missing from schema docs)
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS plan_category TEXT DEFAULT 'common';
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS plan_division TEXT DEFAULT 'both';
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS notif_enabled BOOLEAN DEFAULT TRUE;
+ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS content_type TEXT DEFAULT 'both';
+
+-- v3: plan tasks / sub-tasks / CA notes all use upsc_tracker_progress
+--     (id patterns below — no schema changes needed, column already TEXT PRIMARY KEY)
+--  plan task:     id = 'plan_task_{enc}_{taskB64}'
+--  plan sub-task: id = 'plan_task_{enc}_{parentB64}_sub_{subB64}'
+--  plan card note:id = 'plan_card_{enc}'
+--  CA word note:  id = 'ca_note_word_doc'
+--  All store HTML rich-text in topic_note TEXT column.

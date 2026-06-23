@@ -100,10 +100,15 @@ function escH(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 function escA(s) { return s ? s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
 
 function toggleNoteLock(id, isChecked) {
-    const noteInput = document.getElementById('note-' + id);
-    if(noteInput) {
-        noteInput.readOnly = isChecked;
-        if(isChecked) { noteInput.classList.add('locked-note'); } else { noteInput.classList.remove('locked-note'); }
+    const noteId = 'note-' + id;
+    if (window.RTE) {
+        RTE.lock(noteId, isChecked);
+    } else {
+        const noteInput = document.getElementById(noteId);
+        if(noteInput) {
+            noteInput.readOnly = isChecked;
+            if(isChecked) { noteInput.classList.add('locked-note'); } else { noteInput.classList.remove('locked-note'); }
+        }
     }
 }
 
@@ -141,6 +146,12 @@ function buildList(domId, dataArr, prefix) {
             </div>
         </div>
     `).join('');
+    // Attach compact RTE to each note input
+    if (window.RTE) {
+        dataArr.forEach(function(_, idx) {
+            RTE.init('note-uid-' + prefix + '-' + idx, { minH: '1.8rem' });
+        });
+    }
 }
 
 // =========================================================================
