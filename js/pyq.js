@@ -358,11 +358,21 @@ function filterCSAT() {
 
 // ===== Anthropology Optional Mains PYQs =====
 
+// Returns true only when the user's actual optional is Anthropology (or unset).
+// Uses _activeProfile from profile.js (always in sync with what's on screen).
+function _isAnthroUser() {
+    if (typeof _activeProfile === 'undefined') return true;
+    var opt = _activeProfile.optional_subject || '';
+    return !opt || opt === 'none' || opt === 'Anthropology';
+}
+
 function renderAnthroP1PYQ() {
+    if (!_isAnthroUser()) return; // non-Anthro: custom guide already rendered by applyOptionalSubjectLabels
     renderAnthroPYQGeneric(pyqAnthroP1Data, 'anthro-p1', 'anthro-p1-search', 'anthro-p1-year-filter', 'anthro-p1-total-count');
 }
 
 function renderAnthroP2PYQ() {
+    if (!_isAnthroUser()) return;
     renderAnthroPYQGeneric(pyqAnthroP2Data, 'anthro-p2', 'anthro-p2-search', 'anthro-p2-year-filter', 'anthro-p2-total-count');
 }
 
