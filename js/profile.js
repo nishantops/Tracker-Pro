@@ -233,6 +233,20 @@ async function showApp(knownEmail) {
         return;
     }
 
+    // Profile confirmed in DB — check if required fields are complete
+    if (!isProfileComplete(profile)) {
+        localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-container').classList.add('hidden');
+        _prefillSetupScreen(profile);
+        var setupTitle2 = document.querySelector('#profile-setup-screen h2');
+        var setupSub2   = document.querySelector('#profile-setup-screen p');
+        if (setupTitle2) setupTitle2.textContent = 'Complete Your Profile';
+        if (setupSub2) setupSub2.textContent = 'Please fill in the missing fields to unlock your Command Center';
+        document.getElementById('profile-setup-screen').style.display = 'flex';
+        return;
+    }
+
     // Profile confirmed in DB — refresh cache and show app
     localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
     applyProfileToUI(profile);
@@ -463,7 +477,44 @@ function handleProfileSetup() {
         document.getElementById("sync-status-text").innerText = "CONNECTING CLOUD...";
         syncLatestCloudState();
         updateSessionActivity();
+        startSessionBadge();
+        initFocusMode();
+        setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
+        setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
     });
+}
+
+function isProfileComplete(p) {
+    if (!p) return false;
+    var name = (p.display_name || '').trim();
+    var age  = parseInt(p.age);
+    var att  = parseInt(p.attempt);
+    return name.length >= 2 && age >= 16 && age <= 45 && att >= 1 && att <= 10;
+}
+
+function _prefillSetupScreen(p) {
+    if (!p) return;
+    var n = document.getElementById('setup-name');
+    var a = document.getElementById('setup-age');
+    var t = document.getElementById('setup-attempt');
+    var ph = document.getElementById('setup-phone');
+    if (n && p.display_name) n.value = p.display_name;
+    if (a && p.age)          a.value = p.age;
+    if (t && p.attempt)      t.value = p.attempt;
+    if (ph && p.phone)       ph.value = p.phone;
+    var knownOpts = ['Anthropology','Geography','Public Administration','Sociology','History','Political Science & IR','Philosophy','Law'];
+    var optSel = document.getElementById('setup-optional');
+    if (optSel && p.optional_subject && p.optional_subject !== 'none') {
+        if (knownOpts.indexOf(p.optional_subject) !== -1) {
+            optSel.value = p.optional_subject;
+        } else {
+            optSel.value = 'custom';
+            var cw = document.getElementById('setup-optional-custom-wrap');
+            var ci = document.getElementById('setup-optional-custom');
+            if (cw) cw.style.display = 'block';
+            if (ci) ci.value = p.optional_subject_custom || p.optional_subject;
+        }
+    }
 }
 
 async function getUserProfile() {
