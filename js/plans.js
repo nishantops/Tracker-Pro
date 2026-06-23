@@ -176,9 +176,6 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
 function openPlanDrawer(encodedName) {
     var plan = _planDataStore[encodedName];
     if (!plan) return;
-    var detailEl   = document.getElementById('plan_detail_' + encodedName);
-    var drawerBody = document.getElementById('plan-drawer-body');
-    if (!detailEl || !drawerBody) return;
 
     // Populate header
     var catStyle = PLAN_CAT_STYLES[plan.category] || PLAN_CAT_STYLES.custom;
@@ -192,21 +189,54 @@ function openPlanDrawer(encodedName) {
         ? '\ud83d\udcc5 ' + (plan.startDate ? formatPlanDate(plan.startDate) : '?') + (plan.endDate ? ' \u2192 ' + formatPlanDate(plan.endDate) : '')
         : '';
 
-    // Show / hide tabs based on contentType
-    var ct = plan.contentType || 'both';
-    var tdtTasks = document.getElementById('pdt-tasks');
-    var tdtTable = document.getElementById('pdt-table');
-    if (tdtTasks) tdtTasks.style.display = (ct === 'tables') ? 'none' : '';
-    if (tdtTable) tdtTable.style.display = (ct === 'tasks')  ? 'none' : '';
-
-    // Move detail DOM into drawer
+    // Build drawer body
+    var drawerBody = document.getElementById('plan-drawer-body');
     drawerBody.innerHTML = '';
-    drawerBody.appendChild(detailEl);
-    detailEl.style.display = '';
+
+    // Note section (hidden by default, toggle with 📝 button)
+    var noteEl  = document.getElementById('note-plan_card_' + encodedName);
+    var noteVal = noteEl ? (noteEl.value || '').replace(/\"/g, '&quot;') : '';
+    drawerBody.insertAdjacentHTML('beforeend',
+        '<div id="plan-drawer-note-sec" class="plan-drawer-note-sec" style="display:none;">'
+        + '<textarea id="plan-drawer-note-ta" rows="3" placeholder="Strategy note for this plan\u2026" '
+        + 'oninput="(function(){var ni=document.getElementById(\'note-plan_card_' + encodedName + '\');if(ni)ni.value=this.value;debouncedSync(\'plan_card_' + encodedName + '\')}).call(this)">'
+        + (noteEl ? noteEl.value : '')
+        + '</textarea></div>');
+
+    // Auto-setup panel (shown when plan has dates but no tasks yet)
+    var taskPane = document.getElementById('plan-pane-tasks-' + encodedName);
+    var targetList = document.getElementById('target-list-' + encodedName);
+    var hasTasks = targetList && Array.from(targetList.children).some(function(c) { return c.classList.contains('plan-trow'); });
+    if (!hasTasks && plan.startDate && plan.endDate) {
+        var days = Math.ceil((new Date(plan.endDate + 'T00:00:00') - new Date(plan.startDate + 'T00:00:00')) / 86400000) + 1;
+        var autoHtml = '<div id="plan-auto-setup" class="plan-auto-setup">'
+            + '<div class="plan-auto-setup-label">\u26a1 Quick Setup \u2014 '
+            + days + ' day' + (days !== 1 ? 's' : '') + ' ('
+            + formatPlanDate(plan.startDate) + ' \u2192 ' + formatPlanDate(plan.endDate) + ')</div>'
+            + '<div class="plan-auto-setup-btns">';
+        if (days > 13) {
+            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'weekly\')">&#128197; Generate Weekly Slots</button>';
+        }
+        if (days <= 60) {
+            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'daily\')">&#128197; Generate Daily Tasks</button>';
+        }
+        if (days > 60) {
+            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'monthly\')">&#128197; Generate Monthly Slots</button>';
+        }
+        autoHtml += '</div></div>';
+        drawerBody.insertAdjacentHTML('beforeend', autoHtml);
+    }
+
+    // Move task pane (target-list + add button) into drawer
+    if (taskPane) {
+        taskPane.style.display = '';
+        drawerBody.appendChild(taskPane);
+    }
+
     _activeDrawerPlan = encodedName;
 
-    // Default tab
-    switchDrawerTab(ct === 'tables' ? 'table' : 'tasks');
+    // Update progress display
+    _updateDrawerProgress(encodedName);
 
     // Open drawer
     var drawer  = document.getElementById('plan-drawer');
@@ -216,18 +246,35 @@ function openPlanDrawer(encodedName) {
     document.body.style.overflow = 'hidden';
 }
 
+function _updateDrawerProgress(enc) {
+    var boxes = document.querySelectorAll('.plan-task-box-' + enc);
+    var total = boxes.length, done = 0;
+    boxes.forEach(function(b) { if (b.checked) done++; });
+    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    var pctEl = document.getElementById('plan-drawer-pct');
+    if (pctEl) pctEl.textContent = total > 0 ? pct + '% (' + done + '/' + total + ')' : '';
+}
+
 function closePlanDrawer() {
     var enc = _activeDrawerPlan;
     if (!enc) return;
-    var detailEl   = document.getElementById('plan_detail_' + enc);
-    var wrapper    = document.getElementById('plan_card_wrapper_' + enc);
-    var drawerBody = document.getElementById('plan-drawer-body');
 
-    if (detailEl) {
-        detailEl.style.display = 'none';
-        if (wrapper) { wrapper.appendChild(detailEl); }
-        else if (drawerBody) { drawerBody.innerHTML = ''; }
+    // Move task pane back to detail DOM
+    var taskPane = document.getElementById('plan-pane-tasks-' + enc);
+    var detailEl = document.getElementById('plan_detail_' + enc);
+    if (taskPane && detailEl) {
+        taskPane.style.display = 'none';
+        detailEl.appendChild(taskPane);
     }
+
+    // Sync note value back to hidden note input
+    var noteTa  = document.getElementById('plan-drawer-note-ta');
+    var noteInp = document.getElementById('note-plan_card_' + enc);
+    if (noteTa && noteInp) noteInp.value = noteTa.value;
+
+    // Clear drawer body
+    var drawerBody = document.getElementById('plan-drawer-body');
+    if (drawerBody) drawerBody.innerHTML = '';
 
     var drawer  = document.getElementById('plan-drawer');
     var overlay = document.getElementById('plan-drawer-overlay');
@@ -235,20 +282,15 @@ function closePlanDrawer() {
     if (overlay) overlay.classList.add('hidden');
     document.body.style.overflow = '';
     _activeDrawerPlan = null;
-    _activeDrawerTab  = 'tasks';
 }
 
-function switchDrawerTab(tab) {
-    var enc = _activeDrawerPlan;
-    if (!enc) return;
-    ['tasks', 'table', 'note'].forEach(function(t) {
-        var btn  = document.getElementById('pdt-' + t);
-        var pane = document.getElementById('plan-pane-' + t + '-' + enc);
-        if (btn)  btn.classList.toggle('active', t === tab);
-        if (pane) pane.style.display = (t === tab) ? '' : 'none';
-    });
-    if (tab === 'table' && typeof loadPlanTables === 'function') loadPlanTables(enc);
-    _activeDrawerTab = tab;
+function toggleDrawerNote() {
+    var sec = document.getElementById('plan-drawer-note-sec');
+    var btn = document.getElementById('plan-drawer-note-btn');
+    if (!sec) return;
+    var showing = sec.style.display !== 'none';
+    sec.style.display = showing ? 'none' : '';
+    if (btn) btn.classList.toggle('plan-drawer-note-btn-active', !showing);
 }
 
 // ── Gantt Timeline ──────────────────────────────────────────────────────────
@@ -444,26 +486,188 @@ function cancelInlineTask(planEncodedName) {
 
 function buildPlanTaskDOM(planEncodedName, taskText, fullId, isChecked, noteText) {
     var container = document.getElementById('target-list-' + planEncodedName);
-    if (!container || document.getElementById(fullId)) return;
-    var checkAttr = isChecked ? 'checked' : '';
-    var lockedAttr = isChecked ? 'readonly' : '';
-    var lockedClass = isChecked ? 'locked-note' : '';
-    var htmlNode = '<div class="task-row flex flex-col p-3 rounded-xl transition group relative" style="background:var(--surf);border:1px solid var(--bdr);margin-bottom:0.35rem;">'
-        + '<div class="flex justify-between items-start w-full">'
-        + '<label for="' + fullId + '" class="flex items-start cursor-pointer w-full text-xs sm:text-sm font-bold select-none">'
-        + '<input type="checkbox" id="' + fullId + '" onchange="handleSyncAction(\'' + fullId + '\')" class="plan-task-box-' + planEncodedName + ' mt-0.5 mr-3 flex-shrink-0 cursor-pointer" ' + checkAttr + '>'
-        + '<span style="color:var(--t1);" class="break-words font-medium transition-all">' + taskText + '</span>'
-        + '</label>'
-        + '<button onclick="eraseCustomNode(\'' + fullId + '\', this)" class="opacity-0 group-hover:opacity-100 transition cursor-pointer ml-3 flex-shrink-0" style="background:none;border:none;color:var(--t3);">'
-        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
-        + '</button></div>'
-        + '<div class="mt-2" style="padding-left:1.65rem;">'
-        + '<input type="text" id="note-' + fullId + '" oninput="debouncedSync(\'' + fullId + '\')" value="' + (noteText || '') + '" placeholder="Task note..." '
-        + 'style="width:100%;background:var(--inp);border:1px solid var(--bdr);color:var(--t2);border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.65rem;font-family:var(--mono);outline:none;" '
-        + 'class="' + lockedClass + '" ' + lockedAttr + '>'
-        + '</div></div>';
-    container.insertAdjacentHTML('beforeend', htmlNode);
+    if (!container || document.getElementById('plan-trow-' + fullId)) return;
+
+    var noteVal = (noteText || '').replace(/"/g, '&quot;');
+    var div = document.createElement('div');
+    div.id = 'plan-trow-' + fullId;
+    div.className = 'task-row plan-trow';
+    div.innerHTML =
+        '<div class="plan-trow-top">'
+        + '<input type="checkbox" id="' + fullId + '" onchange="handleSyncAction(\'' + fullId + '\');_planTaskChecked(\'' + fullId + '\')" class="plan-task-box-' + planEncodedName + '" ' + (isChecked ? 'checked' : '') + '>'
+        + '<label for="' + fullId + '" class="plan-trow-label' + (isChecked ? ' plan-trow-done' : '') + '">' + taskText + '</label>'
+        + '<div class="plan-trow-actions">'
+        +   '<button class="plan-stoggle-btn" id="plan-stoggle-' + fullId + '" onclick="togglePlanSubTasks(\'' + fullId + '\')" title="Sub-tasks">\u25be</button>'
+        +   '<button class="plan-trow-del" onclick="eraseCustomNode(\'' + fullId + '\',this)" title="Delete">\xd7</button>'
+        + '</div>'
+        + '</div>'
+        + '<input type="text" id="note-' + fullId + '" oninput="debouncedSync(\'' + fullId + '\')" value="' + noteVal + '" placeholder="Note\u2026" class="plan-trow-note' + (isChecked ? ' locked-note' : '') + '"' + (isChecked ? ' readonly' : '') + '>'
+        + '<div class="plan-stask-area" id="plan-starea-' + fullId + '" style="display:none;">'
+        +   '<div id="plan-strows-' + fullId + '" class="plan-stask-rows"></div>'
+        +   '<button class="plan-stask-add" id="plan-stadd-' + fullId + '" onclick="addPlanSubTask(\'' + planEncodedName + '\',\'' + fullId + '\')">'
+        +     '\u2795 Sub-task'
+        +   '</button>'
+        + '</div>';
+    container.appendChild(div);
     calculatePlanPies();
+}
+
+// ── Sub-task functions ───────────────────────────────────────────────────────
+function buildSubTaskRow(planEnc, parentId, subText, subId, isChecked, noteText) {
+    var stRows = document.getElementById('plan-strows-' + parentId);
+    if (!stRows || document.getElementById('plan-strow-' + subId)) return;
+    var noteVal = (noteText || '').replace(/"/g, '&quot;');
+    var div = document.createElement('div');
+    div.id = 'plan-strow-' + subId;
+    div.className = 'plan-strow';
+    div.innerHTML =
+        '<input type="checkbox" id="' + subId + '" onchange="handleSyncAction(\'' + subId + '\');_subTaskChecked(\'' + subId + '\')" class="plan-task-box-' + planEnc + '" ' + (isChecked ? 'checked' : '') + '>'
+        + '<label for="' + subId + '" class="plan-strow-label' + (isChecked ? ' plan-trow-done' : '') + '">' + subText + '</label>'
+        + '<input type="text" id="note-' + subId + '" oninput="debouncedSync(\'' + subId + '\')" value="' + noteVal + '" placeholder="Note\u2026" class="plan-strow-note' + (isChecked ? ' locked-note' : '') + '"' + (isChecked ? ' readonly' : '') + '>'
+        + '<button class="plan-strow-del" onclick="deletePlanSubTask(\'' + subId + '\',\'' + parentId + '\',this)" title="Delete">\xd7</button>';
+    stRows.appendChild(div);
+    calculatePlanPies();
+}
+
+function togglePlanSubTasks(fullId) {
+    var area = document.getElementById('plan-starea-' + fullId);
+    var btn  = document.getElementById('plan-stoggle-' + fullId);
+    if (!area) return;
+    var open = area.style.display !== 'none';
+    area.style.display = open ? 'none' : '';
+    if (btn) btn.classList.toggle('open', !open);
+}
+
+function addPlanSubTask(planEnc, parentId) {
+    var area = document.getElementById('plan-starea-' + parentId);
+    if (area) area.style.display = '';
+    var existing = document.getElementById('plan-stinline-' + parentId);
+    if (existing) { existing.querySelector('input').focus(); return; }
+    var stRows = document.getElementById('plan-strows-' + parentId);
+    if (!stRows) return;
+    var addBtn = document.getElementById('plan-stadd-' + parentId);
+    if (addBtn) addBtn.style.display = 'none';
+    var d = document.createElement('div');
+    d.id = 'plan-stinline-' + parentId;
+    d.className = 'ptask-inline';
+    d.innerHTML = '<input type="text" id="plan-stinline-inp-' + parentId + '" placeholder="Sub-task\u2026" class="ptask-inline-input">'
+        + '<div class="ptask-inline-btns"><button onclick="submitPlanSubTask(\'' + planEnc + '\',\'' + parentId + '\')" class="ptask-submit">Add</button>'
+        + '<button onclick="cancelPlanSubTask(\'' + parentId + '\')" class="ptask-cancel">Cancel</button></div>';
+    stRows.appendChild(d);
+    var inp = document.getElementById('plan-stinline-inp-' + parentId);
+    if (inp) {
+        inp.focus();
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter')  submitPlanSubTask(planEnc, parentId);
+            if (e.key === 'Escape') cancelPlanSubTask(parentId);
+        });
+    }
+}
+
+function cancelPlanSubTask(parentId) {
+    var el = document.getElementById('plan-stinline-' + parentId);
+    if (el) el.remove();
+    var addBtn = document.getElementById('plan-stadd-' + parentId);
+    if (addBtn) addBtn.style.display = '';
+}
+
+function submitPlanSubTask(planEnc, parentId) {
+    var inp = document.getElementById('plan-stinline-inp-' + parentId);
+    var subText = inp ? inp.value.trim() : '';
+    cancelPlanSubTask(parentId);
+    if (!subText) return;
+    // parentId = 'plan_task_{planEnc}_{parentB64}'
+    var parts = parentId.split('_');
+    var parentB64 = parts[3];
+    var subB64 = btoa(unescape(encodeURIComponent(subText)));
+    var subId = 'plan_task_' + planEnc + '_' + parentB64 + '_sub_' + subB64;
+    buildSubTaskRow(planEnc, parentId, subText, subId, false, '');
+    handleSyncAction(subId);
+}
+
+function deletePlanSubTask(subId, parentId, btn) {
+    if (!confirm('Delete this sub-task?')) return;
+    var row = document.getElementById('plan-strow-' + subId);
+    if (row) row.remove();
+    calculatePlanPies();
+    if (dbClient && currentUserId) {
+        dbClient.from('upsc_tracker_progress').delete().eq('id', subId).eq('user_id', currentUserId);
+    }
+}
+
+function _planTaskChecked(fullId) {
+    var box   = document.getElementById(fullId);
+    var row   = document.getElementById('plan-trow-' + fullId);
+    var note  = document.getElementById('note-' + fullId);
+    if (!box || !row) return;
+    var label = row.querySelector('.plan-trow-label');
+    if (label) label.classList.toggle('plan-trow-done', box.checked);
+    if (note)  { note.readOnly = box.checked; note.className = 'plan-trow-note' + (box.checked ? ' locked-note' : ''); }
+    toggleNoteLock(fullId, box.checked);
+    _updateDrawerProgress(_activeDrawerPlan);
+}
+
+function _subTaskChecked(subId) {
+    var box = document.getElementById(subId);
+    var row = document.getElementById('plan-strow-' + subId);
+    if (!box || !row) return;
+    var label = row.querySelector('.plan-strow-label');
+    var note  = row.querySelector('.plan-strow-note');
+    if (label) label.classList.toggle('plan-trow-done', box.checked);
+    if (note)  { note.readOnly = box.checked; note.className = 'plan-strow-note' + (box.checked ? ' locked-note' : ''); }
+    toggleNoteLock(subId, box.checked);
+    _updateDrawerProgress(_activeDrawerPlan);
+}
+
+// ── Auto-generate tasks from date range ────────────────────────────────────
+function generateAutoTasks(enc, mode) {
+    var plan = _planDataStore[enc];
+    if (!plan || !plan.startDate || !plan.endDate) return;
+    var start = new Date(plan.startDate + 'T00:00:00');
+    var end   = new Date(plan.endDate   + 'T00:00:00');
+    var days  = Math.ceil((end - start) / 86400000) + 1;
+    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var tasks = [];
+
+    if (mode === 'monthly') {
+        var d = new Date(start.getFullYear(), start.getMonth(), 1);
+        var mNum = 1;
+        while (d <= end) {
+            var mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+            if (mEnd > end) mEnd = new Date(end);
+            tasks.push('Month ' + mNum + ' (' + d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) + ')');
+            d.setMonth(d.getMonth() + 1); mNum++;
+        }
+    } else if (mode === 'weekly') {
+        var wStart = new Date(start);
+        var wNum = 1;
+        while (wStart <= end) {
+            var wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+            if (wEnd > end) wEnd = new Date(end);
+            tasks.push('Week ' + wNum + ' ('
+                + wStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                + ' \u2013 '
+                + wEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                + ')');
+            wStart.setDate(wStart.getDate() + 7); wNum++;
+        }
+    } else { // daily
+        var d = new Date(start);
+        while (d <= end) {
+            tasks.push(dayNames[d.getDay()] + ' ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+            d.setDate(d.getDate() + 1);
+        }
+    }
+
+    tasks.forEach(function(taskText) {
+        var taskEnc = btoa(unescape(encodeURIComponent(taskText)));
+        var fullId  = 'plan_task_' + enc + '_' + taskEnc;
+        buildPlanTaskDOM(enc, taskText, fullId, false, '');
+        handleSyncAction(fullId);
+    });
+
+    var autoSetup = document.getElementById('plan-auto-setup');
+    if (autoSetup) autoSetup.style.display = 'none';
 }
 
 function calculatePlanPies() {
@@ -479,6 +683,7 @@ function calculatePlanPies() {
         if (pbarEl) pbarEl.style.width = sPct + '%';
         pieEl.style.background = 'conic-gradient(#10b981 ' + sPct + '%, rgba(51,65,85,0.6) 0%)';
     });
+    if (_activeDrawerPlan) _updateDrawerProgress(_activeDrawerPlan);
 }
 
 function formatPlanDate(dateStr) {

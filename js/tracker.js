@@ -21,6 +21,7 @@ async function syncLatestCloudState() {
         }
 
         if (progressRes.data) {
+            var _deferredSubTasks = [];
             progressRes.data.forEach(row => {
                 const noteValue = row.topic_note || '';
                 if(row.id.startsWith('custom_')) {
@@ -38,12 +39,17 @@ async function syncLatestCloudState() {
                 }
                 else if (row.id.startsWith('plan_task_')) {
                     const parts = row.id.split('_');
-                    const planB64 = parts[2];
-                    const taskB64 = parts[3];
-                    try {
-                        const decodedTask = decodeURIComponent(escape(atob(taskB64)));
-                        buildPlanTaskDOM(planB64, decodedTask, row.id, row.is_checked, noteValue);
-                    } catch(e) {}
+                    // sub-task: parts[4] === 'sub'
+                    if (parts[4] === 'sub') {
+                        _deferredSubTasks.push({ row, noteValue });
+                    } else {
+                        const planB64 = parts[2];
+                        const taskB64 = parts[3];
+                        try {
+                            const decodedTask = decodeURIComponent(escape(atob(taskB64)));
+                            buildPlanTaskDOM(planB64, decodedTask, row.id, row.is_checked, noteValue);
+                        } catch(e) {}
+                    }
                 }
                 else {
                     const box = document.getElementById(row.id);
@@ -53,6 +59,25 @@ async function syncLatestCloudState() {
                 }
 
                 if(row.is_checked && row.id && !row.id.startsWith('plan_card_')) { toggleNoteLock(row.id, true); }
+            });
+
+            // Second pass: render sub-tasks after all parent tasks are created
+            _deferredSubTasks.forEach(function(item) {
+                const row = item.row, noteValue = item.noteValue;
+                const parts = row.id.split('_');
+                const planB64   = parts[2];
+                const parentB64 = parts[3];
+                // parts[4] === 'sub', parts[5] = subB64
+                const subB64 = parts[5];
+                if (!subB64) return;
+                try {
+                    const decodedSub = decodeURIComponent(escape(atob(subB64)));
+                    const parentId   = 'plan_task_' + planB64 + '_' + parentB64;
+                    buildSubTaskRow(planB64, parentId, decodedSub, row.id, row.is_checked, noteValue);
+                    // Also expand the parent's sub-task area
+                    const area = document.getElementById('plan-starea-' + parentId);
+                    if (area) area.style.display = '';
+                } catch(e) {}
             });
         }
 

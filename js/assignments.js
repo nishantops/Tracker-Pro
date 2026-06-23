@@ -128,6 +128,10 @@ async function eraseCustomNode(id, btnElement) {
                 await dbClient.from('upsc_custom_plans').delete().eq('plan_id', planId).eq('user_id', currentUserId);
                 await dbClient.from('upsc_tracker_progress').delete().like('id', `plan_task_${planId}_%`).eq('user_id', currentUserId);
                 await dbClient.from('upsc_tracker_progress').delete().eq('id', `plan_card_${planId}`).eq('user_id', currentUserId);
+            } else if (id.startsWith('plan_task_')) {
+                // Also delete sub-tasks of this task
+                await dbClient.from('upsc_tracker_progress').delete().eq('id', id).eq('user_id', currentUserId);
+                await dbClient.from('upsc_tracker_progress').delete().like('id', id + '_sub_%').eq('user_id', currentUserId);
             } else {
                 await dbClient.from('upsc_tracker_progress').delete().eq('id', id).eq('user_id', currentUserId);
             }
