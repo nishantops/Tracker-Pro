@@ -149,6 +149,7 @@
                 <!-- Profile dropdown menu -->
                 <div id="profile-menu" class="profile-menu hidden" style="position:absolute; top:70px; left:16px;">
                     <button onclick="openProfileEdit()">✏️ Update Profile</button>
+                    <button onclick="openSWManager()">💡 Strengths &amp; Weaknesses</button>
                     <button onclick="openNotifSettings()">🔔 Notification Settings</button>
                     <button onclick="handleLogout()">⏻ Sign Out</button>
                 </div>
@@ -297,10 +298,35 @@
                 </div>
             </div>
 
+            <!-- ── STRENGTHS & WEAKNESSES WIDGET ─────────────────────── -->
+            <div id="sw-widget" class="sw-widget hidden neo-card rounded-3xl p-5">
+                <div class="sw-widget-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span style="font-size:1rem;">💡</span>
+                        <span class="sw-widget-title">My UPSC Profile</span>
+                        <label class="sw-visibility-toggle" title="Show/hide on homepage">
+                            <input type="checkbox" id="sw-homepage-toggle" checked onchange="swToggleHomepage(this.checked)">
+                            <span class="sw-vis-slider"></span>
+                        </label>
+                        <span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);">visible on homepage</span>
+                    </div>
+                    <button class="sw-manage-btn" onclick="openSWManager()">✎ Manage</button>
+                </div>
+                <div class="sw-columns">
+                    <div class="sw-col">
+                        <div class="sw-col-head sw-col-head-strength">💪 Strengths</div>
+                        <div class="sw-chips-row" id="sw-chips-strengths"></div>
+                    </div>
+                    <div class="sw-col">
+                        <div class="sw-col-head sw-col-head-weakness">⚠️ Weaknesses</div>
+                        <div class="sw-chips-row" id="sw-chips-weaknesses"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="neo-card rounded-3xl p-6">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
-                    <h3 class="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>
-                    <button onclick="openCustomTopicModal()" class="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-violet-500/20 font-mono btn-vibrant">+ ADD CUSTOM TOPIC</button>
+                    <h3 class="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">SECTIONAL PIE COMPLETION MATRIX</h3>                    <button onclick="openCustomTopicModal()" class="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-violet-500/20 font-mono btn-vibrant">+ ADD CUSTOM TOPIC</button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div class="pie-card-dark p-3 rounded-2xl flex items-center gap-3 transition hover:shadow-md"><div id="pie-p1" class="pie-chart-frame bg-slate-700"></div><div><div class="pie-label text-[10px] font-bold font-mono tracking-wide uppercase flex items-center gap-1.5">Prelims P1 <span id="lbl-p1" class="px-1.5 py-0.5 rounded text-[9px]">0%</span></div><div class="pie-title text-xs sm:text-sm font-black mt-0.5 leading-tight">GS Paper I</div></div></div>
@@ -869,6 +895,40 @@
         </div>
     </div>
 
+    <!-- ── STRENGTHS & WEAKNESSES MANAGER MODAL ───────────────────────── -->
+    <div id="sw-manager-modal" class="hidden fixed inset-0 z-[9700] bg-slate-900/70 backdrop-blur-md flex items-start justify-center p-4" style="overflow-y:auto;" onclick="if(event.target===this)closeSWManager()">
+        <div class="sw-manager-card" style="margin:auto;">
+            <div class="sw-manager-header">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:1.1rem;">💡</span>
+                    <span style="font-size:0.95rem;font-weight:900;font-family:var(--heading);">Strengths &amp; Weaknesses</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <label class="sw-visibility-toggle" title="Show widget on homepage" style="display:flex;align-items:center;gap:0.4rem;">
+                        <input type="checkbox" id="sw-homepage-toggle-modal" onchange="swToggleHomepage(this.checked)">
+                        <span class="sw-vis-slider"></span>
+                        <span style="font-size:0.62rem;color:var(--t3);font-family:var(--mono);">show on homepage</span>
+                    </label>
+                    <button onclick="closeSWManager()" style="background:rgba(100,116,139,0.2);border:1px solid rgba(100,116,139,0.3);color:var(--t2);border-radius:0.5rem;padding:0.3rem 0.65rem;font-size:0.7rem;font-weight:700;cursor:pointer;">✕ Close</button>
+                </div>
+            </div>
+
+            <!-- Add new item -->
+            <div class="sw-add-row">
+                <select id="sw-new-type" class="sw-add-select">
+                    <option value="strength">💪 Strength</option>
+                    <option value="weakness">⚠️ Weakness</option>
+                </select>
+                <input id="sw-new-text" type="text" class="sw-add-input" placeholder="Describe it in a few words… (e.g. 'Strong essay writing', 'Economy weak')" maxlength="120" onkeydown="if(event.key==='Enter')swAddItem()">
+                <button class="sw-add-btn" onclick="swAddItem()">+ Add</button>
+            </div>
+            <div id="sw-add-error" class="sw-add-error" style="display:none;"></div>
+
+            <!-- List -->
+            <div id="sw-manager-list" class="sw-manager-list"></div>
+        </div>
+    </div>
+
     <!-- Modular JS (order matters: app.js defines globals, then modules use them) -->
     <script src="js/app.js?v=4"></script>
     <script src="js/tracker.js?v=3"></script>
@@ -879,6 +939,7 @@
     <script src="js/pyq.js?v=3"></script>
     <script src="js/trends.js?v=1"></script>
     <script src="js/profile.js?v=1"></script>
+    <script src="js/sw.js?v=1"></script>
     <script src="js/plantable.js?v=1"></script>
     <script src="js/notifications.js?v=1"></script>
     <script src="js/focus.js?v=5"></script>

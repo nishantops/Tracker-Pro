@@ -59,6 +59,7 @@ async function showApp(knownEmail) {
         startSessionBadge();
         initFocusMode();
         setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
+        setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
         return;
     }
 
@@ -76,6 +77,7 @@ async function showApp(knownEmail) {
         startSessionBadge();
         initFocusMode();
         setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
+        setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
         return;
     }
 
@@ -97,6 +99,7 @@ async function showApp(knownEmail) {
     startSessionBadge();
     initFocusMode();
     setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
+    setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
 }
 
 function applyProfileToUI(profile) {
