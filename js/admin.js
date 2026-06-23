@@ -252,8 +252,8 @@ async function openUserModal(userId) {
         document.getElementById('um-study-hrs').textContent = Math.round(hrs * 10) / 10 + ' hrs';
     } catch(e) { document.getElementById('um-study-hrs').textContent = '—'; }
 
-    // Feature toggles
-    var feats = u.features_enabled || { focus: true, plans: true, ai_chat: true, pyq: true, sources: true };
+    // Feature toggles — ai_chat OFF by default for all users
+    var feats = u.features_enabled || { focus: true, plans: true, ai_chat: false, pyq: true, sources: true };
     var featLabels = { focus: '⏱ Focus', plans: '📅 Plans', ai_chat: '🤖 AI Chat', pyq: '📖 PYQ', sources: '📚 Sources' };
     var featHtml = Object.entries(featLabels).map(function(pair) {
         var key = pair[0], label = pair[1];
@@ -332,7 +332,7 @@ async function adminToggleLock() {
 async function adminSaveFeature(key, value) {
     if (!adminCurrentUser) return;
     var u    = adminCurrentUser;
-    var feats = Object.assign({}, u.features_enabled || { focus: true, plans: true, ai_chat: true, pyq: true, sources: true });
+    var feats = Object.assign({}, u.features_enabled || { focus: true, plans: true, ai_chat: false, pyq: true, sources: true });
     feats[key] = value;
     try {
         await adminClient.from('upsc_user_profiles').update({ features_enabled: feats }).eq('user_id', u.user_id);

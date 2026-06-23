@@ -239,6 +239,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await dbClient.auth.getSession();
     if (session) {
         currentUserId = session.user.id;
+
+        // ── Lock check (covers OAuth/Google redirect + session restore) ──────
+        if (!isSuperuser(session.user.email)) {
+            try {
+                const lockRes = await dbClient.from('upsc_user_profiles')
+                    .select('is_locked,locked_reason,is_admin').eq('user_id', currentUserId).maybeSingle();
+                if (lockRes.data && lockRes.data.is_locked) {
+                    await dbClient.auth.signOut();
+                    currentUserId = null;
+                    const errEl = document.getElementById('auth-error');
+                    errEl.style.display = 'block';
+                    errEl.textContent = '🔒 Account locked' + (lockRes.data.locked_reason ? ': ' + lockRes.data.locked_reason : '. Contact admin.');
+                    return;
+                }
+                if (lockRes.data && lockRes.data.is_admin) {
+                    window.location.href = 'admin.html';
+                    return;
+                }
+            } catch(e) { /* non-critical — proceed */ }
+        }
+
         await recordSession(session.user.email || session.user.phone);
         showApp(session.user.email);
         // Lazy auto-logout check (non-blocking)

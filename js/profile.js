@@ -29,6 +29,11 @@ function openProfileEdit() {
                 if (custInput) custInput.value = savedProfile.optional_subject_custom || savedProfile.optional_subject;
             }
         }
+        // Pre-populate phone
+        if (savedProfile.phone) {
+            var phoneEl = document.getElementById('setup-phone');
+            if (phoneEl) phoneEl.value = savedProfile.phone;
+        }
     } catch(e) {}
     document.getElementById('setup-submit-btn').innerHTML = '💾 Update Profile';
 }
@@ -44,7 +49,7 @@ async function showApp(knownEmail) {
 
     // Superuser bypasses profile setup entirely
     if (isSuperuser(userEmail)) {
-        applyProfileToUI({ display_name: 'Sanit', age: null, attempt: null });
+        applyProfileToUI({ display_name: 'Sanit', age: null, attempt: null, features_enabled: SUPERUSER_FEATURES });
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('profile-setup-screen').style.display = 'none';
         document.getElementById('app-container').classList.remove('hidden');
@@ -185,52 +190,72 @@ function applyOptionalSubjectLabels(optText) {
     }
 }
 
+// Default features for new users — ai_chat OFF until admin enables it
+var DEFAULT_FEATURES = { focus: true, plans: true, ai_chat: false, pyq: true, sources: true };
+// Superuser always gets everything
+var SUPERUSER_FEATURES = { focus: true, plans: true, ai_chat: true, pyq: true, sources: true };
+
 function applyFeatureGates(features) {
-    if (!features) return;
+    // Merge with defaults so missing keys behave correctly
+    var f = Object.assign({}, DEFAULT_FEATURES, features || {});
     // Focus mode
     var focusWidget = document.getElementById('focus-mode-widget');
-    if (focusWidget) focusWidget.style.display = features.focus === false ? 'none' : '';
+    if (focusWidget) focusWidget.style.display = f.focus === false ? 'none' : '';
     // Plans tab
     var plansTab = document.querySelector('[onclick*="plans"]');
-    if (plansTab) plansTab.style.display = features.plans === false ? 'none' : '';
-    // AI Chat
+    if (plansTab) plansTab.style.display = f.plans === false ? 'none' : '';
+    // AI Chat fab
     var aiFab = document.getElementById('ai-chat-fab');
-    if (aiFab) aiFab.style.display = features.ai_chat === false ? 'none' : '';
+    if (aiFab) aiFab.style.display = f.ai_chat === false ? 'none' : '';
+    var aiPanel = document.getElementById('ai-chat-panel');
+    if (aiPanel && f.ai_chat === false) aiPanel.classList.add('hidden');
     // PYQ tab
     var pyqTab = document.querySelector('[onclick*="pyq"]');
-    if (pyqTab) pyqTab.style.display = features.pyq === false ? 'none' : '';
+    if (pyqTab) pyqTab.style.display = f.pyq === false ? 'none' : '';
     // Sources tab
     var srcTab = document.querySelector('[onclick*="sources"]');
-    if (srcTab) srcTab.style.display = features.sources === false ? 'none' : '';
+    if (srcTab) srcTab.style.display = f.sources === false ? 'none' : '';
 }
 
 function handleProfileSetup() {
-    const nameInput = document.getElementById('setup-name');
-    const ageInput = document.getElementById('setup-age');
+    const nameInput    = document.getElementById('setup-name');
+    const ageInput     = document.getElementById('setup-age');
     const attemptInput = document.getElementById('setup-attempt');
+    const phoneInput   = document.getElementById('setup-phone');
 
-    const name = nameInput.value.trim();
-    const age = parseInt(ageInput.value);
+    const name    = nameInput.value.trim();
+    const age     = parseInt(ageInput.value);
     const attempt = parseInt(attemptInput.value);
+    const phone   = phoneInput ? phoneInput.value.trim() : '';
 
     document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
     document.querySelectorAll('#profile-setup-screen input').forEach(el => el.classList.remove('input-error'));
 
     let hasError = false;
 
-    if (!name || name.length < 2) {
+    // Name: 2-50 chars, letters/spaces only
+    if (!name || name.length < 2 || !/^[A-Za-z][A-Za-z\s\.'-]{1,49}$/.test(name)) {
         document.getElementById('err-name').style.display = 'block';
+        document.getElementById('err-name').textContent = 'Enter a valid full name (letters, spaces, . \' - only; min 2 chars)';
         nameInput.classList.add('input-error');
         hasError = true;
     }
+    // Age: 16-45
     if (!age || age < 16 || age > 45) {
         document.getElementById('err-age').style.display = 'block';
         ageInput.classList.add('input-error');
         hasError = true;
     }
+    // Attempt: 1-10
     if (!attempt || attempt < 1 || attempt > 10) {
         document.getElementById('err-attempt').style.display = 'block';
         attemptInput.classList.add('input-error');
+        hasError = true;
+    }
+    // Phone: optional, but if provided must be valid 10-digit Indian mobile (starts with 6-9)
+    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+        document.getElementById('err-phone').style.display = 'block';
+        if (phoneInput) phoneInput.classList.add('input-error');
         hasError = true;
     }
 
@@ -245,8 +270,8 @@ function handleProfileSetup() {
     btn.style.opacity = '0.6';
     btn.textContent = '✨ Setting up...';
 
-    saveUserProfile(name, age, attempt, optSubject, optCustom).then(() => {
-        const profile = { display_name: name, age, attempt, optional_subject: optSubject, optional_subject_custom: optCustom };
+    saveUserProfile(name, age, attempt, optSubject, optCustom, phone).then(() => {
+        const profile = { display_name: name, age, attempt, optional_subject: optSubject, optional_subject_custom: optCustom, phone: phone || '' };
         localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(profile));
         applyProfileToUI(profile);
         document.getElementById('profile-setup-screen').style.display = 'none';
@@ -267,7 +292,7 @@ async function getUserProfile() {
     return null;
 }
 
-async function saveUserProfile(name, age, attempt, optSubject, optCustom) {
+async function saveUserProfile(name, age, attempt, optSubject, optCustom, phone) {
     if (!dbClient || !currentUserId) return;
     try {
         const { data: { session } } = await dbClient.auth.getSession();
@@ -278,6 +303,7 @@ async function saveUserProfile(name, age, attempt, optSubject, optCustom) {
             age: age,
             attempt: attempt,
             email: email,
+            phone: phone || null,
             optional_subject: optSubject || 'none',
             optional_subject_custom: optCustom || ''
         }, { onConflict: 'user_id' });
@@ -287,7 +313,13 @@ async function saveUserProfile(name, age, attempt, optSubject, optCustom) {
 // Profile setup Enter key navigation
 document.getElementById('setup-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('setup-age').focus(); });
 document.getElementById('setup-age').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('setup-attempt').focus(); });
-document.getElementById('setup-attempt').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleProfileSetup(); });
+document.getElementById('setup-attempt').addEventListener('keydown', (e) => { if (e.key === 'Enter') { var ph = document.getElementById('setup-phone'); ph ? ph.focus() : handleProfileSetup(); } });
+document.getElementById('setup-phone') && document.getElementById('setup-phone').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleProfileSetup(); });
 document.querySelectorAll('#profile-setup-screen input').forEach(input => {
-    input.addEventListener('input', () => { input.classList.remove('input-error'); input.nextElementSibling.style.display = 'none'; });
+    input.addEventListener('input', () => {
+        input.classList.remove('input-error');
+        if (input.nextElementSibling && input.nextElementSibling.classList.contains('field-error')) {
+            input.nextElementSibling.style.display = 'none';
+        }
+    });
 });

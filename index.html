@@ -93,6 +93,12 @@
             </div>
 
             <div class="setup-field-group">
+                <label><span class="field-icon">📱</span> Mobile Number <span style="font-size:0.65rem;font-weight:600;color:#94a3b8;">(optional)</span></label>
+                <input type="tel" id="setup-phone" placeholder="e.g. 9876543210" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
+                <div class="field-error" id="err-phone">Enter a valid 10-digit Indian mobile number</div>
+            </div>
+
+            <div class="setup-field-group">
                 <label><span class="field-icon">📖</span> Optional Subject <span style="font-size:0.65rem;font-weight:600;color:#94a3b8;">(optional)</span></label>
                 <select id="setup-optional" onchange="var v=this.value;var c=document.getElementById('setup-optional-custom-wrap');if(c)c.style.display=v==='custom'?'block':'none';">
                     <option value="none">-- Select Optional Subject --</option>
