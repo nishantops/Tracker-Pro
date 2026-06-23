@@ -4,38 +4,158 @@
 
 function openProfileEdit() {
     document.getElementById('profile-menu').classList.add('hidden');
-    if (currentUserId) localStorage.removeItem('upsc_profile_' + currentUserId);
-    document.getElementById('app-container').classList.add('hidden');
-    document.getElementById('profile-setup-screen').style.display = 'flex';
-    const name = document.getElementById('user-display-name').textContent;
-    const age = document.getElementById('user-age-text').textContent;
-    const attempt = document.getElementById('user-attempt-text').textContent;
-    if (name && name !== 'User') document.getElementById('setup-name').value = name;
-    if (age && age !== '--') document.getElementById('setup-age').value = age;
-    if (attempt && attempt !== '--') document.getElementById('setup-attempt').value = attempt;
-    // Pre-populate optional subject
+    openProfileModal();
+}
+
+function openProfileModal() {
+    var modal = document.getElementById('profile-modal-full');
+    if (!modal) return;
+
+    // Load from cache
+    var profile = {};
     try {
-        var savedProfile = currentUserId ? JSON.parse(localStorage.getItem('upsc_profile_' + currentUserId) || '{}') : {};
-        var optSel = document.getElementById('setup-optional');
-        if (optSel && savedProfile.optional_subject) {
-            var knownOpts = ['Anthropology','Geography','Public Administration','Sociology','History','Political Science & IR','Philosophy','Law'];
-            if (knownOpts.indexOf(savedProfile.optional_subject) !== -1) {
-                optSel.value = savedProfile.optional_subject;
-            } else if (savedProfile.optional_subject !== 'none') {
-                optSel.value = 'custom';
-                var custWrap = document.getElementById('setup-optional-custom-wrap');
-                if (custWrap) custWrap.style.display = 'block';
-                var custInput = document.getElementById('setup-optional-custom');
-                if (custInput) custInput.value = savedProfile.optional_subject_custom || savedProfile.optional_subject;
-            }
-        }
-        // Pre-populate phone
-        if (savedProfile.phone) {
-            var phoneEl = document.getElementById('setup-phone');
-            if (phoneEl) phoneEl.value = savedProfile.phone;
-        }
+        var cached = currentUserId ? localStorage.getItem('upsc_profile_' + currentUserId) : null;
+        if (cached) profile = JSON.parse(cached);
     } catch(e) {}
-    document.getElementById('setup-submit-btn').innerHTML = '💾 Update Profile';
+
+    // Fill personal fields
+    document.getElementById('pm-name').value = profile.display_name || '';
+    document.getElementById('pm-age').value = profile.age || '';
+    document.getElementById('pm-attempt').value = profile.attempt || '';
+    document.getElementById('pm-phone').value = profile.phone || '';
+
+    // Avatar preview
+    var name = profile.display_name || 'U';
+    var initials = name.split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+    var avatarEl = document.getElementById('pm-avatar-preview');
+    if (avatarEl) avatarEl.textContent = initials;
+
+    // Optional subject
+    var knownOpts = ['Anthropology','Geography','Public Administration','Sociology','History','Political Science & IR','Philosophy','Law'];
+    var optSel = document.getElementById('pm-optional');
+    var custWrap = document.getElementById('pm-optional-custom-wrap');
+    var custInput = document.getElementById('pm-optional-custom');
+    if (optSel) {
+        if (!profile.optional_subject || profile.optional_subject === 'none') {
+            optSel.value = 'none';
+            if (custWrap) custWrap.style.display = 'none';
+        } else if (knownOpts.indexOf(profile.optional_subject) !== -1) {
+            optSel.value = profile.optional_subject;
+            if (custWrap) custWrap.style.display = 'none';
+        } else {
+            optSel.value = 'custom';
+            if (custWrap) custWrap.style.display = 'block';
+            if (custInput) custInput.value = profile.optional_subject_custom || profile.optional_subject;
+        }
+    }
+
+    // Email (async)
+    var emailEl = document.getElementById('pm-email-display');
+    if (emailEl) {
+        emailEl.textContent = profile.email || '—';
+        if (!profile.email) {
+            try {
+                dbClient.auth.getSession().then(function(r) {
+                    if (r.data && r.data.session) emailEl.textContent = r.data.session.user.email || '—';
+                });
+            } catch(e) {}
+        }
+    }
+
+    // Member since
+    var sinceEl = document.getElementById('pm-since-display');
+    if (sinceEl && profile.created_at) {
+        sinceEl.textContent = 'Member since ' + new Date(profile.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } else if (sinceEl) {
+        sinceEl.textContent = '';
+    }
+
+    // S&W section
+    if (typeof renderSWInProfileModal === 'function') renderSWInProfileModal();
+    var pmSWToggle = document.getElementById('pm-sw-homepage-toggle');
+    if (pmSWToggle && typeof _swData !== 'undefined') pmSWToggle.checked = !!_swData.show_sw;
+
+    // Clear validation errors
+    document.querySelectorAll('.pm-err').forEach(function(e) { e.style.display = 'none'; });
+    document.querySelectorAll('#profile-modal-full input, #profile-modal-full select').forEach(function(el) {
+        el.classList.remove('input-error');
+    });
+
+    modal.classList.remove('hidden');
+    setTimeout(function() { var n = document.getElementById('pm-name'); if (n) n.focus(); }, 50);
+}
+
+function closeProfileModal() {
+    var modal = document.getElementById('profile-modal-full');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function saveProfileModal() {
+    var nameEl    = document.getElementById('pm-name');
+    var ageEl     = document.getElementById('pm-age');
+    var attemptEl = document.getElementById('pm-attempt');
+    var phoneEl   = document.getElementById('pm-phone');
+
+    var name    = nameEl.value.trim();
+    var age     = parseInt(ageEl.value);
+    var attempt = parseInt(attemptEl.value);
+    var phone   = phoneEl.value.trim();
+
+    // Clear errors
+    document.querySelectorAll('.pm-err').forEach(function(e) { e.style.display = 'none'; });
+    var hasError = false;
+
+    if (!name || name.length < 2 || !/^[A-Za-z][A-Za-z\s\.'-]{1,49}$/.test(name)) {
+        document.getElementById('pm-err-name').style.display = 'block';
+        nameEl.focus();
+        hasError = true;
+    }
+    if (!age || age < 16 || age > 45) {
+        document.getElementById('pm-err-age').style.display = 'block';
+        hasError = true;
+    }
+    if (!attempt || attempt < 1 || attempt > 10) {
+        document.getElementById('pm-err-attempt').style.display = 'block';
+        hasError = true;
+    }
+    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+        document.getElementById('pm-err-phone').style.display = 'block';
+        hasError = true;
+    }
+    if (hasError) return;
+
+    var optSel    = document.getElementById('pm-optional');
+    var optSubject = optSel ? optSel.value : 'none';
+    var optCustom  = '';
+    if (optSubject === 'custom') {
+        var custEl = document.getElementById('pm-optional-custom');
+        optCustom = custEl ? custEl.value.trim() : '';
+    }
+
+    var btn = document.getElementById('pm-save-btn');
+    btn.disabled = true;
+    btn.textContent = '✨ Saving…';
+
+    try {
+        await saveUserProfile(name, age, attempt, optSubject, optCustom, phone);
+        // Merge with existing cache to preserve features_enabled, created_at etc.
+        var existingCache = {};
+        try { existingCache = JSON.parse(localStorage.getItem('upsc_profile_' + currentUserId) || '{}'); } catch(e) {}
+        var updatedProfile = Object.assign({}, existingCache, {
+            display_name: name, age: age, attempt: attempt,
+            optional_subject: optSubject, optional_subject_custom: optCustom,
+            phone: phone || ''
+        });
+        localStorage.setItem('upsc_profile_' + currentUserId, JSON.stringify(updatedProfile));
+        applyProfileToUI(updatedProfile);
+        closeProfileModal();
+        if (typeof showToast === 'function') showToast('Profile updated ✓', 'success');
+    } catch(e) {
+        if (typeof showToast === 'function') showToast('Failed to save. Please try again.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Save Profile';
+    }
 }
 
 async function showApp(knownEmail) {
@@ -326,3 +446,9 @@ document.querySelectorAll('#profile-setup-screen input').forEach(input => {
         }
     });
 });
+
+// Profile modal Enter key navigation
+document.getElementById('pm-name').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('pm-age').focus(); });
+document.getElementById('pm-age').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('pm-attempt').focus(); });
+document.getElementById('pm-attempt').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('pm-phone').focus(); });
+document.getElementById('pm-phone').addEventListener('keydown', function(e) { if (e.key === 'Enter') saveProfileModal(); });

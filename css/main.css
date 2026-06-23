@@ -1814,3 +1814,223 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 [data-theme="light"] .sw-chip-strength { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.4); color: #15803d; }
 [data-theme="light"] .sw-chip-weakness { background: rgba(234,88,12,0.1); border-color: rgba(234,88,12,0.4); color: #c2410c; }
 
+/* ── Profile Edit Modal ─────────────────────────────────────────────────── */
+.pm-card {
+    background: var(--bg2);
+    border: 1px solid var(--bdr);
+    border-radius: 1.5rem;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent1) transparent;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.15);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.pm-card::-webkit-scrollbar { width: 4px; }
+.pm-card::-webkit-scrollbar-thumb { background: var(--accent1); border-radius: 2px; }
+.pm-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--bdr);
+    position: sticky;
+    top: 0;
+    background: var(--bg2);
+    z-index: 2;
+}
+.pm-avatar-big {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #7c3aed, #db2777, #f97316);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: -0.05em;
+}
+.pm-meta-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--t1);
+    font-family: var(--heading);
+    line-height: 1.2;
+}
+.pm-meta-email {
+    font-size: 0.75rem;
+    color: var(--t3);
+    font-family: var(--mono);
+    margin-top: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pm-meta-since {
+    font-size: 0.68rem;
+    color: var(--t3);
+    margin-top: 0.1rem;
+}
+.pm-close-btn {
+    margin-left: auto;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.2);
+    color: var(--t2);
+    border-radius: 0.6rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.pm-close-btn:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+.pm-section {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--bdr);
+}
+.pm-section-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent1);
+    margin-bottom: 1rem;
+    font-family: var(--mono);
+}
+.pm-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.pm-section-title-row .pm-section-title { margin-bottom: 0; }
+.pm-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1rem;
+}
+@media (max-width: 480px) { .pm-grid-2 { grid-template-columns: 1fr; } }
+.pm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.pm-field label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t2);
+    font-family: var(--mono);
+}
+.pm-field input, .pm-field select {
+    background: var(--bg3);
+    border: 1px solid var(--bdr);
+    border-radius: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    color: var(--t1);
+    font-size: 0.875rem;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pm-field input:focus, .pm-field select:focus {
+    outline: none;
+    border-color: var(--accent1);
+    box-shadow: 0 0 0 2px rgba(139,92,246,0.15);
+}
+.pm-field select option { background: var(--bg2); color: var(--t1); }
+.pm-optional-label {
+    font-size: 0.65rem;
+    color: var(--t3);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 0.25rem;
+}
+.pm-err {
+    font-size: 0.68rem;
+    color: #f87171;
+    display: none;
+    margin-top: 0.1rem;
+}
+.pm-sw-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+.pm-sw-toggle-label {
+    font-size: 0.7rem;
+    color: var(--t2);
+    font-weight: 600;
+    white-space: nowrap;
+    font-family: var(--mono);
+}
+.pm-actions {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border-top: 1px solid var(--bdr);
+    background: var(--bg2);
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+}
+.pm-btn-cancel {
+    background: transparent;
+    border: 1px solid var(--bdr);
+    color: var(--t2);
+    padding: 0.55rem 1.25rem;
+    border-radius: 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.pm-btn-cancel:hover { border-color: var(--t2); color: var(--t1); }
+.pm-btn-save {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    border: none;
+    color: #fff;
+    padding: 0.55rem 1.5rem;
+    border-radius: 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(124,58,237,0.35);
+    transition: opacity 0.15s;
+    font-family: var(--heading);
+}
+.pm-btn-save:hover { opacity: 0.9; }
+.pm-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Light mode overrides */
+[data-theme="light"] .pm-card { background: #f5f5f7; }
+[data-theme="light"] .pm-header { background: #f5f5f7; }
+[data-theme="light"] .pm-actions { background: #f5f5f7; }
+[data-theme="light"] .pm-field input, [data-theme="light"] .pm-field select {
+    background: #fff;
+    border-color: #d1d5db;
+    color: #1a1a2e;
+}
+[data-theme="light"] .pm-field input:focus, [data-theme="light"] .pm-field select:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124,58,237,0.12);
+}
+[data-theme="light"] .pm-meta-title { color: #1a1a2e; }

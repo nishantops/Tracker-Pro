@@ -92,29 +92,39 @@ function renderSWWidget() {
     if (toggle) toggle.checked = !!_swData.show_sw;
 }
 
-// ── Render manager modal list ─────────────────────────────────────────────
-function renderSWManagerList() {
-    var el = document.getElementById('sw-manager-list');
+// ── Generic list renderer (used by both manager modal and profile modal) ─────
+function _renderSWList(containerId, prefix) {
+    var el = document.getElementById(containerId);
     if (!el) return;
     var allItems = _swData.strengths.map(function(i) { return Object.assign({}, i, { type: 'strength' }); })
         .concat(_swData.weaknesses.map(function(i) { return Object.assign({}, i, { type: 'weakness' }); }));
     if (allItems.length === 0) {
-        el.innerHTML = '<div class="sw-empty">No items yet. Add your first strength or weakness below.</div>';
+        el.innerHTML = '<div class="sw-empty">No items yet. Add your first strength or weakness above.</div>';
         return;
     }
     el.innerHTML = allItems.map(function(item) {
         var tag = item.type === 'strength'
             ? '<span class="sw-type-tag sw-type-strength">💪 Strength</span>'
             : '<span class="sw-type-tag sw-type-weakness">⚠️ Weakness</span>';
-        return '<div class="sw-manager-row" id="sw-row-' + escSW(item.id) + '">'
+        return '<div class="sw-manager-row" id="' + prefix + '-row-' + escSW(item.id) + '">'
             + tag
-            + '<span class="sw-manager-text" id="sw-text-' + escSW(item.id) + '">' + escSW(item.text) + '</span>'
+            + '<span class="sw-manager-text" id="' + prefix + '-text-' + escSW(item.id) + '">' + escSW(item.text) + '</span>'
             + '<div class="sw-manager-actions">'
-            + '<button class="sw-mgr-btn sw-mgr-edit" onclick="swStartEditRow(\'' + escSW(item.id) + '\',\'' + item.type + '\')" title="Edit">✎</button>'
+            + '<button class="sw-mgr-btn sw-mgr-edit" onclick="swStartEditRow(\'' + escSW(item.id) + '\',\'' + item.type + '\',\'' + prefix + '\')" title="Edit">✎</button>'
             + '<button class="sw-mgr-btn sw-mgr-del" onclick="swDeleteItem(\'' + escSW(item.id) + '\',\'' + item.type + '\')" title="Delete">🗑</button>'
             + '</div>'
             + '</div>';
     }).join('');
+}
+
+function renderSWManagerList() {
+    _renderSWList('sw-manager-list', 'sw');
+}
+
+function renderSWInProfileModal() {
+    _renderSWList('pm-sw-list', 'pm-sw');
+    var toggle = document.getElementById('pm-sw-homepage-toggle');
+    if (toggle) toggle.checked = !!_swData.show_sw;
 }
 
 // ── Open / close manager ──────────────────────────────────────────────────
@@ -161,6 +171,32 @@ function swAddItem() {
     textEl.value = '';
     _swDebounceSave();
     renderSWManagerList();
+    renderSWInProfileModal();
+    renderSWWidget();
+    if (typeof showToast === 'function') showToast('Added to ' + type + 's ✓', 'success');
+}
+
+// ── Add item from profile modal ───────────────────────────────────────────
+function pmSwAddItem() {
+    var textEl = document.getElementById('pm-sw-text');
+    var typeEl = document.getElementById('pm-sw-type');
+    var errEl  = document.getElementById('pm-sw-error');
+    var text = textEl.value.trim();
+    var type = typeEl.value;
+    errEl.style.display = 'none';
+
+    if (!text) { errEl.textContent = 'Please enter a description.'; errEl.style.display = 'block'; textEl.focus(); return; }
+    if (text.length > 120) { errEl.textContent = 'Max 120 characters allowed.'; errEl.style.display = 'block'; return; }
+    if (text.length < 2) { errEl.textContent = 'Min 2 characters required.'; errEl.style.display = 'block'; return; }
+
+    var item = { id: type[0] + '_' + Date.now(), text: text, ts: Date.now() };
+    if (type === 'strength') { _swData.strengths.push(item); }
+    else { _swData.weaknesses.push(item); }
+
+    textEl.value = '';
+    _swDebounceSave();
+    renderSWManagerList();
+    renderSWInProfileModal();
     renderSWWidget();
     if (typeof showToast === 'function') showToast('Added to ' + type + 's ✓', 'success');
 }
@@ -174,13 +210,15 @@ function swDeleteItem(id, type) {
     }
     _swDebounceSave();
     renderSWManagerList();
+    renderSWInProfileModal();
     renderSWWidget();
 }
 
-// ── Inline edit (manager row) ─────────────────────────────────────────────
-function swStartEditRow(id, type) {
-    var row = document.getElementById('sw-row-' + id);
-    var textSpan = document.getElementById('sw-text-' + id);
+// ── Inline edit (accepts prefix: 'sw' for manager modal, 'pm-sw' for profile modal) ─
+function swStartEditRow(id, type, prefix) {
+    prefix = prefix || 'sw';
+    var row = document.getElementById(prefix + '-row-' + id);
+    var textSpan = document.getElementById(prefix + '-text-' + id);
     if (!row || !textSpan) return;
 
     var current = textSpan.textContent;
@@ -200,6 +238,7 @@ function swStartEditRow(id, type) {
         if (item) item.text = newText;
         _swDebounceSave();
         renderSWManagerList();
+        renderSWInProfileModal();
         renderSWWidget();
     };
     input.addEventListener('blur', commit);
@@ -223,11 +262,13 @@ function swToggleHomepage(checked) {
     renderSWWidget();
 }
 
-// ── ESC to close manager modal ────────────────────────────────────────────
+// ── ESC to close manager modal or profile modal ───────────────────────────
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        var modal = document.getElementById('sw-manager-modal');
-        if (modal && !modal.classList.contains('hidden')) { closeSWManager(); }
+        var swModal = document.getElementById('sw-manager-modal');
+        if (swModal && !swModal.classList.contains('hidden')) { closeSWManager(); return; }
+        var pmModal = document.getElementById('profile-modal-full');
+        if (pmModal && !pmModal.classList.contains('hidden')) { closeProfileModal(); return; }
     }
 });
 
