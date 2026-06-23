@@ -141,27 +141,17 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
     // ── HIDDEN DETAIL DOM (moved into drawer when opened) ──────────────────
     var detailHtml =
         '<div id="plan_detail_' + encodedName + '" class="plan-detail-data" style="display:none;">'
-        // Note pane
-        + '<div id="plan-pane-note-' + encodedName + '" class="plan-detail-pane" style="display:none;padding:0.25rem 0;">'
-        +   '<textarea id="note-plan_card_' + encodedName + '" oninput="debouncedSync(\'plan_card_' + encodedName + '\')" rows="5" placeholder="Master strategy / goals for this plan\u2026" '
-        +   'style="width:100%;background:var(--inp);border:1px solid var(--bdr);color:var(--t2);border-radius:0.75rem;padding:0.75rem 1rem;font-size:0.8rem;font-family:var(--mono);resize:vertical;outline:none;box-sizing:border-box;" '
-        +   'onfocus="this.style.borderColor=\'var(--bdr-h)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea>'
-        + '</div>'
-        // Tasks pane
+        // Hidden note storage (drawer reads/writes this; never shown here)
+        + '<textarea id="note-plan_card_' + encodedName + '" oninput="debouncedSync(\'plan_card_' + encodedName + '\')" style="display:none;"></textarea>'
+        // Tasks pane (the ONLY content — task rows ARE the table)
         + '<div id="plan-pane-tasks-' + encodedName + '" class="plan-detail-pane">'
         +   '<div id="target-list-' + encodedName + '" class="space-y-2 mb-3"></div>'
         +   '<button onclick="addPlanTaskPrompt(\'' + encodedName + '\')" class="ptask-add-btn" id="ptask-add-btn-' + encodedName + '">'
-        +     '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Add Sub-Target'
+        +     '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Add Row'
         +   '</button>'
         + '</div>'
-        // Table pane
-        + '<div id="plan-pane-table-' + encodedName + '" class="plan-detail-pane" style="display:none;">'
-        +   '<div id="plan-table-container-' + encodedName + '" class="pt-container">'
-        +     '<div class="pt-loading">Loading table\u2026</div>'
-        +   '</div>'
-        + '</div>'
-        // Hidden pie element (for calculatePlanPies backward compat)
-        + '<div id="pie-plan-' + encodedName + '" class="pie-chart-frame" style="display:none;width:2.5rem;height:2.5rem;background:var(--surf);"></div>'
+        // Hidden pie anchor (calculatePlanPies uses this id)
+        + '<div id="pie-plan-' + encodedName + '" style="display:none;"></div>'
         + '</div>';
 
     var wrapperHtml = '<div id="plan_card_wrapper_' + encodedName + '" class="plan-card-wrapper">'
@@ -238,21 +228,29 @@ function openPlanDrawer(encodedName) {
     var hasTasks = targetList && Array.from(targetList.children).some(function(c) { return c.classList.contains('plan-trow'); });
     if (!hasTasks && plan.startDate && plan.endDate) {
         var days = Math.ceil((new Date(plan.endDate + 'T00:00:00') - new Date(plan.startDate + 'T00:00:00')) / 86400000) + 1;
+        // Determine best auto-mode based on date span
+        var autoMode, autoLabel, autoDesc;
+        if (days > 60) {
+            autoMode  = 'monthly';
+            autoLabel = '\ud83d\udcc5 Monthly \u2192 Weekly structure';
+            autoDesc  = days + ' days: months as rows, weeks as sub-rows';
+        } else if (days > 13) {
+            autoMode  = 'weekly';
+            autoLabel = '\ud83d\udcc5 Weekly \u2192 Daily structure';
+            autoDesc  = days + ' days: weeks as rows, days as sub-rows';
+        } else {
+            autoMode  = 'daily';
+            autoLabel = '\ud83d\udcc5 Generate Daily rows';
+            autoDesc  = days + ' day' + (days !== 1 ? 's' : '') + ': one row per day';
+        }
         var autoHtml = '<div id="plan-auto-setup" class="plan-auto-setup">'
             + '<div class="plan-auto-setup-label">\u26a1 Quick Setup \u2014 '
-            + days + ' day' + (days !== 1 ? 's' : '') + ' ('
-            + formatPlanDate(plan.startDate) + ' \u2192 ' + formatPlanDate(plan.endDate) + ')</div>'
-            + '<div class="plan-auto-setup-btns">';
-        if (days > 13) {
-            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'weekly\')">&#128197; Generate Weekly Slots</button>';
-        }
-        if (days <= 60) {
-            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'daily\')">&#128197; Generate Daily Tasks</button>';
-        }
-        if (days > 60) {
-            autoHtml += '<button class="plan-auto-btn" onclick="generateAutoTasks(\'' + encodedName + '\',\'monthly\')">&#128197; Generate Monthly Slots</button>';
-        }
-        autoHtml += '</div></div>';
+            + (plan.startDate ? formatPlanDate(plan.startDate) : '?') + ' \u2192 ' + (plan.endDate ? formatPlanDate(plan.endDate) : '?')
+            + '</div>'
+            + '<div class="plan-auto-desc">' + autoDesc + '</div>'
+            + '<div class="plan-auto-setup-btns">'
+            + '<button class="plan-auto-btn plan-auto-btn-primary" onclick="generateAutoTasks(\'' + encodedName + '\',\'' + autoMode + '\')">' + autoLabel + '</button>'
+            + '</div></div>';
         drawerBody.insertAdjacentHTML('beforeend', autoHtml);
     }
 
@@ -655,46 +653,86 @@ function generateAutoTasks(enc, mode) {
     if (!plan || !plan.startDate || !plan.endDate) return;
     var start = new Date(plan.startDate + 'T00:00:00');
     var end   = new Date(plan.endDate   + 'T00:00:00');
-    var days  = Math.ceil((end - start) / 86400000) + 1;
-    var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    var tasks = [];
+    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // ── Helpers ──────────────────────────────────────────────────────────
+    function encText(t) { return btoa(unescape(encodeURIComponent(t))); }
+    function addTask(text) {
+        var id = 'plan_task_' + enc + '_' + encText(text);
+        buildPlanTaskDOM(enc, text, id, false, '');
+        handleSyncAction(id);
+        return id;
+    }
+    function addSub(parentId, text) {
+        var parentB64 = parentId.replace('plan_task_' + enc + '_', '');
+        var subId = 'plan_task_' + enc + '_' + parentB64 + '_sub_' + encText(text);
+        buildSubTaskRow(enc, parentId, text, subId, false, '');
+        handleSyncAction(subId);
+        // Auto-open the sub-task area so rows are visible immediately
+        var stArea = document.getElementById('plan-stask-area-' + parentId);
+        if (stArea) stArea.style.display = '';
+        var stBtn = document.getElementById('plan-stoggle-' + parentId);
+        if (stBtn) stBtn.classList.add('open');
+        return subId;
+    }
+    function fmtDay(d) {
+        return dayNames[d.getDay()] + ' ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    }
+    function fmtRange(d1, d2) {
+        return d1.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+             + ' \u2013 '
+             + d2.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    }
+
+    // ── Mode: monthly → weekly sub-tasks per month ───────────────────────
     if (mode === 'monthly') {
         var d = new Date(start.getFullYear(), start.getMonth(), 1);
         var mNum = 1;
         while (d <= end) {
             var mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
             if (mEnd > end) mEnd = new Date(end);
-            tasks.push('Month ' + mNum + ' (' + d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) + ')');
-            d.setMonth(d.getMonth() + 1); mNum++;
+            var mText = 'Month ' + mNum + ' (' + d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) + ')';
+            var mId = addTask(mText);
+            // Weekly sub-tasks within this month
+            var wStart = new Date(d < start ? start : d);
+            var wNum = 1;
+            while (wStart <= mEnd) {
+                var wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+                if (wEnd > mEnd) wEnd = new Date(mEnd);
+                addSub(mId, 'Wk ' + wNum + ' (' + fmtRange(wStart, wEnd) + ')');
+                wStart.setDate(wStart.getDate() + 7);
+                wNum++;
+            }
+            d.setMonth(d.getMonth() + 1);
+            mNum++;
         }
+
+    // ── Mode: weekly → daily sub-tasks per week ──────────────────────────
     } else if (mode === 'weekly') {
         var wStart = new Date(start);
         var wNum = 1;
         while (wStart <= end) {
             var wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
             if (wEnd > end) wEnd = new Date(end);
-            tasks.push('Week ' + wNum + ' ('
-                + wStart.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                + ' \u2013 '
-                + wEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                + ')');
-            wStart.setDate(wStart.getDate() + 7); wNum++;
+            var wId = addTask('Week ' + wNum + ' (' + fmtRange(wStart, wEnd) + ')');
+            // Daily sub-tasks for this week
+            var dayD = new Date(wStart);
+            while (dayD <= wEnd) {
+                addSub(wId, fmtDay(dayD));
+                dayD.setDate(dayD.getDate() + 1);
+            }
+            wStart.setDate(wStart.getDate() + 7);
+            wNum++;
         }
-    } else { // daily
+
+    // ── Mode: daily → just day rows, no further sub-tasks ───────────────
+    } else {
         var d = new Date(start);
         while (d <= end) {
-            tasks.push(dayNames[d.getDay()] + ' ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+            addTask(fmtDay(d));
             d.setDate(d.getDate() + 1);
         }
     }
-
-    tasks.forEach(function(taskText) {
-        var taskEnc = btoa(unescape(encodeURIComponent(taskText)));
-        var fullId  = 'plan_task_' + enc + '_' + taskEnc;
-        buildPlanTaskDOM(enc, taskText, fullId, false, '');
-        handleSyncAction(fullId);
-    });
 
     var autoSetup = document.getElementById('plan-auto-setup');
     if (autoSetup) autoSetup.style.display = 'none';
