@@ -2087,3 +2087,152 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
     box-shadow: 0 0 0 2px rgba(124,58,237,0.12);
 }
 [data-theme="light"] .pm-meta-title { color: #1a1a2e; }
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE · TABLET · LAPTOP
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Notif panel: prevent overflow on narrow screens ───────── */
+@media (max-width: 479px) {
+  #notif-panel {
+    width: calc(100vw - 1rem) !important;
+    right: 0.5rem !important;
+    left: 0.5rem !important;
+  }
+}
+@media (min-width: 480px) and (max-width: 639px) {
+  #notif-panel {
+    width: calc(100vw - 2rem) !important;
+    right: 1rem !important;
+  }
+}
+
+/* ── Header: compact on small phones ───────────────────────── */
+/* Hide date widget below sm (640px) */
+@media (max-width: 639px) {
+  #header-date-widget { display: none !important; }
+}
+/* Hide focus mode widget below md (768px) */
+@media (max-width: 767px) {
+  #focus-mode-widget { display: none !important; }
+}
+/* Hide "⚙ SETTINGS" text label, keep avatar icon */
+@media (max-width: 639px) {
+  .header-settings-text { display: none !important; }
+}
+/* Hide profile stat badges below sm */
+@media (max-width: 639px) {
+  #user-age-badge, #user-attempt-badge, #user-optional-badge { display: none !important; }
+}
+/* Tighten header inner padding on mobile */
+@media (max-width: 479px) {
+  header .max-w-7xl { padding-left: 0.75rem !important; padding-right: 0.75rem !important; gap: 0.5rem !important; }
+  header .flex.items-center.gap-2 { gap: 0.35rem !important; }
+}
+
+/* ── Countdown cards on mobile ──────────────────────────────── */
+@media (max-width: 479px) {
+  /* Allow smaller countdown number font on tiny screens */
+  #prelims-countdown-live,
+  #mains-countdown-live { font-size: 2.25rem !important; }
+  /* Absorption ring: shrink on tiny cards to avoid clipping */
+  .absorption-ring { width: 110px !important; height: 110px !important; right: -14px !important; top: -14px !important; }
+}
+
+/* ── SW widget: chip text overflow on mobile ────────────────── */
+.sw-chip {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+/* sw-rails already goes 1-col below 540px (existing rule).
+   Also ensure chips don't overflow their container. */
+.sw-chips-row {
+  overflow-x: hidden;
+}
+
+/* ── SW widget inline (below xl): cap width ────────────────── */
+@media (max-width: 1279px) {
+  #sw-widget {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* ── view-marathon sidebar: activate earlier on lg screens ─── */
+/* Promote to sidebar grid at lg (1024px) instead of xl (1280px)
+   for wider laptops that don't reach 1280px */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  #view-marathon {
+    display: grid;
+    grid-template-columns: 1fr 16rem;
+    column-gap: 1.25rem;
+    row-gap: 1.75rem;
+    align-items: start;
+  }
+  #view-marathon > * { margin-top: 0 !important; grid-column: 1; }
+  #sw-widget {
+    grid-column: 2 !important;
+    grid-row: 1 / span 20;
+    position: sticky;
+    top: 5.5rem;
+    max-height: calc(100vh - 6.5rem);
+    overflow-y: auto;
+    margin: 0 !important;
+  }
+}
+
+/* ── Profile modal: full-screen on small phones ─────────────── */
+@media (max-width: 639px) {
+  #profile-modal-full {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .pm-card {
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    border-radius: 1.25rem 1.25rem 0 0 !important;
+  }
+  .pm-header, .pm-section { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .pm-actions { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .pm-meta-email { font-size: 0.65rem !important; }
+}
+
+/* ── SW Manager modal: full-screen on small phones ──────────── */
+@media (max-width: 639px) {
+  #sw-manager-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .sw-manager-card {
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    border-radius: 1.25rem 1.25rem 0 0 !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ── Toast container on mobile ──────────────────────────────── */
+@media (max-width: 479px) {
+  #toast-container {
+    bottom: 1rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    align-items: center;
+  }
+  .toast { max-width: 100%; }
+}
+
+/* ── General overflow guards ────────────────────────────────── */
+/* Ensure no child of view-marathon causes horizontal scroll */
+#view-marathon > * { max-width: 100%; overflow-x: hidden; }
+/* Tab panels */
+.root-pane-view, .root-pane-view * { max-width: 100%; }
+/* PYQ search row: allow wrapping on mobile */
+@media (max-width: 639px) {
+  .pyq-search-row { flex-wrap: wrap !important; }
+}
+/* Main container padding on mobile */
+@media (max-width: 479px) {
+  main > .max-w-7xl { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+}
