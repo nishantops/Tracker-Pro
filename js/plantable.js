@@ -12,6 +12,8 @@ var PT_DEFAULT_COLS = [
 var _ptCache      = {};   // { planId: [sheet, …] }
 var _ptSaveTimers = {};   // debounce timers
 var _ptZoom       = {};   // { planId: 1.0 }
+var _ptFsPlanId   = null; // planId currently open in fullscreen
+var _ptFsSheetIdx = 0;    // sheet index currently shown in fullscreen
 
 // ── Load ──────────────────────────────────────────────────────────────────
 async function loadPlanTables(planId) {
@@ -278,6 +280,10 @@ function ptAddRow(planId, sheetIdx) {
     sheet.rows_data.push({ id: 'r_' + Date.now(), cells: cells });
     var wrap = document.getElementById('pt-wrap-' + planId);
     if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
+        var fsWrap = document.getElementById('pt-fs-wrap');
+        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    }
     ptDebounce(planId, sheetIdx);
 }
 
@@ -288,6 +294,10 @@ function ptDelRow(planId, sheetIdx, rowIdx) {
     sheet.rows_data.splice(parseInt(rowIdx), 1);
     var wrap = document.getElementById('pt-wrap-' + planId);
     if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
+        var fsWrap = document.getElementById('pt-fs-wrap');
+        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    }
     ptDebounce(planId, sheetIdx);
 }
 
@@ -300,6 +310,10 @@ function ptAddCol(planId, sheetIdx) {
     sheet.rows_data.forEach(function(row) { row.cells[colId] = ''; });
     var wrap = document.getElementById('pt-wrap-' + planId);
     if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
+        var fsWrap = document.getElementById('pt-fs-wrap');
+        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    }
     ptDebounce(planId, sheetIdx);
 }
 
@@ -314,6 +328,10 @@ function ptDelCol(planId, sheetIdx, colId) {
     sheet.rows_data.forEach(function(row) { delete row.cells[colId]; });
     var wrap = document.getElementById('pt-wrap-' + planId);
     if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
+        var fsWrap = document.getElementById('pt-fs-wrap');
+        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
+    }
     ptDebounce(planId, sheetIdx);
 }
 
@@ -393,6 +411,8 @@ function ptOpenFullscreen(planId) {
     if (!sheets) return;
     var container = document.getElementById('plan-table-container-' + planId);
     var activeIdx = parseInt((container && container.dataset.activeSheet) || '0');
+    _ptFsPlanId   = planId;
+    _ptFsSheetIdx = activeIdx;
 
     var overlay = document.getElementById('pt-fullscreen-overlay');
     if (!overlay) {
@@ -423,6 +443,7 @@ function ptOpenFullscreen(planId) {
 }
 
 function ptFsSwitchSheet(planId, idx, btn) {
+    _ptFsSheetIdx = parseInt(idx);
     var wrap = document.getElementById('pt-fs-wrap');
     if (wrap) wrap.innerHTML = ptRenderSheet(planId, parseInt(idx));
     var bar = btn.parentElement;
@@ -432,4 +453,5 @@ function ptFsSwitchSheet(planId, idx, btn) {
 function ptCloseFullscreen() {
     var overlay = document.getElementById('pt-fullscreen-overlay');
     if (overlay) overlay.style.display = 'none';
+    _ptFsPlanId = null;
 }

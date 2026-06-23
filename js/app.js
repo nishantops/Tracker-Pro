@@ -164,3 +164,65 @@ buildList('box-ts-gs1', dataTS_gs1, 'tg1'); buildList('box-ts-gs2', dataTS_gs2, 
 buildList('box-ts-essay', dataTS_essay, 'te1'); buildList('box-ts-a1', dataTS_a1, 'ta1'); buildList('box-ts-a2', dataTS_a2, 'ta2');
 
 // trackLiveClockTimelines & calculateMetricsHUD called from tracker.js after definitions
+
+// ── Global ESC key handler (industry standard close-all-overlays) ─────────
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+
+    // 1. Fullscreen plan table overlay
+    var fsOverlay = document.getElementById('pt-fullscreen-overlay');
+    if (fsOverlay && fsOverlay.style.display !== 'none') {
+        if (typeof ptCloseFullscreen === 'function') ptCloseFullscreen();
+        return;
+    }
+
+    // 2. Notification settings modal
+    var notifSettingsModal = document.getElementById('notif-settings-modal');
+    if (notifSettingsModal && !notifSettingsModal.classList.contains('hidden')) {
+        if (typeof closeNotifSettings === 'function') closeNotifSettings();
+        return;
+    }
+
+    // 3. Plan creator/editor modal
+    var planModal = document.getElementById('plan-modal');
+    if (planModal && !planModal.classList.contains('hidden')) {
+        if (typeof closePlannerModal === 'function') closePlannerModal();
+        return;
+    }
+
+    // 4. Clear progress modal
+    var clearModal = document.getElementById('clear-modal');
+    if (clearModal && !clearModal.classList.contains('hidden')) {
+        if (typeof closeClearModal === 'function') closeClearModal();
+        return;
+    }
+
+    // 5. AI chat panel
+    var aiPanel = document.getElementById('ai-chat-panel');
+    if (aiPanel && !aiPanel.classList.contains('hidden')) {
+        if (typeof AI_CHAT !== 'undefined' && typeof AI_CHAT.toggle === 'function') AI_CHAT.toggle();
+        return;
+    }
+
+    // 6. Notification panel
+    var notifPanel = document.getElementById('notif-panel');
+    if (notifPanel && !notifPanel.classList.contains('hidden')) {
+        notifPanel.classList.add('hidden');
+        if (typeof _notifPanelOpen !== 'undefined') window._notifPanelOpen = false;
+        return;
+    }
+
+    // 7. Focus panel
+    var focusPanel = document.getElementById('focus-panel');
+    if (focusPanel && !focusPanel.classList.contains('hidden')) {
+        focusPanel.classList.add('hidden');
+        return;
+    }
+
+    // 8. Profile menu
+    var profileMenu = document.getElementById('profile-menu');
+    if (profileMenu && !profileMenu.classList.contains('hidden')) {
+        profileMenu.classList.add('hidden');
+        return;
+    }
+});

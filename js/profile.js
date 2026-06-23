@@ -13,6 +13,23 @@ function openProfileEdit() {
     if (name && name !== 'User') document.getElementById('setup-name').value = name;
     if (age && age !== '--') document.getElementById('setup-age').value = age;
     if (attempt && attempt !== '--') document.getElementById('setup-attempt').value = attempt;
+    // Pre-populate optional subject
+    try {
+        var savedProfile = currentUserId ? JSON.parse(localStorage.getItem('upsc_profile_' + currentUserId) || '{}') : {};
+        var optSel = document.getElementById('setup-optional');
+        if (optSel && savedProfile.optional_subject) {
+            var knownOpts = ['Anthropology','Geography','Public Administration','Sociology','History','Political Science & IR','Philosophy','Law'];
+            if (knownOpts.indexOf(savedProfile.optional_subject) !== -1) {
+                optSel.value = savedProfile.optional_subject;
+            } else if (savedProfile.optional_subject !== 'none') {
+                optSel.value = 'custom';
+                var custWrap = document.getElementById('setup-optional-custom-wrap');
+                if (custWrap) custWrap.style.display = 'block';
+                var custInput = document.getElementById('setup-optional-custom');
+                if (custInput) custInput.value = savedProfile.optional_subject_custom || savedProfile.optional_subject;
+            }
+        }
+    } catch(e) {}
     document.getElementById('setup-submit-btn').innerHTML = '💾 Update Profile';
 }
 
@@ -99,12 +116,73 @@ function applyProfileToUI(profile) {
             optBadge.style.display = 'flex';
             var optSpan = optBadge.querySelector('.optional-badge-chip');
             if (optSpan) optSpan.textContent = optText;
+            applyOptionalSubjectLabels(optText);
         } else {
             optBadge.style.display = 'none';
         }
     }
     // Apply feature toggles from admin RBAC
     applyFeatureGates(profile.features_enabled);
+}
+
+// ── Dynamic optional subject labels ──────────────────────────────────────
+function applyOptionalSubjectLabels(optText) {
+    if (!optText || optText === 'none') optText = 'Optional';
+    var shortName = optText.length > 14 ? optText.substring(0, 12) + '…' : optText;
+
+    // Stage III button
+    var btnStage = document.getElementById('btn-stage-anthro');
+    if (btnStage) btnStage.textContent = 'Stage III: ' + shortName;
+
+    // Panel headings
+    var p1 = document.getElementById('panel-anthro-p1');
+    if (p1) { var h1 = p1.querySelector('h2'); if (h1) h1.textContent = optText + ': Paper I'; }
+    var p2 = document.getElementById('panel-anthro-p2');
+    if (p2) { var h2 = p2.querySelector('h2'); if (h2) h2.textContent = optText + ': Paper II'; }
+
+    // Pie chart labels
+    var pieA1 = document.getElementById('pie-a1');
+    if (pieA1) {
+        var card1 = pieA1.closest ? pieA1.closest('.pie-card-dark') : null;
+        if (card1) {
+            var lbl1 = card1.querySelector('.pie-label');
+            if (lbl1) { var sp1 = lbl1.querySelector('span'); lbl1.textContent = shortName + ' P1 '; if (sp1) lbl1.appendChild(sp1); }
+        }
+    }
+    var pieA2 = document.getElementById('pie-a2');
+    if (pieA2) {
+        var card2 = pieA2.closest ? pieA2.closest('.pie-card-dark') : null;
+        if (card2) {
+            var lbl2 = card2.querySelector('.pie-label');
+            if (lbl2) { var sp2 = lbl2.querySelector('span'); lbl2.textContent = shortName + ' P2 '; if (sp2) lbl2.appendChild(sp2); }
+        }
+    }
+
+    // Add-topic modal dropdown
+    var sel = document.getElementById('modal-select-panel');
+    if (sel) {
+        sel.querySelectorAll('option').forEach(function(opt) {
+            if (opt.value === 'box-anthro-p1') opt.textContent = shortName + ' Paper I';
+            if (opt.value === 'box-anthro-p2') opt.textContent = shortName + ' Paper II';
+            if (opt.value === 'box-anthro-asn') opt.textContent = shortName + ' Assignments';
+        });
+    }
+
+    // If NOT Anthropology, clear pre-populated Anthro syllabus topics
+    // and show a setup guide so users can add their own topics
+    if (optText && optText !== 'Anthropology' && optText !== 'Optional') {
+        var b1 = document.getElementById('box-anthro-p1');
+        var b2 = document.getElementById('box-anthro-p2');
+        var guide = function(label) {
+            return '<div style="text-align:center;padding:2rem 1.5rem;color:var(--t3);border:1px dashed var(--bdr);border-radius:1rem;margin-bottom:0.75rem;">'
+                + '<div style="font-size:1.5rem;margin-bottom:0.5rem">📚</div>'
+                + '<div style="font-size:0.8rem;font-weight:700;color:var(--t2);margin-bottom:0.35rem">' + label + ' — Custom Setup</div>'
+                + '<div style="font-size:0.72rem;line-height:1.6">Add your ' + optText + ' ' + label + ' topics below.<br>Click <strong>+ Custom Topic</strong> to start building your syllabus.</div>'
+                + '</div>';
+        };
+        if (b1) b1.innerHTML = guide('Paper I');
+        if (b2) b2.innerHTML = guide('Paper II');
+    }
 }
 
 function applyFeatureGates(features) {
