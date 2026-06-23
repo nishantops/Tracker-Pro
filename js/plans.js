@@ -855,10 +855,9 @@ function plannerCalToday() {
 
 function plannerCalToggle() {
     var wrap = document.getElementById('planner-cal-wrap');
-    var btn  = document.getElementById('planner-cal-toggle-btn');
-    var grid = document.getElementById('planner-cal-grid');
+    var btn  = document.getElementById('planner-cal-view-btn');
     if (!wrap) return;
     var collapsed = wrap.classList.toggle('planner-cal-collapsed');
-    if (btn) btn.innerHTML = collapsed ? '&#9650;' : '&#9660;';
-    if (btn) btn.title = collapsed ? 'Expand' : 'Collapse';
+    if (btn) btn.classList.toggle('active', !collapsed);
+    if (!collapsed) renderPlannerCal();
 }

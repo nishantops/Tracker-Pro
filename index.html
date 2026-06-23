@@ -753,36 +753,46 @@ Use the toolbar above for bullets, colors and more."></div>
 
             <!-- Master Plan / Gantt subtab -->
             <div id="planner-tab-master" class="planner-subtab hidden">
-                <!-- Mini Calendar -->
-                <div id="planner-cal-wrap" class="planner-cal-wrap">
-                    <div class="planner-cal-header" id="planner-cal-header">
-                        <button class="planner-cal-toggle" onclick="plannerCalToggle()" id="planner-cal-toggle-btn" title="Collapse">&#9660;</button>
-                        <button class="planner-cal-nav" onclick="plannerCalMove(-1)">&#8249;</button>
-                        <span id="planner-cal-title" class="planner-cal-title"></span>
-                        <button class="planner-cal-nav" onclick="plannerCalMove(1)">&#8250;</button>
-                        <button class="planner-cal-today" onclick="plannerCalToday()">Today</button>
-                    </div>
-                    <div id="planner-cal-grid" class="planner-cal-grid"></div>
-                </div>
+
+                <!-- Header row with title, calendar toggle, view buttons -->
                 <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                     <h2 class="heading-font text-2xl font-black" style="color:var(--t1);">Mission Timeline</h2>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 items-center">
+                        <button onclick="plannerCalToggle()" id="planner-cal-view-btn" class="plan-gantt-view-btn" title="Show/hide calendar">&#128197; Calendar</button>
                         <button onclick="renderGanttTimeline('month')" id="gantt-btn-month" class="plan-gantt-view-btn active">Monthly</button>
                         <button onclick="renderGanttTimeline('week')" id="gantt-btn-week" class="plan-gantt-view-btn">Weekly</button>
                     </div>
                 </div>
-                <div id="plan-gantt-container" class="plan-gantt-outer">
-                    <div class="plan-gantt-empty-msg">Loading timeline…</div>
-                </div>
-                <!-- Aggregate Progress Dashboard -->
-                <div id="master-aggregate" class="master-agg-section" style="margin-top:1.75rem;"></div>
-                <!-- Master Spreadsheet -->
-                <div style="margin-top:1.75rem;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                        <h3 class="heading-font font-black text-base" style="color:var(--t1);">&#9635; Master Spreadsheet</h3>
-                        <span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);">Shared planning sheet across all plans</span>
+
+                <!-- Two-column layout: calendar sidebar + gantt -->
+                <div class="master-tab-body">
+                    <!-- Calendar sidebar (hidden by default) -->
+                    <div id="planner-cal-wrap" class="planner-cal-wrap planner-cal-collapsed">
+                        <div class="planner-cal-header">
+                            <button class="planner-cal-nav" onclick="plannerCalMove(-1)">&#8249;</button>
+                            <span id="planner-cal-title" class="planner-cal-title"></span>
+                            <button class="planner-cal-nav" onclick="plannerCalMove(1)">&#8250;</button>
+                            <button class="planner-cal-today" onclick="plannerCalToday()">Today</button>
+                        </div>
+                        <div id="planner-cal-grid" class="planner-cal-grid"></div>
                     </div>
-                    <div id="plan-table-container-master_sheet" class="pt-container"></div>
+
+                    <!-- Gantt + rest of content -->
+                    <div class="master-tab-main">
+                        <div id="plan-gantt-container" class="plan-gantt-outer">
+                            <div class="plan-gantt-empty-msg">Loading timeline…</div>
+                        </div>
+                        <!-- Aggregate Progress Dashboard -->
+                        <div id="master-aggregate" class="master-agg-section" style="margin-top:1.75rem;"></div>
+                        <!-- Master Spreadsheet -->
+                        <div style="margin-top:1.75rem;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                                <h3 class="heading-font font-black text-base" style="color:var(--t1);">&#9635; Master Spreadsheet</h3>
+                                <span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);">Shared planning sheet across all plans</span>
+                            </div>
+                            <div id="plan-table-container-master_sheet" class="pt-container"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
