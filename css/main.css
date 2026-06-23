@@ -1471,6 +1471,27 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
    STRENGTHS & WEAKNESSES – HOMEPAGE WIDGET
    ══════════════════════════════════════════════════════════ */
 
+/* ── xl+ sidebar grid layout: sw-widget becomes sticky right column ── */
+@media (min-width: 1280px) {
+  #view-marathon {
+    display: grid;
+    grid-template-columns: 1fr 17rem;
+    column-gap: 1.5rem;
+    row-gap: 2rem;
+    align-items: start;
+  }
+  #view-marathon > * { margin-top: 0 !important; grid-column: 1; }
+  #sw-widget {
+    grid-column: 2 !important;
+    grid-row: 1 / span 20;
+    position: sticky;
+    top: 5.5rem;
+    max-height: calc(100vh - 6.5rem);
+    overflow-y: auto;
+    margin: 0 !important;
+  }
+}
+
 /* ── S&W Widget — animated gradient border card ─────────────── */
 .sw-widget {
   border-radius: 1.25rem;

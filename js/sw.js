@@ -60,25 +60,24 @@ function renderSWWidget() {
     var widget = document.getElementById('sw-widget');
     if (!widget) return;
 
-    // Never fully hide the widget — keeps the layout stable and the toggle always accessible.
-    // Just dim the rails when show_sw is false.
+    // Properly hide when show_sw is false — widget is in the CSS grid sidebar
+    // so display:none cleanly collapses it without breaking layout
+    if (!_swData.show_sw) {
+        widget.classList.add('hidden');
+        var toggle = document.getElementById('sw-homepage-toggle');
+        if (toggle) toggle.checked = false;
+        return;
+    }
+
     widget.classList.remove('hidden');
 
     // Toggle checkbox sync
     var toggle = document.getElementById('sw-homepage-toggle');
-    if (toggle) toggle.checked = !!_swData.show_sw;
+    if (toggle) toggle.checked = true;
 
-    // Dim rails when hidden from homepage; re-enable when visible
+    // Remove any leftover dim styles
     var rails = widget.querySelector('.sw-rails');
-    if (rails) {
-        if (!_swData.show_sw) {
-            rails.style.opacity = '0.35';
-            rails.style.pointerEvents = 'none';
-        } else {
-            rails.style.opacity = '';
-            rails.style.pointerEvents = '';
-        }
-    }
+    if (rails) { rails.style.opacity = ''; rails.style.pointerEvents = ''; }
 
     // Strengths chips
     var sc = document.getElementById('sw-chips-strengths');
