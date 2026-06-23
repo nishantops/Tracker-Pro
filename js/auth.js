@@ -109,7 +109,7 @@ async function handleGoogleLogin() {
         if (!ensureClient()) throw new Error('Supabase script blocked');
         const { error } = await dbClient.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin + '/upsc-tracker/' }
+            options: { redirectTo: window.location.origin + '/' }
         });
         if (error) throw error;
     } catch(e) {
