@@ -53,6 +53,7 @@ async function startFocusMode() {
         focusSessionId = data.id;
         focusStartTime = new Date(data.started_at).getTime();
         startFocusUI();
+        if (typeof showToast === 'function') showToast('Focus mode started — timer is running', 'focus', 2500);
     } catch(e) {
         showFocusError();
     } finally {
@@ -78,6 +79,10 @@ async function stopFocusMode() {
             .eq('id', sid)
             .eq('user_id', currentUserId);
         await updateFocusTotals();
+        const mins = Math.floor(durationSeconds / 60);
+        const secs = durationSeconds % 60;
+        const label = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        if (typeof showToast === 'function') showToast(`Focus session saved — ${label} studied`, 'success', 3500);
     } catch(e) { /* non-critical, data will be stale but UI is correct */ }
 }
 
