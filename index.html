@@ -307,27 +307,28 @@
             </div>
 
             <!-- ── STRENGTHS & WEAKNESSES WIDGET ─────────────────────── -->
-            <div id="sw-widget" class="sw-widget hidden neo-card rounded-3xl p-5">
-                <div class="sw-widget-header">
-                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                        <span style="font-size:1rem;">💡</span>
-                        <span class="sw-widget-title">My UPSC Profile</span>
-                        <label class="sw-visibility-toggle" title="Show/hide on homepage">
+            <div id="sw-widget" class="sw-widget hidden">
+                <div class="sw-inner">
+                    <div class="sw-widget-header">
+                        <span class="sw-pulse-dot"></span>
+                        <span class="sw-widget-title">MY UPSC PROFILE</span>
+                        <label class="sw-visibility-toggle" title="Show/hide on homepage" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
                             <input type="checkbox" id="sw-homepage-toggle" checked onchange="swToggleHomepage(this.checked)">
                             <span class="sw-vis-slider"></span>
+                            <span style="font-size:0.6rem;color:var(--t3);font-family:var(--mono);white-space:nowrap;">visible on homepage</span>
                         </label>
-                        <span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);">visible on homepage</span>
+                        <button class="sw-manage-btn" onclick="openSWManager()" style="margin-left:auto;">✎ Manage</button>
                     </div>
-                    <button class="sw-manage-btn" onclick="openSWManager()">✎ Manage</button>
-                </div>
-                <div class="sw-columns">
-                    <div class="sw-col">
-                        <div class="sw-col-head sw-col-head-strength">💪 Strengths</div>
-                        <div class="sw-chips-row" id="sw-chips-strengths"></div>
-                    </div>
-                    <div class="sw-col">
-                        <div class="sw-col-head sw-col-head-weakness">⚠️ Weaknesses</div>
-                        <div class="sw-chips-row" id="sw-chips-weaknesses"></div>
+                    <div class="sw-rails">
+                        <div class="sw-rail">
+                            <div class="sw-rail-head sw-rail-head-strength">💪 STRENGTHS</div>
+                            <div class="sw-chips-row" id="sw-chips-strengths"></div>
+                        </div>
+                        <div class="sw-rail-divider"></div>
+                        <div class="sw-rail">
+                            <div class="sw-rail-head sw-rail-head-weakness">⚠️ WEAKNESSES</div>
+                            <div class="sw-chips-row" id="sw-chips-weaknesses"></div>
+                        </div>
                     </div>
                 </div>
             </div>
