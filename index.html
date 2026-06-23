@@ -676,8 +676,23 @@
         <div id="view-planner" class="root-pane-view hidden space-y-8">
             <!-- Planner sub-tabs -->
             <div class="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 bg-gradient-to-r from-emerald-50/80 via-teal-50/80 to-cyan-50/80 rounded-2xl border border-emerald-200/40 shadow-sm">
+                <button onclick="activatePlannerTab('master')" id="btn-planner-master" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500 hover:text-teal-700 hover:bg-white/80 heading-font border border-transparent">📅 Master Plan</button>
                 <button onclick="activatePlannerTab('plans')" id="btn-planner-plans" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 heading-font border border-emerald-500">📋 My Plans</button>
                 <button onclick="activatePlannerTab('sources')" id="btn-planner-sources" class="cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500 hover:text-teal-700 hover:bg-white/80 heading-font border border-transparent">📚 Sources & Links</button>
+            </div>
+
+            <!-- Master Plan / Gantt subtab -->
+            <div id="planner-tab-master" class="planner-subtab hidden">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                    <h2 class="heading-font text-2xl font-black" style="color:var(--t1);">Mission Timeline</h2>
+                    <div class="flex gap-2">
+                        <button onclick="renderGanttTimeline('month')" id="gantt-btn-month" class="plan-gantt-view-btn active">Monthly</button>
+                        <button onclick="renderGanttTimeline('week')" id="gantt-btn-week" class="plan-gantt-view-btn">Weekly</button>
+                    </div>
+                </div>
+                <div id="plan-gantt-container" class="plan-gantt-outer">
+                    <div class="plan-gantt-empty-msg">Loading timeline…</div>
+                </div>
             </div>
 
             <!-- Plans subtab -->
@@ -689,7 +704,12 @@
                     </div>
                     <button onclick="openPlannerModal()" class="cursor-pointer bg-emerald-500 hover:bg-emerald-400 text-white font-black px-6 py-3 rounded-xl transition-all shadow-lg heading-font whitespace-nowrap">+ CREATE NEW PLAN</button>
                 </div>
-                <div id="planner-container" class="space-y-6"></div>
+                <div id="planner-grid" class="planner-card-grid"></div>
+                <div id="planner-empty" class="planner-empty hidden">
+                    <div style="font-size:3rem;margin-bottom:0.75rem;">📋</div>
+                    <p class="heading-font font-bold text-base" style="color:var(--t2);">No Plans Yet</p>
+                    <p style="color:var(--t3);font-size:0.75rem;margin-top:0.25rem;">Click "+ Create New Plan" to build your first strategic plan.</p>
+                </div>
             </div>
 
             <!-- Sources subtab -->
@@ -710,6 +730,34 @@
             </div>
         </div>
     </main>
+
+    <!-- ================================================ -->
+    <!-- PLAN DETAIL DRAWER                               -->
+    <!-- ================================================ -->
+    <div id="plan-drawer-overlay" onclick="closePlanDrawer()" class="hidden fixed inset-0 z-[7000] bg-slate-900/60 backdrop-blur-sm"></div>
+    <div id="plan-drawer" class="fixed top-0 right-0 h-full z-[7001]" style="width:min(520px,100vw);transform:translateX(100%);display:flex;flex-direction:column;transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);">
+        <!-- Drawer Header -->
+        <div id="plan-drawer-header" class="plan-drawer-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem 1rem;border-bottom:1px solid var(--bdr);background:var(--bg2);flex-shrink:0;position:sticky;top:0;z-index:2;">
+            <div style="min-width:0;flex:1;">
+                <div id="plan-drawer-title" style="font-size:1.05rem;font-weight:800;color:var(--t1);font-family:var(--heading);line-height:1.3;word-break:break-word;"></div>
+                <div id="plan-drawer-badges" style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem;"></div>
+                <div id="plan-drawer-dates" style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);margin-top:0.25rem;"></div>
+            </div>
+            <button onclick="closePlanDrawer()" class="plan-drawer-close" title="Close (Esc)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <!-- Drawer Tab Bar -->
+        <div id="plan-drawer-tab-bar" style="display:flex;border-bottom:1px solid var(--bdr);background:var(--bg2);flex-shrink:0;">
+            <button class="plan-drawer-tab active" id="pdt-tasks" onclick="switchDrawerTab('tasks')">✓ Tasks</button>
+            <button class="plan-drawer-tab" id="pdt-table" onclick="switchDrawerTab('table')">⊞ Tables</button>
+            <button class="plan-drawer-tab" id="pdt-note" onclick="switchDrawerTab('note')">✎ Note</button>
+        </div>
+        <!-- Drawer Body -->
+        <div id="plan-drawer-body" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;background:var(--bg2);scrollbar-width:thin;scrollbar-color:var(--accent1) transparent;">
+            <!-- Plan detail DOM will be moved here when drawer opens -->
+        </div>
+    </div>
 
     <!-- CUSTOM TOPIC/TASK MODAL -->
     <div id="custom-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
@@ -832,6 +880,14 @@
                         </select>
                     </div>
                 </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Plan Mode</label>
+                    <select id="modal-plan-content" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
+                        <option value="both">✓ Tasks + ⊞ Tables</option>
+                        <option value="tasks">✓ Tasks Only</option>
+                        <option value="tables">⊞ Tables Only</option>
+                    </select>
+                </div>
                 <!-- Subject field – shows for GS/Optional/Essay and Custom -->
                 <div id="modal-plan-subject-wrap" style="display:none;">
                     <label id="modal-plan-subject-label" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Subject / Topic</label>
@@ -840,6 +896,14 @@
                 <div id="modal-plan-custom-name-wrap" style="display:none;">
                     <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Custom Category Name</label>
                     <input type="text" id="modal-plan-custom-name" placeholder="e.g., Anthropology, Sociology…" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Plan Mode</label>
+                    <select id="modal-plan-content" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
+                        <option value="both">✓ Tasks + ⊞ Tables</option>
+                        <option value="tasks">✓ Tasks Only</option>
+                        <option value="tables">⊞ Tables Only</option>
+                    </select>
                 </div>
                 <div class="flex items-center justify-between" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.75rem;padding:0.65rem 0.9rem;">
                     <span style="font-size:0.72rem;font-weight:700;color:#475569;">🔔 Plan notifications</span>

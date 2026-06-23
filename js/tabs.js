@@ -15,12 +15,14 @@ function activateRootTab(id) {
 function activatePlannerTab(id) {
     document.querySelectorAll('.planner-subtab').forEach(p => p.classList.add('hidden'));
     document.getElementById(`planner-tab-${id}`).classList.remove('hidden');
-    ['plans', 'sources'].forEach(k => {
+    ['master', 'plans', 'sources'].forEach(k => {
         const btn = document.getElementById(`btn-planner-${k}`);
+        if (!btn) return;
         if (k === id) { btn.className = "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 heading-font border border-emerald-500"; }
         else { btn.className = "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500 hover:text-teal-700 hover:bg-white/80 heading-font border border-transparent"; }
     });
     if (id === 'sources') loadSources();
+    if (id === 'master' && typeof renderGanttTimeline === 'function') renderGanttTimeline('month');
 }
 
 function activateMasterTab(id) {
