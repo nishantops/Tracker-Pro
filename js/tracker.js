@@ -7,7 +7,7 @@ async function syncLatestCloudState() {
     try {
         const plansPromise = dbClient.from('upsc_custom_plans').select('*').eq('user_id', currentUserId);
         const progressPromise = dbClient.from('upsc_tracker_progress').select('*').eq('user_id', currentUserId);
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 12s')), 12000));
 
         const [plansRes, progressRes] = await Promise.race([
             Promise.all([plansPromise, progressPromise]),
@@ -92,6 +92,7 @@ async function syncLatestCloudState() {
         calculateMetricsHUD(); calculatePlanPies();
         if (typeof checkPlanNotifications === 'function') checkPlanNotifications();
     } catch(e) {
+        console.error('[Sync] failed:', e && (e.message || e));
         document.getElementById("sync-status-text").innerText = "OFFLINE: DB CONNECTION REJECTED";
         document.getElementById("sync-status-indicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-rose-500";
         if (typeof showToast === 'function') showToast('Sync failed — working offline', 'error');
