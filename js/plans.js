@@ -365,45 +365,34 @@ function renderMasterAggregate() {
         + '<text x="'+pieC+'" y="'+(pieC+4)+'" text-anchor="middle" font-size="11" font-weight="900" fill="var(--t1)" font-family="monospace">'+totalTasks+'</text>'
         + '</svg>';
 
-    // ── Chart 3: Master sheet Done vs Pending summary bars (aggregate across ALL plans+tables)
+    // ── Chart 3: Master sheet Done vs Pending — compact stat chips (inline with row 1)
     var totalPending = totalTasks - doneTasks;
-    var dpMax = Math.max(doneTasks, totalPending) || 1;
-    var dpH = 72, dpBW = 52;
-    var dH = Math.round(doneTasks / dpMax * dpH);
-    var pH = Math.round(totalPending / dpMax * dpH);
-    var dpSvg = '<svg width="160" height="'+(dpH+28)+'" style="overflow:visible;display:block;">'
-        + '<line x1="0" y1="'+dpH+'" x2="160" y2="'+dpH+'" stroke="var(--bdr)" stroke-width="1"/>'
-        + (dH > 0 ? '<rect x="10" y="'+(dpH-dH)+'" width="'+dpBW+'" height="'+dH+'" rx="3" fill="#10b981" opacity="0.85"/>' : '<rect x="10" y="'+(dpH-3)+'" width="'+dpBW+'" height="3" rx="1" fill="rgba(16,185,129,0.2)"/>')
-        + '<text x="'+(10+dpBW/2)+'" y="'+(dpH+12)+'" text-anchor="middle" font-size="8" fill="var(--t2)" font-family="monospace">Done</text>'
-        + '<text x="'+(10+dpBW/2)+'" y="'+(dpH-dH-5)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#10b981" font-family="monospace">'+doneTasks+'</text>'
-        + (pH > 0 ? '<rect x="'+(10+dpBW+16)+'" y="'+(dpH-pH)+'" width="'+dpBW+'" height="'+pH+'" rx="3" fill="#f59e0b" opacity="0.75"/>' : '<rect x="'+(10+dpBW+16)+'" y="'+(dpH-3)+'" width="'+dpBW+'" height="3" rx="1" fill="rgba(245,158,11,0.2)"/>')
-        + '<text x="'+(10+dpBW+16+dpBW/2)+'" y="'+(dpH+12)+'" text-anchor="middle" font-size="8" fill="var(--t2)" font-family="monospace">Pending</text>'
-        + '<text x="'+(10+dpBW+16+dpBW/2)+'" y="'+(dpH-pH-5)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#f59e0b" font-family="monospace">'+totalPending+'</text>'
-        + '<text x="80" y="'+(dpH+25)+'" text-anchor="middle" font-size="7" fill="var(--t3)" font-family="monospace">'+overallPct+'% complete</text>'
-        + '</svg>';
+    var dpChips = '<div style="display:flex;flex-direction:column;gap:0.35rem;min-width:76px;">'
+        + '<div style="font-size:0.6rem;font-weight:800;color:var(--t1);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Overall</div>'
+        + '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:0.45rem;padding:0.35rem 0.5rem;text-align:center;">'
+        +   '<div style="font-size:1.15rem;font-weight:900;color:#10b981;font-family:var(--mono);line-height:1;">'+doneTasks+'</div>'
+        +   '<div style="font-size:0.55rem;color:var(--t3);font-family:var(--mono);margin-top:1px;">\u2713 Done</div>'
+        + '</div>'
+        + '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.22);border-radius:0.45rem;padding:0.35rem 0.5rem;text-align:center;">'
+        +   '<div style="font-size:1.15rem;font-weight:900;color:#f59e0b;font-family:var(--mono);line-height:1;">'+totalPending+'</div>'
+        +   '<div style="font-size:0.55rem;color:var(--t3);font-family:var(--mono);margin-top:1px;">\u25cb Pending</div>'
+        + '</div>'
+        + '<div style="font-size:0.6rem;font-weight:700;color:var(--t2);font-family:var(--mono);text-align:center;padding:0.15rem 0;">'+overallPct+'%</div>'
+        + '</div>';
 
-    el.innerHTML = ''
-        // Row 1: bar chart + pie
-        + '<div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap;">'
-        +   '<div style="flex:1;min-width:220px;">'
+    el.innerHTML = '<div style="display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap;">'
+        +   '<div style="flex:1;min-width:200px;">'
         +     '<div style="font-size:0.72rem;font-weight:800;color:var(--t1);font-family:var(--mono);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.06em;">&#9642; Completion % per Plan</div>'
         +     bars
         +   '</div>'
         +   '<div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;min-width:110px;">'
-        +     '<div style="font-size:0.65rem;font-weight:800;color:var(--t1);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Plan Distribution</div>'
-        +     '<div style="display:flex;align-items:center;gap:0.6rem;">'
+        +     '<div style="font-size:0.6rem;font-weight:800;color:var(--t1);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Plan Distribution</div>'
+        +     '<div style="display:flex;align-items:center;gap:0.5rem;">'
         +       pieSvg
-        +       '<div style="min-width:80px;">' + pieLegend + '</div>'
+        +       '<div style="min-width:76px;">' + pieLegend + '</div>'
         +     '</div>'
         +   '</div>'
-        + '</div>'
-        // Row 2: master sheet done/pending summary
-        + '<div style="margin-top:1rem;border-top:1px solid var(--bdr);padding-top:0.9rem;display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap;">'
-        +   '<div>'
-        +     '<div style="font-size:0.72rem;font-weight:800;color:var(--t1);font-family:var(--mono);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.06em;">&#9636; Master Sheet — Done vs Pending</div>'
-        +     '<div style="font-size:0.62rem;color:var(--t3);font-family:var(--mono);margin-bottom:0.5rem;">Aggregate across all plan tasks &amp; table rows</div>'
-        +     dpSvg
-        +   '</div>'
+        +   dpChips
         + '</div>';
 }
 
