@@ -168,8 +168,8 @@ function stopSessionBadge() {
 // Close profile menu when clicking outside
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('profile-menu');
-    const avatar = document.getElementById('user-avatar');
-    if (menu && !menu.contains(e.target) && !avatar.contains(e.target)) {
+    const settingsBtn = document.getElementById('header-settings-btn');
+    if (menu && settingsBtn && !menu.contains(e.target) && !settingsBtn.contains(e.target)) {
         menu.classList.add('hidden');
     }
 });

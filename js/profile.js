@@ -199,6 +199,11 @@ async function showApp(knownEmail) {
         if (currentUserId) localStorage.removeItem('upsc_profile_' + currentUserId);
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app-container').classList.add('hidden');
+        // Welcome new users with a first-time prompt
+        var setupTitle = document.querySelector('#profile-setup-screen h2');
+        var setupSub   = document.querySelector('#profile-setup-screen h2 + p, #profile-setup-screen .text-center p');
+        if (setupTitle) setupTitle.textContent = 'Welcome! Set Up Your Profile';
+        if (setupSub) setupSub.textContent = 'Just a few details to personalise your UPSC Command Center';
         document.getElementById('profile-setup-screen').style.display = 'flex';
         return;
     }
@@ -223,6 +228,9 @@ function applyProfileToUI(profile) {
     document.getElementById('user-display-name').textContent = name;
     const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     document.getElementById('user-avatar').textContent = initials;
+    // Sync the header settings button initials too
+    var hsa = document.getElementById('header-settings-avatar');
+    if (hsa) hsa.textContent = initials;
     document.title = name + ' \u2022 UPSC CSE Command Center 2027';
 
     if (profile.age) {
