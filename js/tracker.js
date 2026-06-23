@@ -112,6 +112,12 @@ function calculateMetricsHUD() {
     document.getElementById("global-perc-text").innerText = percentage + "%";
     document.getElementById("global-progress-bar").style.width = percentage + "%";
 
+    // Animate SVG ring (circumference of r=66 circle = 2*PI*66 = 414.69)
+    const ring = document.getElementById('global-ring-progress');
+    if (ring) ring.style.strokeDashoffset = (414.69 * (1 - percentage / 100)).toFixed(2);
+    const badge = document.getElementById('global-perc-badge');
+    if (badge) badge.textContent = percentage + '% MATRIX';
+
     const prefixes = ['p1', 'p2', 'gs1', 'gs2', 'gs3', 'gs4', 'a1', 'a2', 'ca'];
     prefixes.forEach(pfx => {
         const secBoxes = document.querySelectorAll(`input[type="checkbox"][id*="-${pfx}-"]`);
@@ -146,6 +152,40 @@ function trackLiveClockTimelines() {
         document.getElementById("mains-countdown-live").innerText = mDate > ms ? Math.floor((mDate - ms) / (1000*60*60*24)) + " Days" : "Executed";
     }
     update(); setInterval(update, 30000);
+}
+
+// ── Clear Progress ────────────────────────────────────────────
+function confirmClearProgress() {
+    const modal = document.getElementById('clear-progress-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+function closeClearModal() {
+    const modal = document.getElementById('clear-progress-modal');
+    if (modal) modal.classList.add('hidden');
+}
+async function clearAllProgress() {
+    closeClearModal();
+    const excludePrefixes = ['plan_','uid-pyq','uid-ts','uid-pq','uid-qg','uid-qa','uid-tp','uid-tg','uid-te','uid-ta'];
+    const syllabusBoxes = Array.from(document.querySelectorAll('input[type="checkbox"]'))
+        .filter(b => !excludePrefixes.some(p => b.id.startsWith(p)));
+
+    syllabusBoxes.forEach(b => {
+        if (b.checked) { b.checked = false; toggleNoteLock(b.id, false); }
+    });
+    calculateMetricsHUD();
+
+    if (dbClient && currentUserId) {
+        try {
+            await dbClient.from('upsc_tracker_progress')
+                .update({ is_checked: false })
+                .eq('user_id', currentUserId);
+            showToast('All syllabus progress reset', 'info', 3000);
+        } catch(e) {
+            showToast('Cleared locally (sync failed)', 'error', 3000);
+        }
+    } else {
+        showToast('Progress cleared locally', 'info', 2500);
+    }
 }
 
 // Initialize (called here after function definitions to avoid script-order issues)

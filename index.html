@@ -148,25 +148,23 @@
       <!-- Header row -->
       <div class="fp-status-row" style="margin-bottom:0.8rem;">
         <div style="display:flex;align-items:center;gap:0.5rem;">
-          <span style="font-size:1rem;">🎯</span>
+          <span style="font-size:1rem;">&#127919;</span>
           <span style="font-weight:800;font-size:0.8rem;color:var(--t1);">Focus Mode</span>
-          <span id="fp-db-badge" class="fp-db-badge">● Cloud sync</span>
+          <span id="fp-db-badge" class="fp-db-badge">Cloud sync</span>
         </div>
-        <button class="fp-close-btn" onclick="closeFocusPanel()">✕</button>
+        <button class="fp-close-btn" onclick="closeFocusPanel()">&#x2715;</button>
       </div>
 
       <!-- Status badge -->
       <div style="margin-bottom:0.6rem;">
-        <span id="fp-status-badge" class="fp-status-badge">○ IDLE</span>
+        <span id="fp-status-badge" class="fp-status-badge">IDLE</span>
       </div>
 
       <!-- Big timer -->
       <div id="fp-big-timer" class="fp-big-timer">00:00:00</div>
 
       <!-- Start/Stop button -->
-      <button id="fp-toggle-btn" class="fp-start-btn" onclick="toggleFocusMode()">▶ START SESSION</button>
-
-      <!-- Stats grid -->
+      <button id="fp-toggle-btn" class="fp-start-btn" onclick="toggleFocusMode()">START SESSION</button>
       <div class="fp-stat-grid">
         <div class="fp-stat">
           <div class="fp-stat-label">Today</div>
@@ -197,11 +195,27 @@
         <div id="view-marathon" class="root-pane-view block space-y-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="neo-card rounded-3xl p-6 border-l-4 border-violet-500 flex flex-col justify-between relative overflow-hidden glow-violet animate-in" style="animation-delay:0.1s;">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full"></div>
+                    <!-- Live SVG progress ring -->
+                    <svg class="absorption-ring" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(139,92,246,0.14)" stroke-width="9"/>
+                      <circle id="global-ring-progress" cx="80" cy="80" r="66" fill="none" stroke="url(#ringGradMain)" stroke-width="9" stroke-linecap="round" stroke-dasharray="414.69" stroke-dashoffset="414.69" transform="rotate(-90 80 80)"/>
+                      <defs>
+                        <linearGradient id="ringGradMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#6366f1"/>
+                          <stop offset="50%" stop-color="#a855f7"/>
+                          <stop offset="100%" stop-color="#ec4899"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <span class="abs-orb abs-orb1"></span>
+                    <span class="abs-orb abs-orb2"></span>
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <h3 class="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">Global Syllabus Absorption</h3>
-                            <span id="global-perc-badge" class="bg-violet-500/20 text-violet-300 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono border border-violet-500/30">0% MATRIX</span>
+                            <div style="display:flex;align-items:center;gap:0.4rem;">
+                              <span id="global-perc-badge" class="bg-violet-500/20 text-violet-300 text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono border border-violet-500/30">0% MATRIX</span>
+                              <button id="clear-progress-btn" onclick="confirmClearProgress()" title="Reset all syllabus progress">&#8635;</button>
+                            </div>
                         </div>
                         <div class="heading-font text-5xl font-black gradient-text-animated tracking-tight my-1" id="global-perc-text">0.0%</div>
                     </div>
@@ -213,7 +227,7 @@
                     </div>
                 </div>
                 <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-amber-400 relative overflow-hidden glow-amber animate-in" style="animation-delay:0.2s;">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full"></div>
+                    <span class="countdown-orb countdown-orb-amber"></span>
                     <div>
                         <span class="text-[10px] uppercase font-bold text-amber-300/80 tracking-widest font-mono block mb-1">Live Target Delta</span>
                         <div class="heading-font text-xl font-black text-amber-100">UPSC CSE Prelims 2027</div>
@@ -222,7 +236,7 @@
                     <div class="mt-6 pt-3 border-t border-amber-500/20 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent tracking-tight" id="prelims-countdown-live">--- Days</div></div>
                 </div>
                 <div class="neo-card rounded-3xl p-6 flex flex-col justify-between border-l-4 border-rose-400 relative overflow-hidden glow-rose animate-in" style="animation-delay:0.3s;">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-full"></div>
+                    <span class="countdown-orb countdown-orb-rose"></span>
                     <div>
                         <span class="text-[10px] uppercase font-bold text-rose-300/80 tracking-widest font-mono block mb-1">Live Target Delta</span>
                         <div class="heading-font text-xl font-black text-rose-100">UPSC CSE Mains Phase 2027</div>
@@ -781,6 +795,20 @@
     </div><!-- END app-container -->
     <div id="ai-chat-fab" onclick="AI_CHAT.toggle()" title="AI Study Assistant">🤖</div>
     <!-- Toast notification container -->
+    <!-- Clear Progress Confirm Modal -->
+    <div id="clear-progress-modal" class="hidden">
+      <div class="modal-backdrop" onclick="closeClearModal()"></div>
+      <div class="modal-card">
+        <div class="modal-icon">&#9888;&#65039;</div>
+        <div class="modal-title">Reset All Syllabus Progress?</div>
+        <div class="modal-desc">This will uncheck all topics across Prelims, Mains and Anthropology. Your notes will be preserved. This cannot be undone.</div>
+        <div class="modal-btns">
+          <button class="modal-cancel" onclick="closeClearModal()">Cancel</button>
+          <button class="modal-confirm" onclick="clearAllProgress()">Yes, Reset</button>
+        </div>
+      </div>
+    </div>
+
     <div id="toast-container"></div>
     <div id="ai-chat-panel" class="hidden">
         <!-- Chat View -->
