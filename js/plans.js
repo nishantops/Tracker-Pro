@@ -782,3 +782,73 @@ function formatPlanDate(dateStr) {
         return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch(e) { return dateStr; }
 }
+
+// ── Planner Mini Calendar ───────────────────────────────────────────────────
+var _calYear = new Date().getFullYear();
+var _calMonth = new Date().getMonth(); // 0-indexed
+
+function renderPlannerCal() {
+    var title = document.getElementById('planner-cal-title');
+    var grid  = document.getElementById('planner-cal-grid');
+    if (!title || !grid) return;
+
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    title.textContent = months[_calMonth] + ' ' + _calYear;
+
+    // Collect all plan date ranges for dot indicators
+    var planDates = {}; // 'YYYY-MM-DD' -> true
+    Object.values(_planDataStore || {}).forEach(function(p) {
+        if (!p.startDate || !p.endDate) return;
+        var s = new Date(p.startDate + 'T00:00:00'), e = new Date(p.endDate + 'T00:00:00');
+        for (var d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+            planDates[d.toISOString().slice(0,10)] = true;
+        }
+    });
+
+    var today = new Date(); today.setHours(0,0,0,0);
+    var first = new Date(_calYear, _calMonth, 1);
+    var startDay = first.getDay(); // 0=Sun
+    var daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+    var daysInPrev  = new Date(_calYear, _calMonth, 0).getDate();
+
+    var days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    var html = days.map(function(d) { return '<div class="planner-cal-day-hdr">' + d + '</div>'; }).join('');
+
+    // Leading blanks
+    for (var i = 0; i < startDay; i++) {
+        var prevDay = daysInPrev - startDay + 1 + i;
+        html += '<div class="planner-cal-cell other-month">' + prevDay + '</div>';
+    }
+    // Current month days
+    for (var d2 = 1; d2 <= daysInMonth; d2++) {
+        var dt = new Date(_calYear, _calMonth, d2);
+        var iso = dt.toISOString().slice(0,10);
+        var cls = 'planner-cal-cell';
+        if (dt.getTime() === today.getTime()) cls += ' today';
+        else if (dt < today) cls += ' past';
+        if (planDates[iso]) cls += ' has-plan';
+        html += '<div class="' + cls + '">' + d2 + '</div>';
+    }
+    // Trailing blanks
+    var total = startDay + daysInMonth;
+    var trailing = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (var t = 1; t <= trailing; t++) {
+        html += '<div class="planner-cal-cell other-month">' + t + '</div>';
+    }
+
+    grid.innerHTML = html;
+}
+
+function plannerCalMove(dir) {
+    _calMonth += dir;
+    if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+    if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+    renderPlannerCal();
+}
+
+function plannerCalToday() {
+    var now = new Date();
+    _calYear  = now.getFullYear();
+    _calMonth = now.getMonth();
+    renderPlannerCal();
+}

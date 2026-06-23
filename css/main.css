@@ -2772,6 +2772,62 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   padding: 1rem 1.25rem;
 }
 
+/* ── Planner Calendar ───────────────────────────────────────── */
+.planner-cal-wrap {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem 0.75rem;
+  margin-bottom: 1.5rem;
+  max-width: 360px;
+}
+.planner-cal-header {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.planner-cal-title {
+  flex: 1; text-align: center; font-size: 0.78rem; font-weight: 900;
+  font-family: var(--heading); color: var(--t1); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.planner-cal-nav {
+  background: none; border: 1px solid var(--bdr); color: var(--t2);
+  border-radius: 0.35rem; width: 1.7rem; height: 1.7rem; font-size: 1rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.planner-cal-nav:hover { background: var(--surf); }
+.planner-cal-today {
+  background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25);
+  color: #818cf8; border-radius: 0.35rem; padding: 0.2rem 0.55rem;
+  font-size: 0.62rem; font-weight: 700; cursor: pointer; font-family: var(--mono);
+}
+.planner-cal-today:hover { background: rgba(99,102,241,0.22); }
+.planner-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.planner-cal-day-hdr {
+  text-align: center; font-size: 0.58rem; font-weight: 700;
+  color: var(--t3); font-family: var(--mono); padding: 0.2rem 0;
+  text-transform: uppercase;
+}
+.planner-cal-cell {
+  text-align: center; font-size: 0.65rem; font-family: var(--mono);
+  color: var(--t2); padding: 0.3rem 0.1rem; border-radius: 0.35rem;
+  cursor: default; line-height: 1.3;
+  transition: background 0.1s;
+}
+.planner-cal-cell.other-month { color: var(--t4); }
+.planner-cal-cell.today {
+  background: rgba(99,102,241,0.18);
+  color: #818cf8; font-weight: 900;
+  box-shadow: inset 0 0 0 1.5px rgba(99,102,241,0.5);
+}
+.planner-cal-cell.has-plan { font-weight: 700; color: #34d399; }
+.planner-cal-cell.has-plan::after {
+  content: ''; display: block; width: 4px; height: 4px;
+  background: #34d399; border-radius: 50%; margin: 1px auto 0;
+}
+.planner-cal-cell:hover:not(.other-month) { background: var(--surf); }
+
 /* ── General overflow guards ────────────────────────────────── */
 /* Ensure no child of view-marathon causes horizontal scroll */
 #view-marathon > * { max-width: 100%; }

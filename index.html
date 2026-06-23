@@ -751,6 +751,16 @@ Use the toolbar above for bullets, colors and more."></div>
 
             <!-- Master Plan / Gantt subtab -->
             <div id="planner-tab-master" class="planner-subtab hidden">
+                <!-- Mini Calendar -->
+                <div id="planner-cal-wrap" class="planner-cal-wrap">
+                    <div class="planner-cal-header">
+                        <button class="planner-cal-nav" onclick="plannerCalMove(-1)">&#8249;</button>
+                        <span id="planner-cal-title" class="planner-cal-title"></span>
+                        <button class="planner-cal-nav" onclick="plannerCalMove(1)">&#8250;</button>
+                        <button class="planner-cal-today" onclick="plannerCalToday()">Today</button>
+                    </div>
+                    <div class="planner-cal-grid" id="planner-cal-grid"></div>
+                </div>
                 <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                     <h2 class="heading-font text-2xl font-black" style="color:var(--t1);">Mission Timeline</h2>
                     <div class="flex gap-2">
@@ -1179,6 +1189,7 @@ Use the toolbar above for bullets, colors and more."></div>
     <script src="js/pyq.js?v=1"></script>
     <script src="js/trends.js?v=1"></script>
     <script src="js/profile.js?v=1"></script>
+    <script src="js/sw.js?v=1"></script>
     <script src="js/notifications.js?v=1"></script>
     <script src="js/focus.js?v=5"></script>
     <script src="js/auth.js?v=3"></script>
