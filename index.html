@@ -252,9 +252,8 @@
         </div>
 
         <div id="view-marathon" class="root-pane-view block space-y-8">
-            <!-- Countdown cards + S&W widget side-by-side on large screens -->
-            <div class="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-stretch">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 4-col grid on desktop: Absorption | Prelims | Mains | S&W Profile -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
                 <div class="neo-card rounded-3xl p-6 border-l-4 border-violet-500 flex flex-col justify-between relative overflow-hidden glow-violet animate-in" style="animation-delay:0.1s;">
                     <!-- Live SVG progress ring -->
                     <svg class="absorption-ring" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -305,35 +304,34 @@
                     </div>
                     <div class="mt-6 pt-3 border-t border-rose-500/20 flex items-baseline justify-between"><div class="text-4xl font-mono font-black bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent tracking-tight" id="mains-countdown-live">--- Days</div></div>
                 </div>
-                </div><!-- end 3-card grid -->
 
-            <!-- ── STRENGTHS & WEAKNESSES WIDGET ─────────────────────── -->
-            <div id="sw-widget" class="sw-widget" style="height:100%">
-                <div class="sw-inner">
-                    <div class="sw-widget-header">
-                        <span class="sw-pulse-dot"></span>
-                        <span class="sw-widget-title">MY UPSC PROFILE</span>
-                        <label class="sw-visibility-toggle" title="Show/hide on homepage" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
-                            <input type="checkbox" id="sw-homepage-toggle" checked onchange="swToggleHomepage(this.checked)">
-                            <span class="sw-vis-slider"></span>
-                            <span style="font-size:0.6rem;color:var(--t3);font-family:var(--mono);white-space:nowrap;">visible on homepage</span>
-                        </label>
-                        <button class="sw-manage-btn" onclick="openSWManager()" style="margin-left:auto;">✎ Manage</button>
-                    </div>
-                    <div class="sw-rails">
-                        <div class="sw-rail">
-                            <div class="sw-rail-head sw-rail-head-strength">💪 STRENGTHS</div>
-                            <div class="sw-chips-row" id="sw-chips-strengths"></div>
+                <!-- ── STRENGTHS & WEAKNESSES WIDGET (4th grid cell) ─── -->
+                <div id="sw-widget" class="sw-widget">
+                    <div class="sw-inner">
+                        <div class="sw-widget-header">
+                            <span class="sw-pulse-dot"></span>
+                            <span class="sw-widget-title">MY UPSC PROFILE</span>
+                            <label class="sw-visibility-toggle" title="Show/hide on homepage" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;">
+                                <input type="checkbox" id="sw-homepage-toggle" checked onchange="swToggleHomepage(this.checked)">
+                                <span class="sw-vis-slider"></span>
+                                <span style="font-size:0.6rem;color:var(--t3);font-family:var(--mono);white-space:nowrap;">visible on homepage</span>
+                            </label>
+                            <button class="sw-manage-btn" onclick="openSWManager()" style="margin-left:auto;">✎ Manage</button>
                         </div>
-                        <div class="sw-rail-divider"></div>
-                        <div class="sw-rail">
-                            <div class="sw-rail-head sw-rail-head-weakness">⚠️ WEAKNESSES</div>
-                            <div class="sw-chips-row" id="sw-chips-weaknesses"></div>
+                        <div class="sw-rails">
+                            <div class="sw-rail">
+                                <div class="sw-rail-head sw-rail-head-strength">💪 STRENGTHS</div>
+                                <div class="sw-chips-row" id="sw-chips-strengths"></div>
+                            </div>
+                            <div class="sw-rail-divider"></div>
+                            <div class="sw-rail">
+                                <div class="sw-rail-head sw-rail-head-weakness">⚠️ WEAKNESSES</div>
+                                <div class="sw-chips-row" id="sw-chips-weaknesses"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            </div><!-- end countdown+sw outer grid -->
 
             <div class="neo-card rounded-3xl p-6">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
