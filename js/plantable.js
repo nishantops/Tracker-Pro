@@ -1,457 +1,69 @@
-﻿// =========================================================================
-// UPSC Tracker – Plan Spreadsheet Module (plantable.js v2)
-// =========================================================================
+﻿// plantable.js v3 - Enhanced Spreadsheet Engine
+var PT_DEFAULT_COLS=[{id:"c_subj",name:"Subject",width:140},{id:"c_dates",name:"Dates",width:160},{id:"c_target",name:"Target",width:200},{id:"c_status",name:"Self Status",width:120},{id:"c_hw",name:"H.W",width:100},{id:"c_remark",name:"Remarks",width:240}];
+var _ptCache={},_ptSaveTimers={},_ptZoom={},_ptFsPlanId=null,_ptFsSheetIdx=0;
+var _ptSelPlan=null,_ptSelSi=0,_ptSel={},_ptSelAnchor=null,_ptDrag=false;
 
-var PT_DEFAULT_COLS = [
-    { id: 'c_week',   name: 'Week / Date',  width: 140 },
-    { id: 'c_target', name: 'Target',        width: 200 },
-    { id: 'c_status', name: 'Self Status',   width: 130 },
-    { id: 'c_remark', name: 'Remarks',       width: 220 }
-];
+function _ptC(r){if(r===null||r===undefined)return{v:""};if(typeof r==="string")return{v:r};return r;}
+function _ptV(r){return _ptC(r).v||"";}
+function _ptTdStyle(r){var c=_ptC(r),s=[];if(c.b)s.push("font-weight:700");if(c.i)s.push("font-style:italic");var td=[];if(c.u)td.push("underline");if(c.sk)td.push("line-through");if(td.length)s.push("text-decoration:"+td.join(" "));if(c.sz)s.push("font-size:"+c.sz+"px");if(c.fg)s.push("color:"+c.fg);if(c.bg)s.push("background:"+c.bg);if(c.al==="c")s.push("text-align:center");else if(c.al==="r")s.push("text-align:right");else if(c.al==="l")s.push("text-align:left");return s.join(";");}
+function _ptGetSi(p){var c=document.getElementById("plan-table-container-"+p);return parseInt((c&&c.dataset.activeSheet)||"0");}
+function _ptEsc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
-var _ptCache      = {};   // { planId: [sheet, …] }
-var _ptSaveTimers = {};   // debounce timers
-var _ptZoom       = {};   // { planId: 1.0 }
-var _ptFsPlanId   = null; // planId currently open in fullscreen
-var _ptFsSheetIdx = 0;    // sheet index currently shown in fullscreen
+async function loadPlanTables(planId){var container=document.getElementById("plan-table-container-"+planId);if(!container)return;if(_ptCache[planId]!==undefined){renderPlanTableUI(planId);return;}container.innerHTML='<div class="pt-loading">Loading\u2026</div>';var sheets=[];if(typeof dbClient!=="undefined"&&typeof currentUserId!=="undefined"&&currentUserId){try{var res=await dbClient.from("upsc_plan_tables").select("*").eq("user_id",currentUserId).eq("plan_id",planId).order("sort_order",{ascending:true});if(!res.error&&res.data)sheets=res.data;}catch(e){console.warn("[PT] load:",e.message);}}if(!sheets.length){try{sheets=JSON.parse(localStorage.getItem("upsc_pt_"+planId)||"[]");}catch(e){}}if(!sheets.length){var def=ptCreateDefaultSheet(planId,"Sheet 1",0);sheets=[def];ptSaveSheet(def,planId);}_ptCache[planId]=sheets;if(_ptZoom[planId]===undefined)_ptZoom[planId]=1.0;renderPlanTableUI(planId);}
 
-// ── Load ──────────────────────────────────────────────────────────────────
-async function loadPlanTables(planId) {
-    var container = document.getElementById('plan-table-container-' + planId);
-    if (!container) return;
-    if (_ptCache[planId] !== undefined) { renderPlanTableUI(planId); return; }
+function ptCreateDefaultSheet(planId,name,order){var cols=PT_DEFAULT_COLS.map(function(c){return{id:c.id,name:c.name,width:c.width};});var rows=[];for(var i=0;i<8;i++){var cells={};cols.forEach(function(c){cells[c.id]={v:""};});rows.push({id:"r_"+Date.now()+"_"+i,cells:cells});}return{id:null,plan_id:planId,sheet_name:name,columns_data:cols,rows_data:rows,sort_order:order};}
 
-    container.innerHTML = '<div class="pt-loading">Loading…</div>';
-    var sheets = [];
+async function ptSaveSheet(sheet,planId){var all=_ptCache[planId]||[sheet];try{localStorage.setItem("upsc_pt_"+planId,JSON.stringify(all));}catch(e){}if(typeof dbClient==="undefined"||!currentUserId)return;try{var payload={user_id:currentUserId,plan_id:planId,sheet_name:sheet.sheet_name,columns_data:sheet.columns_data,rows_data:sheet.rows_data,sort_order:sheet.sort_order||0,updated_at:new Date().toISOString()};if(sheet.id){await dbClient.from("upsc_plan_tables").update(payload).eq("id",sheet.id);}else{var ins=await dbClient.from("upsc_plan_tables").insert(payload).select().single();if(ins.data&&_ptCache[planId]){var idx=_ptCache[planId].indexOf(sheet);if(idx>=0)_ptCache[planId][idx].id=ins.data.id;}}}catch(e){console.warn("[PT] save:",e.message);}}
 
-    if (typeof dbClient !== 'undefined' && typeof currentUserId !== 'undefined' && currentUserId) {
-        try {
-            var res = await dbClient.from('upsc_plan_tables')
-                .select('*').eq('user_id', currentUserId).eq('plan_id', planId)
-                .order('sort_order', { ascending: true });
-            if (!res.error && res.data) sheets = res.data;
-        } catch(e) { console.warn('[PT] DB load:', e.message); }
-    }
+function ptShowStatus(planId,state){["plan-table-container-"+planId,"pt-fullscreen-overlay"].forEach(function(cid){var root=document.getElementById(cid);if(!root)return;var el=root.querySelector("#pt-save-status-"+planId);if(!el)return;if(state==="saving"){el.textContent="Saving\u2026";el.style.color="var(--t4)";}else{el.textContent="\u2713 Saved";el.style.color="#10b981";setTimeout(function(){if(el.textContent==="\u2713 Saved")el.textContent="";},2500);}});}
+function ptDebounce(planId,si){var key=planId+"_"+si;ptShowStatus(planId,"saving");clearTimeout(_ptSaveTimers[key]);_ptSaveTimers[key]=setTimeout(async function(){if(_ptCache[planId]&&_ptCache[planId][si]){await ptSaveSheet(_ptCache[planId][si],planId);ptShowStatus(planId,"saved");}},1200);}
+async function ptManualSave(planId){var si=_ptGetSi(planId);var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return;ptShowStatus(planId,"saving");await ptSaveSheet(sheet,planId);ptShowStatus(planId,"saved");}
+function ptBuildToolbar(planId){var zoom=Math.round((_ptZoom[planId]||1)*100);return'<div class="pt-toolbar2"><div class="pt-tb2-group"><button class="pt-fmt-btn" title="Bold" onclick="ptFmt(\''+planId+'\',\'b\')"><b>B</b></button><button class="pt-fmt-btn" title="Italic" onclick="ptFmt(\''+planId+'\',\'i\')"><i>I</i></button><button class="pt-fmt-btn" title="Underline" onclick="ptFmt(\''+planId+'\',\'u\')"><u>U</u></button><button class="pt-fmt-btn" title="Strike" onclick="ptFmt(\''+planId+'\',\'sk\')"><s>S</s></button></div><span class="pt-tb2-sep"></span><select class="pt-font-size" onchange="ptFmtSz(\''+planId+'\',this.value)" title="Font size"><option value="0">Size</option>'+[10,11,12,13,14,16,18,20,24,28,32].map(function(s){return'<option value="'+s+'">'+s+'</option>';}).join('')+'</select><span class="pt-tb2-sep"></span><div class="pt-tb2-group"><button class="pt-fmt-btn" title="Align Left" onclick="ptFmt(\''+planId+'\',\'al\',\'l\')">&#8676;</button><button class="pt-fmt-btn" title="Center" onclick="ptFmt(\''+planId+'\',\'al\',\'c\')">&#8801;</button><button class="pt-fmt-btn" title="Align Right" onclick="ptFmt(\''+planId+'\',\'al\',\'r\')">&#8677;</button></div><span class="pt-tb2-sep"></span><div class="pt-tb2-group"><label class="pt-clr-btn" title="Text color"><span class="pt-clr-label-fg">A</span><input type="color" value="#e11d48" onchange="ptFmtClr(\''+planId+'\',\'fg\',this.value)" onclick="event.stopPropagation()"></label><label class="pt-clr-btn" title="Fill color"><span class="pt-clr-label-bg">&#9724;</span><input type="color" value="#ffd600" onchange="ptFmtClr(\''+planId+'\',\'bg\',this.value)" onclick="event.stopPropagation()"></label><button class="pt-fmt-btn" title="Clear fill" onclick="ptFmtClr(\''+planId+'\',\'bg\',\'\')">&#8856;</button><button class="pt-fmt-btn" title="Clear text color" onclick="ptFmtClr(\''+planId+'\',\'fg\',\'\')">A&#8856;</button></div><span class="pt-tb2-sep"></span><div class="pt-tb2-group"><button class="pt-fmt-btn" title="Merge cells" onclick="ptMerge(\''+planId+'\')">&#8862; Merge</button><button class="pt-fmt-btn" title="Unmerge" onclick="ptUnmerge(\''+planId+'\')">&#8863; Split</button></div><span class="pt-tb2-sep"></span><div class="pt-tb2-group"><button class="pt-fmt-btn pt-fmt-add" title="Insert row" onclick="ptAddRowAtSel(\''+planId+'\')">+Row</button><button class="pt-fmt-btn pt-fmt-del" title="Delete row" onclick="ptDelRowAtSel(\''+planId+'\')">&#8722;Row</button><button class="pt-fmt-btn pt-fmt-add" title="Add col" onclick="ptAddCol(\''+planId+'\',_ptGetSi(\''+planId+'\'))">+Col</button><button class="pt-fmt-btn pt-fmt-del" title="Del col" onclick="ptDelColAtSel(\''+planId+'\')">&#8722;Col</button></div><span class="pt-tb2-sep"></span><div class="pt-tb2-group"><button class="pt-zoom-btn" onclick="ptZoomOut(\''+planId+'\')">&#8722;</button><span id="pt-zoom-pct-'+planId+'" class="pt-zoom-pct">'+zoom+'%</span><button class="pt-zoom-btn" onclick="ptZoomIn(\''+planId+'\')">+</button><button class="pt-zoom-btn" style="font-size:0.55rem;padding:0 0.4rem" onclick="ptZoomReset(\''+planId+'\')">&#8635;</button></div><div class="pt-tb2-group"><button class="pt-fmt-btn" title="Save" onclick="ptManualSave(\''+planId+'\')">&#128190;</button><span id="pt-save-status-'+planId+'" class="pt-save-status"></span><button class="pt-fmt-btn" title="Fullscreen" onclick="ptOpenFullscreen(\''+planId+'\')">&#9974;</button></div></div>';}
 
-    if (sheets.length === 0) {
-        try { sheets = JSON.parse(localStorage.getItem('upsc_pt_' + planId) || '[]'); } catch(e) {}
-    }
+function renderPlanTableUI(planId){var container=document.getElementById("plan-table-container-"+planId);if(!container)return;var sheets=_ptCache[planId]||[];var si=parseInt(container.dataset.activeSheet||"0");if(si>=sheets.length)si=0;if(_ptZoom[planId]===undefined)_ptZoom[planId]=1.0;var tabs=sheets.map(function(s,i){return'<button class="pt-sheet-tab'+(i===si?" active":"")+'" onclick="ptSwitchSheet(\''+planId+'\','+i+')" ondblclick="ptRenameSheet(\''+planId+'\','+i+',this)">'+_ptEsc(s.sheet_name)+"</button>";}).join('')+'<button class="pt-add-sheet" onclick="ptAddSheet(\''+planId+'\')">+ Sheet</button>';container.innerHTML=ptBuildToolbar(planId)+'<div class="pt-table-wrapper" id="pt-wrap-'+planId+'" style="zoom:'+_ptZoom[planId]+'">'+ptRenderSheet(planId,si)+'</div><div class="pt-sheet-bar">'+tabs+"</div>";container.dataset.activeSheet=si;_ptAttachSel(container,planId,si);}
 
-    if (sheets.length === 0) {
-        var def = ptCreateDefaultSheet(planId, 'Sheet 1', 0);
-        sheets = [def];
-        ptSaveSheet(def, planId);
-    }
+function ptRenderSheet(planId,si){var sheet=_ptCache[planId]&&_ptCache[planId][parseInt(si)];if(!sheet)return'<div class="pt-loading">No sheet</div>';var cols=sheet.columns_data||[],rows=sheet.rows_data||[];si=parseInt(si);var hdr=cols.map(function(c,ci){return'<th class="pt-th" data-ci="'+ci+'" style="min-width:'+(c.width||120)+'px"><span class="pt-col-name" ondblclick="ptStartRenameCol(\''+planId+'\','+si+',\''+c.id+'\',this)">'+_ptEsc(c.name)+"</span>"+'<button class="pt-edit-col" onclick="ptStartRenameColBtn(\''+planId+'\','+si+',\''+c.id+'\',this)">&#9998;</button><button class="pt-del-col" onclick="ptDelCol(\''+planId+'\','+si+',\''+c.id+'\')">\xd7</button></th>';}).join('');var bdy=rows.map(function(row,ri){var tds=cols.map(function(c,ci){var raw=row.cells&&row.cells[c.id]!==undefined?row.cells[c.id]:{v:""};var cell=_ptC(raw);if(cell.mg)return"";var rs=cell.rs||1,cs=cell.cs||1,sty=_ptTdStyle(raw);return'<td class="pt-td" id="ptc-'+planId+"-"+si+"-"+ri+"-"+ci+'" contenteditable="true" '+(rs>1?'rowspan="'+rs+'" ':"")+( cs>1?'colspan="'+cs+'" ':"")+'data-plan="'+planId+'" data-si="'+si+'" data-ri="'+ri+'" data-ci="'+ci+'" data-col="'+c.id+'" '+(sty?'style="'+sty+'"':"")+" oninput=\"ptOnInput(this)\" onblur=\"ptOnBlur(this)\">"+_ptEsc(cell.v)+"</td>";}).join('');return'<tr data-ri="'+ri+'"><td class="pt-td-num">'+(ri+1)+"</td>"+tds+'<td class="pt-td-del"><button onclick="ptDelRow(\''+planId+'\','+si+","+ri+')" title="Del row">\xd7</button></td></tr>';}).join('');return'<table class="pt-table"><thead><tr><th class="pt-th-num">#</th>'+hdr+'<th class="pt-th-add"><button onclick="ptAddCol(\''+planId+'\','+si+')">+col</button></th></tr></thead><tbody>'+bdy+'<tr><td colspan="'+(cols.length+3)+'" class="pt-add-row-cell"><button onclick="ptAddRow(\''+planId+'\','+si+'\')">+ Add Row</button></td></tr></tbody></table>';}
+function _ptAttachSel(container,planId,si){var wrap=container.querySelector(".pt-table-wrapper");if(!wrap)return;wrap.onmousedown=function(e){var td=e.target.closest?e.target.closest("td.pt-td"):null;if(!td)return;var ri=parseInt(td.dataset.ri),ci=parseInt(td.dataset.ci);if(e.shiftKey&&_ptSelAnchor&&_ptSelPlan===planId&&_ptSelSi===si){_ptSel={};var r1=Math.min(_ptSelAnchor.ri,ri),r2=Math.max(_ptSelAnchor.ri,ri),c1=Math.min(_ptSelAnchor.ci,ci),c2=Math.max(_ptSelAnchor.ci,ci);for(var r=r1;r<=r2;r++)for(var c=c1;c<=c2;c++)_ptSel[r+"_"+c]=true;}else{_ptSel={};_ptSel[ri+"_"+ci]=true;_ptSelAnchor={ri:ri,ci:ci};}_ptSelPlan=planId;_ptSelSi=si;_ptDrag=true;_ptHiSel(wrap,planId,si);};wrap.onmousemove=function(e){if(!_ptDrag||_ptSelPlan!==planId)return;var td=e.target.closest?e.target.closest("td.pt-td"):null;if(!td||!_ptSelAnchor)return;var ri=parseInt(td.dataset.ri),ci=parseInt(td.dataset.ci);_ptSel={};var r1=Math.min(_ptSelAnchor.ri,ri),r2=Math.max(_ptSelAnchor.ri,ri),c1=Math.min(_ptSelAnchor.ci,ci),c2=Math.max(_ptSelAnchor.ci,ci);for(var r=r1;r<=r2;r++)for(var c=c1;c<=c2;c++)_ptSel[r+"_"+c]=true;_ptHiSel(wrap,planId,si);};document.addEventListener("mouseup",function(){_ptDrag=false;});}
 
-    _ptCache[planId] = sheets;
-    if (_ptZoom[planId] === undefined) _ptZoom[planId] = 1.0;
-    renderPlanTableUI(planId);
-}
+function _ptHiSel(wrap,planId,si){if(!wrap)return;wrap.querySelectorAll("td.pt-td").forEach(function(td){if(td.dataset.plan!==planId||parseInt(td.dataset.si)!==si)return;td.classList.toggle("pt-selected",!!_ptSel[td.dataset.ri+"_"+td.dataset.ci]);});var fs=document.getElementById("pt-fs-wrap");if(fs&&_ptFsPlanId===planId)fs.querySelectorAll("td.pt-td").forEach(function(td){td.classList.toggle("pt-selected",!!_ptSel[td.dataset.ri+"_"+td.dataset.ci]);});}
 
-function ptCreateDefaultSheet(planId, sheetName, sortOrder) {
-    var cols = PT_DEFAULT_COLS.map(function(c) { return { id: c.id, name: c.name, width: c.width }; });
-    var rows = [];
-    for (var i = 0; i < 5; i++) {
-        var cells = {};
-        cols.forEach(function(c) { cells[c.id] = ''; });
-        rows.push({ id: 'r_' + Date.now() + '_' + i, cells: cells });
-    }
-    return { id: null, plan_id: planId, sheet_name: sheetName,
-             columns_data: cols, rows_data: rows, sort_order: sortOrder };
-}
+function _ptGetSelCells(planId,si){var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return[];return Object.keys(_ptSel).map(function(k){var p=k.split("_");var ri=parseInt(p[0]),ci=parseInt(p[1]);return{ri:ri,ci:ci,col:sheet.columns_data[ci],row:sheet.rows_data[ri]};}).filter(function(x){return x.col&&x.row;});}
 
-async function ptSaveSheet(sheet, planId) {
-    var all = _ptCache[planId] || [sheet];
-    try { localStorage.setItem('upsc_pt_' + planId, JSON.stringify(all)); } catch(e) {}
-    if (typeof dbClient === 'undefined' || typeof currentUserId === 'undefined' || !currentUserId) return;
-    try {
-        var payload = {
-            user_id: currentUserId, plan_id: planId,
-            sheet_name: sheet.sheet_name,
-            columns_data: sheet.columns_data, rows_data: sheet.rows_data,
-            sort_order: sheet.sort_order || 0,
-            updated_at: new Date().toISOString()
-        };
-        if (sheet.id) {
-            await dbClient.from('upsc_plan_tables').update(payload).eq('id', sheet.id);
-        } else {
-            var ins = await dbClient.from('upsc_plan_tables').insert(payload).select().single();
-            if (ins.data && _ptCache[planId]) {
-                var idx = _ptCache[planId].indexOf(sheet);
-                if (idx >= 0) _ptCache[planId][idx].id = ins.data.id;
-            }
-        }
-    } catch(e) { console.warn('[PT] save:', e.message); }
-}
+function _ptGetRange(){var keys=Object.keys(_ptSel);if(!keys.length)return null;var ris=keys.map(function(k){return parseInt(k.split("_")[0]);});var cis=keys.map(function(k){return parseInt(k.split("_")[1]);});return{r1:Math.min.apply(null,ris),r2:Math.max.apply(null,ris),c1:Math.min.apply(null,cis),c2:Math.max.apply(null,cis)};}
 
-function ptShowSaveStatus(planId, state) {
-    var el = document.getElementById('pt-save-status-' + planId);
-    if (!el) return;
-    if (state === 'saving') {
-        el.textContent = 'Saving…'; el.style.color = 'var(--t4)';
-    } else {
-        el.textContent = '✓ Saved'; el.style.color = '#10b981';
-        setTimeout(function() { if (el.textContent === '✓ Saved') el.textContent = ''; }, 2500);
-    }
-}
+function _ptRerender(planId,si,keepSel){var w=document.getElementById("pt-wrap-"+planId);if(w){w.innerHTML=ptRenderSheet(planId,si);var c=document.getElementById("plan-table-container-"+planId);if(c)_ptAttachSel(c,planId,si);if(keepSel)_ptHiSel(w,planId,si);}if(_ptFsPlanId===planId&&_ptFsSheetIdx===si){var fw=document.getElementById("pt-fs-wrap");if(fw){fw.innerHTML=ptRenderSheet(planId,si);if(keepSel)_ptHiSel(fw,planId,si);}}}
 
-function ptDebounce(planId, sheetIdx) {
-    var key = planId + '_' + sheetIdx;
-    ptShowSaveStatus(planId, 'saving');
-    if (_ptSaveTimers[key]) clearTimeout(_ptSaveTimers[key]);
-    _ptSaveTimers[key] = setTimeout(async function() {
-        if (_ptCache[planId] && _ptCache[planId][sheetIdx]) {
-            await ptSaveSheet(_ptCache[planId][sheetIdx], planId);
-            ptShowSaveStatus(planId, 'saved');
-        }
-    }, 1200);
-}
+function ptFmt(planId,prop,val){if(_ptSelPlan!==planId)return;var si=_ptGetSi(planId);var cells=_ptGetSelCells(planId,si);if(!cells.length)return;var isBool=(prop==="b"||prop==="i"||prop==="u"||prop==="sk");var allOn=isBool&&cells.every(function(cx){return!!_ptC(cx.row.cells[cx.col.id])[prop];});cells.forEach(function(cx){var cell=_ptC(cx.row.cells[cx.col.id]);if(isBool)cell[prop]=!allOn;else if(prop==="al")cell[prop]=(cell[prop]===val?"":val);else cell[prop]=val;cx.row.cells[cx.col.id]=cell;});_ptRerender(planId,si,true);ptDebounce(planId,si);}
+function ptFmtSz(planId,sz){if(_ptSelPlan!==planId)return;var si=_ptGetSi(planId);_ptGetSelCells(planId,si).forEach(function(cx){var cell=_ptC(cx.row.cells[cx.col.id]);cell.sz=parseInt(sz)||0;cx.row.cells[cx.col.id]=cell;});_ptRerender(planId,si,true);ptDebounce(planId,si);}
+function ptFmtClr(planId,prop,val){if(_ptSelPlan!==planId)return;var si=_ptGetSi(planId);_ptGetSelCells(planId,si).forEach(function(cx){var cell=_ptC(cx.row.cells[cx.col.id]);cell[prop]=val;cx.row.cells[cx.col.id]=cell;});_ptRerender(planId,si,true);ptDebounce(planId,si);}
 
-async function ptManualSave(planId) {
-    var container = document.getElementById('plan-table-container-' + planId);
-    var sheetIdx = parseInt((container && container.dataset.activeSheet) || '0');
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (!sheet) return;
-    ptShowSaveStatus(planId, 'saving');
-    await ptSaveSheet(sheet, planId);
-    ptShowSaveStatus(planId, 'saved');
-}
+function ptMerge(planId){if(_ptSelPlan!==planId||Object.keys(_ptSel).length<2){if(typeof showToast==="function")showToast("Select 2+ cells to merge","error");return;}var si=_ptGetSi(planId);var sheet=_ptCache[planId][si];var range=_ptGetRange();if(!range)return;var r1=range.r1,r2=range.r2,c1=range.c1,c2=range.c2;var aRow=sheet.rows_data[r1],aCol=sheet.columns_data[c1];if(!aRow||!aCol)return;var ac=_ptC(aRow.cells[aCol.id]);ac.rs=r2-r1+1;ac.cs=c2-c1+1;ac.mg=false;aRow.cells[aCol.id]=ac;for(var r=r1;r<=r2;r++){for(var c=c1;c<=c2;c++){if(r===r1&&c===c1)continue;var row=sheet.rows_data[r],col=sheet.columns_data[c];if(row&&col)row.cells[col.id]={v:"",mg:true};}}_ptSel={};_ptSel[r1+"_"+c1]=true;_ptRerender(planId,si,true);ptDebounce(planId,si);}
 
-// ── Render ────────────────────────────────────────────────────────────────
-function renderPlanTableUI(planId) {
-    var container = document.getElementById('plan-table-container-' + planId);
-    if (!container) return;
-    var sheets = _ptCache[planId] || [];
-    var activeIdx = parseInt(container.dataset.activeSheet || '0');
-    if (activeIdx >= sheets.length) activeIdx = 0;
-    if (_ptZoom[planId] === undefined) _ptZoom[planId] = 1.0;
+function ptUnmerge(planId){if(_ptSelPlan!==planId)return;var si=_ptGetSi(planId);var sheet=_ptCache[planId][si];Object.keys(_ptSel).forEach(function(key){var p=key.split("_");var ri=parseInt(p[0]),ci=parseInt(p[1]);var row=sheet.rows_data[ri],col=sheet.columns_data[ci];if(!row||!col)return;var cell=_ptC(row.cells[col.id]);var rs=cell.rs||1,cs=cell.cs||1;delete cell.rs;delete cell.cs;delete cell.mg;row.cells[col.id]=cell;for(var r=ri;r<ri+rs;r++){for(var c=ci;c<ci+cs;c++){if(r===ri&&c===ci)continue;var cr=sheet.rows_data[r],cc=sheet.columns_data[c];if(cr&&cc){var cv=_ptC(cr.cells[cc.id]);delete cv.mg;cr.cells[cc.id]=cv;}}}});_ptRerender(planId,si,false);ptDebounce(planId,si);}
 
-    var zoom = _ptZoom[planId];
-    var zoomPct = Math.round(zoom * 100);
+function ptOnInput(td){var planId=td.dataset.plan,si=parseInt(td.dataset.si),ri=parseInt(td.dataset.ri),colId=td.dataset.col;var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet||!sheet.rows_data[ri])return;var cell=_ptC(sheet.rows_data[ri].cells[colId]);cell.v=td.textContent;sheet.rows_data[ri].cells[colId]=cell;ptShowStatus(planId,"saving");}
+function ptOnBlur(td){ptDebounce(td.dataset.plan,parseInt(td.dataset.si));}
+function ptAddRow(planId,si){si=parseInt(si);var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return;var cells={};sheet.columns_data.forEach(function(c){cells[c.id]={v:""};});sheet.rows_data.push({id:"r_"+Date.now(),cells:cells});_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptAddRowAtSel(planId){var si=_ptGetSi(planId),range=_ptGetRange();var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return;var at=range?range.r2+1:sheet.rows_data.length;var cells={};sheet.columns_data.forEach(function(c){cells[c.id]={v:""};});sheet.rows_data.splice(at,0,{id:"r_"+Date.now(),cells:cells});_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptDelRow(planId,si,ri){si=parseInt(si);var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return;sheet.rows_data.splice(parseInt(ri),1);_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptDelRowAtSel(planId){var si=_ptGetSi(planId),range=_ptGetRange();var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet||!range)return;sheet.rows_data.splice(range.r1,range.r2-range.r1+1);_ptSel={};_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptAddCol(planId,si){si=parseInt(si);var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet)return;var cid="c_"+Date.now();sheet.columns_data.push({id:cid,name:"Column",width:140});sheet.rows_data.forEach(function(row){row.cells[cid]={v:""};});_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptDelCol(planId,si,colId){si=parseInt(si);var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet||sheet.columns_data.length<=1){if(typeof showToast==="function")showToast("Cannot delete last column","error");return;}sheet.columns_data=sheet.columns_data.filter(function(c){return c.id!==colId;});sheet.rows_data.forEach(function(row){delete row.cells[colId];});_ptRerender(planId,si,false);ptDebounce(planId,si);}
+function ptDelColAtSel(planId){var si=_ptGetSi(planId),range=_ptGetRange();var sheet=_ptCache[planId]&&_ptCache[planId][si];if(!sheet||!range)return;var toDelete=[];for(var c=range.c1;c<=range.c2;c++){if(sheet.columns_data[c])toDelete.push(sheet.columns_data[c].id);}if(sheet.columns_data.length<=toDelete.length){if(typeof showToast==="function")showToast("Cannot delete all columns","error");return;}toDelete.forEach(function(id){sheet.columns_data=sheet.columns_data.filter(function(c){return c.id!==id;});sheet.rows_data.forEach(function(row){delete row.cells[id];});});_ptSel={};_ptRerender(planId,si,false);ptDebounce(planId,si);}
 
-    // Pie: count completed tasks from the plan's task tab
-    var taskBoxes = document.querySelectorAll('.plan-task-box-' + planId);
-    var tTotal = taskBoxes.length, tDone = 0;
-    taskBoxes.forEach(function(b) { if (b.checked) tDone++; });
-    var tPct = tTotal > 0 ? Math.round((tDone / tTotal) * 100) : 0;
-    var pieBg = 'conic-gradient(#10b981 ' + tPct + '%, rgba(100,116,139,0.35) 0%)';
+function ptSwitchSheet(planId,idx){var container=document.getElementById("plan-table-container-"+planId);if(!container)return;idx=parseInt(idx);container.dataset.activeSheet=idx;var wrap=document.getElementById("pt-wrap-"+planId);if(wrap)wrap.innerHTML=ptRenderSheet(planId,idx);_ptAttachSel(container,planId,idx);_ptSel={};_ptSelPlan=planId;_ptSelSi=idx;container.querySelectorAll(".pt-sheet-tab").forEach(function(b,i){b.classList.toggle("active",i===idx);});}
+async function ptAddSheet(planId){var sheets=_ptCache[planId];if(!sheets)return;var ns=ptCreateDefaultSheet(planId,"Sheet "+(sheets.length+1),sheets.length);sheets.push(ns);await ptSaveSheet(ns,planId);renderPlanTableUI(planId);ptSwitchSheet(planId,sheets.length-1);}
+function ptRenameSheet(planId,idx,btn){idx=parseInt(idx);if(btn.querySelector&&btn.querySelector("input"))return;var cur=btn.textContent.trim();var inp=document.createElement("input");inp.type="text";inp.value=cur;inp.className="pt-sheet-rename-input";inp.style.width=Math.max(60,cur.length*8+24)+"px";btn.textContent="";btn.appendChild(inp);inp.focus();inp.select();var commit=function(){var n=inp.value.trim()||cur;if(_ptCache[planId]&&_ptCache[planId][idx]){_ptCache[planId][idx].sheet_name=n;ptDebounce(planId,idx);}btn.textContent=n;};inp.addEventListener("blur",commit);inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();inp.blur();}if(e.key==="Escape"){inp.value=cur;inp.blur();}});inp.addEventListener("click",function(e){e.stopPropagation();});}
 
-    // Sheet tabs
-    var sheetTabsHtml = sheets.map(function(s, i) {
-        return '<button class="pt-sheet-tab ' + (i === activeIdx ? 'active' : '') + '" '
-            + 'id="pt-stab-' + planId + '-' + i + '" '
-            + 'onclick="ptSwitchSheet(\'' + planId + '\',' + i + ')" '
-            + 'ondblclick="ptRenameSheet(\'' + planId + '\',' + i + ',this)">'
-            + ptEsc(s.sheet_name) + '</button>';
-    }).join('') + '<button class="pt-add-sheet" onclick="ptAddSheet(\'' + planId + '\')">+ Sheet</button>';
+function ptStartRenameColBtn(planId,si,colId,btn){var th=btn.closest?btn.closest("th"):btn.parentElement;var span=th&&th.querySelector(".pt-col-name");if(span)ptStartRenameCol(planId,parseInt(si),colId,span);}
+function ptStartRenameCol(planId,si,colId,span){if(span.querySelector&&span.querySelector("input"))return;var cur=span.textContent.trim();var inp=document.createElement("input");inp.type="text";inp.value=cur;inp.className="pt-col-edit";span.replaceWith(inp);inp.focus();inp.select();var commit=function(){var n=inp.value.trim()||cur;var sheet=_ptCache[planId]&&_ptCache[planId][si];if(sheet){var col=sheet.columns_data.find(function(c){return c.id===colId;});if(col){col.name=n;ptDebounce(planId,si);}}var ns=document.createElement("span");ns.className="pt-col-name";ns.title="Dbl-click to rename";ns.ondblclick=function(){ptStartRenameCol(planId,si,colId,ns);};ns.textContent=n;inp.replaceWith(ns);};inp.addEventListener("blur",commit);inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();inp.blur();}if(e.key==="Escape"){inp.value=cur;inp.blur();}});}
 
-    container.innerHTML =
-        // toolbar
-        '<div class="pt-toolbar">'
-        +   '<div class="pt-toolbar-left">'
-        +     '<span class="pt-tb-label">Zoom</span>'
-        +     '<button class="pt-zoom-btn" onclick="ptZoomOut(\'' + planId + '\')" title="Zoom out">−</button>'
-        +     '<span id="pt-zoom-pct-' + planId + '" class="pt-zoom-pct">' + zoomPct + '%</span>'
-        +     '<button class="pt-zoom-btn" onclick="ptZoomIn(\'' + planId + '\')" title="Zoom in">+</button>'
-        +     '<button class="pt-zoom-btn" onclick="ptZoomReset(\'' + planId + '\')" title="Reset zoom" style="font-size:0.58rem;padding:0.1rem 0.45rem;">Reset</button>'
-        +   '</div>'
-        +   '<div class="pt-toolbar-right">'
-        +     '<div class="pt-mini-pie" style="background:' + pieBg + '" title="Task completion: ' + tPct + '%"></div>'
-        +     '<span style="font-size:0.6rem;color:var(--t3);font-family:var(--mono);">' + tPct + '% done</span>'
-        +     '<button class="pt-tb-btn" onclick="ptOpenFullscreen(\'' + planId + '\')" title="Full-page view">⛶ Full</button>'
-        +     '<button class="pt-tb-btn pt-save-btn" onclick="ptManualSave(\'' + planId + '\')" title="Save now">💾 Save</button>'
-        +     '<span id="pt-save-status-' + planId + '" class="pt-save-status"></span>'
-        +   '</div>'
-        + '</div>'
-        + '<div class="pt-table-wrapper" id="pt-wrap-' + planId + '" style="zoom:' + zoom + '">'
-        +   ptRenderSheet(planId, activeIdx)
-        + '</div>'
-        + '<div class="pt-sheet-bar">' + sheetTabsHtml + '</div>';
+function ptZoomIn(planId){_ptZoom[planId]=Math.min(2.0,(_ptZoom[planId]||1)+0.1);_ptApplyZoom(planId);}
+function ptZoomOut(planId){_ptZoom[planId]=Math.max(0.4,(_ptZoom[planId]||1)-0.1);_ptApplyZoom(planId);}
+function ptZoomReset(planId){_ptZoom[planId]=1.0;_ptApplyZoom(planId);}
+function _ptApplyZoom(planId){var w=document.getElementById("pt-wrap-"+planId);if(w)w.style.zoom=_ptZoom[planId];var p=document.getElementById("pt-zoom-pct-"+planId);if(p)p.textContent=Math.round(_ptZoom[planId]*100)+"%";}
 
-    container.dataset.activeSheet = activeIdx;
-}
+function ptOpenFullscreen(planId){var sheets=_ptCache[planId];if(!sheets)return;var container=document.getElementById("plan-table-container-"+planId);var si=parseInt((container&&container.dataset.activeSheet)||"0");_ptFsPlanId=planId;_ptFsSheetIdx=si;var ov=document.getElementById("pt-fullscreen-overlay");if(!ov){ov=document.createElement("div");ov.id="pt-fullscreen-overlay";ov.className="pt-fs-overlay";document.body.appendChild(ov);}var tabs=sheets.map(function(s,i){return'<button class="pt-sheet-tab'+(i===si?" active":"")+'" onclick="ptFsSwitchSheet(\''+planId+'\','+i+',this)">'+_ptEsc(s.sheet_name)+"</button>";}).join('')+'<button class="pt-add-sheet" onclick="ptAddSheet(\''+planId+'\')">+ Sheet</button>';ov.innerHTML='<div class="pt-fs-inner"><div class="pt-fs-header">'+ptBuildToolbar(planId)+'<button class="pt-fs-close" onclick="ptCloseFullscreen()">\xd7 Close</button></div><div class="pt-fs-table-wrap" id="pt-fs-wrap">'+ptRenderSheet(planId,si)+'</div><div class="pt-sheet-bar">'+tabs+"</div></div>";ov.style.display="flex";ov.onclick=function(e){if(e.target===ov)ptCloseFullscreen();};var fsWrap=ov.querySelector(".pt-fs-table-wrap");if(fsWrap){fsWrap.onmousedown=function(e){var td=e.target.closest?e.target.closest("td.pt-td"):null;if(!td)return;var ri=parseInt(td.dataset.ri),ci=parseInt(td.dataset.ci);if(!e.shiftKey){_ptSel={};_ptSelAnchor={ri:ri,ci:ci};}else if(_ptSelAnchor){_ptSel={};var r1=Math.min(_ptSelAnchor.ri,ri),r2=Math.max(_ptSelAnchor.ri,ri),c1=Math.min(_ptSelAnchor.ci,ci),c2=Math.max(_ptSelAnchor.ci,ci);for(var r=r1;r<=r2;r++)for(var c=c1;c<=c2;c++)_ptSel[r+"_"+c]=true;}_ptSel[ri+"_"+ci]=true;_ptSelPlan=planId;_ptSelSi=si;_ptDrag=true;_ptHiSel(fsWrap,planId,si);};}}
 
-function ptRenderSheet(planId, sheetIdx) {
-    var sheet = _ptCache[planId] && _ptCache[planId][parseInt(sheetIdx)];
-    if (!sheet) return '<div class="pt-loading">No sheet data</div>';
-    var cols = sheet.columns_data || [];
-    var rows = sheet.rows_data    || [];
-    var si   = parseInt(sheetIdx);
-
-    var headerCells = cols.map(function(c) {
-        return '<th class="pt-th" data-col="' + c.id + '">'
-            + '<span class="pt-col-name" ondblclick="ptStartRenameCol(\'' + planId + '\',' + si + ',\'' + c.id + '\',this)" title="Dbl-click to rename">'
-            +   ptEsc(c.name)
-            + '</span>'
-            + '<button class="pt-edit-col" onclick="ptStartRenameColBtn(\'' + planId + '\',' + si + ',\'' + c.id + '\',this)" title="Rename">✎</button>'
-            + '<button class="pt-del-col" onclick="ptDelCol(\'' + planId + '\',' + si + ',\'' + c.id + '\')" title="Delete">✕</button>'
-            + '</th>';
-    }).join('');
-
-    var bodyRows = rows.map(function(row, ri) {
-        var cells = cols.map(function(c) {
-            var val = (row.cells && row.cells[c.id]) ? row.cells[c.id] : '';
-            return '<td class="pt-td" contenteditable="true" '
-                + 'data-plan="' + planId + '" data-sidx="' + si + '" data-row="' + ri + '" data-col="' + c.id + '" '
-                + 'oninput="ptOnInput(this)" onblur="ptOnBlur(this)">'
-                + ptEsc(val)
-                + '</td>';
-        }).join('');
-        return '<tr>'
-            + '<td class="pt-td-num">' + (ri + 1) + '</td>'
-            + cells
-            + '<td class="pt-td-del"><button onclick="ptDelRow(\'' + planId + '\',' + si + ',' + ri + ')" title="Delete row">✕</button></td>'
-            + '</tr>';
-    }).join('');
-
-    return '<table class="pt-table">'
-        + '<thead><tr>'
-        +   '<th class="pt-th-num">#</th>'
-        +   headerCells
-        +   '<th class="pt-th-add"><button onclick="ptAddCol(\'' + planId + '\',' + si + ')" title="Add column">+ col</button></th>'
-        + '</tr></thead>'
-        + '<tbody>' + bodyRows
-        + '<tr><td colspan="' + (cols.length + 3) + '" class="pt-add-row-cell">'
-        +   '<button onclick="ptAddRow(\'' + planId + '\',' + si + ')" class="pt-add-row-btn">+ Add Row</button>'
-        + '</td></tr>'
-        + '</tbody></table>';
-}
-
-function ptEsc(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Actions ───────────────────────────────────────────────────────────────
-function ptSwitchSheet(planId, idx) {
-    var container = document.getElementById('plan-table-container-' + planId);
-    if (!container) return;
-    idx = parseInt(idx);
-    container.dataset.activeSheet = idx;
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, idx);
-    container.querySelectorAll('.pt-sheet-tab').forEach(function(b, i) { b.classList.toggle('active', i === idx); });
-}
-
-async function ptAddSheet(planId) {
-    var sheets = _ptCache[planId];
-    if (!sheets) return;
-    var name = 'Sheet ' + (sheets.length + 1);
-    var ns = ptCreateDefaultSheet(planId, name, sheets.length);
-    sheets.push(ns);
-    await ptSaveSheet(ns, planId);
-    renderPlanTableUI(planId);
-    ptSwitchSheet(planId, sheets.length - 1);
-}
-
-// Inline sheet rename (no prompt — dblclick on active tab)
-function ptRenameSheet(planId, idx, btn) {
-    idx = parseInt(idx);
-    if (btn.querySelector && btn.querySelector('input')) return;
-    var current = btn.textContent.trim();
-    var input = document.createElement('input');
-    input.type = 'text'; input.value = current;
-    input.className = 'pt-sheet-rename-input';
-    input.style.width = Math.max(60, current.length * 8 + 24) + 'px';
-    btn.textContent = '';
-    btn.appendChild(input);
-    input.focus(); input.select();
-    var commit = function() {
-        var newName = input.value.trim() || current;
-        if (_ptCache[planId] && _ptCache[planId][idx]) {
-            _ptCache[planId][idx].sheet_name = newName;
-            ptDebounce(planId, idx);
-        }
-        btn.textContent = newName;
-    };
-    input.addEventListener('blur', commit);
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
-        if (e.key === 'Escape') { input.value = current; input.blur(); }
-    });
-    input.addEventListener('click', function(e) { e.stopPropagation(); });
-}
-
-function ptAddRow(planId, sheetIdx) {
-    sheetIdx = parseInt(sheetIdx);
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (!sheet) return;
-    var cells = {};
-    (sheet.columns_data || []).forEach(function(c) { cells[c.id] = ''; });
-    sheet.rows_data.push({ id: 'r_' + Date.now(), cells: cells });
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
-        var fsWrap = document.getElementById('pt-fs-wrap');
-        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    }
-    ptDebounce(planId, sheetIdx);
-}
-
-function ptDelRow(planId, sheetIdx, rowIdx) {
-    sheetIdx = parseInt(sheetIdx);
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (!sheet) return;
-    sheet.rows_data.splice(parseInt(rowIdx), 1);
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
-        var fsWrap = document.getElementById('pt-fs-wrap');
-        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    }
-    ptDebounce(planId, sheetIdx);
-}
-
-function ptAddCol(planId, sheetIdx) {
-    sheetIdx = parseInt(sheetIdx);
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (!sheet) return;
-    var colId = 'c_' + Date.now();
-    sheet.columns_data.push({ id: colId, name: 'Column ' + (sheet.columns_data.length + 1), width: 160 });
-    sheet.rows_data.forEach(function(row) { row.cells[colId] = ''; });
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
-        var fsWrap = document.getElementById('pt-fs-wrap');
-        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    }
-    ptDebounce(planId, sheetIdx);
-}
-
-function ptDelCol(planId, sheetIdx, colId) {
-    sheetIdx = parseInt(sheetIdx);
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (!sheet || sheet.columns_data.length <= 1) {
-        if (typeof showToast === 'function') showToast('Cannot delete the last column', 'error');
-        return;
-    }
-    sheet.columns_data = sheet.columns_data.filter(function(c) { return c.id !== colId; });
-    sheet.rows_data.forEach(function(row) { delete row.cells[colId]; });
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    if (_ptFsPlanId === planId && _ptFsSheetIdx === sheetIdx) {
-        var fsWrap = document.getElementById('pt-fs-wrap');
-        if (fsWrap) fsWrap.innerHTML = ptRenderSheet(planId, sheetIdx);
-    }
-    ptDebounce(planId, sheetIdx);
-}
-
-function ptStartRenameColBtn(planId, sheetIdx, colId, btn) {
-    sheetIdx = parseInt(sheetIdx);
-    var th = btn.closest ? btn.closest('th') : btn.parentElement;
-    if (!th) return;
-    var span = th.querySelector('.pt-col-name');
-    if (span) ptStartRenameCol(planId, sheetIdx, colId, span);
-}
-
-function ptStartRenameCol(planId, sheetIdx, colId, span) {
-    sheetIdx = parseInt(sheetIdx);
-    if (span.querySelector && span.querySelector('input')) return;
-    var current = span.textContent.trim();
-    var input = document.createElement('input');
-    input.type = 'text'; input.value = current; input.className = 'pt-col-edit';
-    span.replaceWith(input); input.focus(); input.select();
-    var commit = function() {
-        var newName = input.value.trim() || current;
-        var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-        if (sheet) {
-            var col = sheet.columns_data.find(function(c) { return c.id === colId; });
-            if (col) { col.name = newName; ptDebounce(planId, sheetIdx); }
-        }
-        var ns = document.createElement('span');
-        ns.className = 'pt-col-name'; ns.title = 'Dbl-click to rename';
-        ns.ondblclick = function() { ptStartRenameCol(planId, sheetIdx, colId, ns); };
-        ns.textContent = newName;
-        input.replaceWith(ns);
-    };
-    input.addEventListener('blur', commit);
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
-        if (e.key === 'Escape') { input.value = current; input.blur(); }
-    });
-}
-
-function ptOnInput(td) {
-    var planId = td.dataset.plan, sheetIdx = parseInt(td.dataset.sidx);
-    var rowIdx = parseInt(td.dataset.row), colId = td.dataset.col;
-    var sheet = _ptCache[planId] && _ptCache[planId][sheetIdx];
-    if (sheet && sheet.rows_data[rowIdx]) {
-        sheet.rows_data[rowIdx].cells[colId] = td.textContent;
-        ptShowSaveStatus(planId, 'saving');
-    }
-}
-
-function ptOnBlur(td) {
-    ptDebounce(td.dataset.plan, parseInt(td.dataset.sidx));
-}
-
-// ── Zoom ──────────────────────────────────────────────────────────────────
-function ptZoomIn(planId) {
-    _ptZoom[planId] = Math.min(1.8, (_ptZoom[planId] || 1.0) + 0.15);
-    ptApplyZoom(planId);
-}
-function ptZoomOut(planId) {
-    _ptZoom[planId] = Math.max(0.5, (_ptZoom[planId] || 1.0) - 0.15);
-    ptApplyZoom(planId);
-}
-function ptZoomReset(planId) {
-    _ptZoom[planId] = 1.0;
-    ptApplyZoom(planId);
-}
-function ptApplyZoom(planId) {
-    var zoom = _ptZoom[planId];
-    var wrap = document.getElementById('pt-wrap-' + planId);
-    if (wrap) wrap.style.zoom = zoom;
-    var pct = document.getElementById('pt-zoom-pct-' + planId);
-    if (pct) pct.textContent = Math.round(zoom * 100) + '%';
-}
-
-// ── Fullscreen ────────────────────────────────────────────────────────────
-function ptOpenFullscreen(planId) {
-    var sheets = _ptCache[planId];
-    if (!sheets) return;
-    var container = document.getElementById('plan-table-container-' + planId);
-    var activeIdx = parseInt((container && container.dataset.activeSheet) || '0');
-    _ptFsPlanId   = planId;
-    _ptFsSheetIdx = activeIdx;
-
-    var overlay = document.getElementById('pt-fullscreen-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'pt-fullscreen-overlay';
-        overlay.className = 'pt-fs-overlay';
-        document.body.appendChild(overlay);
-    }
-    overlay.innerHTML =
-        '<div class="pt-fs-inner">'
-        +   '<div class="pt-fs-header">'
-        +     '<span class="pt-fs-title">📊 Table — Full View</span>'
-        +     '<button class="pt-fs-close" onclick="ptCloseFullscreen()">✕ Close</button>'
-        +   '</div>'
-        +   '<div class="pt-fs-table-wrap" id="pt-fs-wrap">'
-        +     ptRenderSheet(planId, activeIdx)
-        +   '</div>'
-        +   '<div class="pt-sheet-bar" style="border-radius:0 0 0.75rem 0.75rem;">'
-        +     sheets.map(function(s, i) {
-                  return '<button class="pt-sheet-tab ' + (i === activeIdx ? 'active' : '') + '" '
-                      + 'onclick="ptFsSwitchSheet(\'' + planId + '\',' + i + ',this)">'
-                      + ptEsc(s.sheet_name) + '</button>';
-              }).join('')
-        +   '</div>'
-        + '</div>';
-    overlay.style.display = 'flex';
-    overlay.onclick = function(e) { if (e.target === overlay) ptCloseFullscreen(); };
-}
-
-function ptFsSwitchSheet(planId, idx, btn) {
-    _ptFsSheetIdx = parseInt(idx);
-    var wrap = document.getElementById('pt-fs-wrap');
-    if (wrap) wrap.innerHTML = ptRenderSheet(planId, parseInt(idx));
-    var bar = btn.parentElement;
-    bar.querySelectorAll('.pt-sheet-tab').forEach(function(b, i) { b.classList.toggle('active', i === parseInt(idx)); });
-}
-
-function ptCloseFullscreen() {
-    var overlay = document.getElementById('pt-fullscreen-overlay');
-    if (overlay) overlay.style.display = 'none';
-    _ptFsPlanId = null;
-}
+function ptFsSwitchSheet(planId,idx,btn){idx=parseInt(idx);_ptFsSheetIdx=idx;var wrap=document.getElementById("pt-fs-wrap");if(wrap)wrap.innerHTML=ptRenderSheet(planId,idx);_ptSelSi=idx;_ptSel={};btn.parentElement.querySelectorAll(".pt-sheet-tab").forEach(function(b,i){b.classList.toggle("active",i===idx);});}
+function ptCloseFullscreen(){var ov=document.getElementById("pt-fullscreen-overlay");if(ov)ov.style.display="none";_ptFsPlanId=null;}

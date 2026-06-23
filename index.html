@@ -761,6 +761,16 @@ Use the toolbar above for bullets, colors and more."></div>
                 <div id="plan-gantt-container" class="plan-gantt-outer">
                     <div class="plan-gantt-empty-msg">Loading timeline…</div>
                 </div>
+                <!-- Aggregate Progress Dashboard -->
+                <div id="master-aggregate" class="master-agg-section" style="margin-top:1.75rem;"></div>
+                <!-- Master Spreadsheet -->
+                <div style="margin-top:1.75rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                        <h3 class="heading-font font-black text-base" style="color:var(--t1);">&#9635; Master Spreadsheet</h3>
+                        <span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);">Shared planning sheet across all plans</span>
+                    </div>
+                    <div id="plan-table-container-master_sheet" class="pt-container"></div>
+                </div>
             </div>
 
             <!-- Plans subtab -->
@@ -1163,7 +1173,7 @@ Use the toolbar above for bullets, colors and more."></div>
     <script src="js/tracker.js?v=5"></script>
     <script src="js/plans.js?v=4"></script>
     <script src="js/assignments.js?v=3"></script>
-    <script src="js/plantable.js?v=1"></script>
+    <script src="js/plantable.js?v=3"></script>
     <script src="js/tabs.js?v=2"></script>
     <script src="js/sources.js?v=1"></script>
     <script src="js/pyq.js?v=1"></script>

@@ -22,7 +22,11 @@ function activatePlannerTab(id) {
         else { btn.className = "cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500 hover:text-teal-700 hover:bg-white/80 heading-font border border-transparent"; }
     });
     if (id === 'sources') loadSources();
-    if (id === 'master' && typeof renderGanttTimeline === 'function') renderGanttTimeline('month');
+    if (id === 'master' && typeof renderGanttTimeline === 'function') {
+        renderGanttTimeline('month');
+        if (typeof renderMasterAggregate === 'function') renderMasterAggregate();
+        if (typeof renderPlanTableUI === 'function') renderPlanTableUI('master_sheet');
+    }
 }
 
 function activateMasterTab(id) {
