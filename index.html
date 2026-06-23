@@ -813,15 +813,20 @@ Use the toolbar above for bullets, colors and more."></div>
             </div>
             <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
                 <span id="plan-drawer-pct" style="font-size:0.65rem;font-weight:800;font-family:var(--mono);color:var(--t3);white-space:nowrap;"></span>
-                <button onclick="toggleDrawerNote()" id="plan-drawer-note-btn" class="plan-drawer-note-toggle" title="Toggle strategy note">\ud83d\udcdd</button>
                 <button onclick="closePlanDrawer()" class="plan-drawer-close" title="Close (Esc)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
         </div>
-        <!-- Drawer Body (note section + task table injected here dynamically) -->
-        <div id="plan-drawer-body" style="flex:1;overflow-y:auto;padding:0.75rem 1.1rem 1.5rem;background:var(--bg2);scrollbar-width:thin;scrollbar-color:var(--accent1) transparent;">
-            <!-- Populated by openPlanDrawer() -->
+        <!-- Drawer Tab Bar -->
+        <div id="plan-drawer-tab-bar" style="display:flex;border-bottom:1px solid var(--bdr);background:var(--bg2);flex-shrink:0;">
+            <button class="plan-drawer-tab active" id="pdt-tasks" onclick="switchDrawerTab('tasks')">&#10003; Tasks</button>
+            <button class="plan-drawer-tab" id="pdt-table" onclick="switchDrawerTab('table')">&#8862; Tables</button>
+            <button class="plan-drawer-tab" id="pdt-note" onclick="switchDrawerTab('note')">&#9998; Note</button>
+        </div>
+        <!-- Drawer Body -->
+        <div id="plan-drawer-body" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;background:var(--bg2);scrollbar-width:thin;scrollbar-color:var(--accent1) transparent;">
+            <!-- Plan detail DOM will be moved here when drawer opens -->
         </div>
     </div>
 
@@ -962,14 +967,6 @@ Use the toolbar above for bullets, colors and more."></div>
                 <div id="modal-plan-custom-name-wrap" style="display:none;">
                     <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Custom Category Name</label>
                     <input type="text" id="modal-plan-custom-name" placeholder="e.g., Anthropology, Sociology…" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 font-mono">Plan Mode</label>
-                    <select id="modal-plan-content" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500">
-                        <option value="both">✓ Tasks + ⊞ Tables</option>
-                        <option value="tasks">✓ Tasks Only</option>
-                        <option value="tables">⊞ Tables Only</option>
-                    </select>
                 </div>
                 <div class="flex items-center justify-between" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.75rem;padding:0.65rem 0.9rem;">
                     <span style="font-size:0.72rem;font-weight:700;color:#475569;">🔔 Plan notifications</span>

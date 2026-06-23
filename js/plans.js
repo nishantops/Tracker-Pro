@@ -141,16 +141,26 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
     // ── HIDDEN DETAIL DOM (moved into drawer when opened) ──────────────────
     var detailHtml =
         '<div id="plan_detail_' + encodedName + '" class="plan-detail-data" style="display:none;">'
-        // Hidden note storage (drawer reads/writes this; never shown here)
-        + '<textarea id="note-plan_card_' + encodedName + '" oninput="debouncedSync(\'plan_card_' + encodedName + '\')" style="display:none;"></textarea>'
-        // Tasks pane (the ONLY content — task rows ARE the table)
+        // Note pane
+        + '<div id="plan-pane-note-' + encodedName + '" class="plan-detail-pane" style="display:none;padding:0.5rem 0;">'
+        +   '<textarea id="note-plan_card_' + encodedName + '" oninput="debouncedSync(\'plan_card_' + encodedName + '\')" rows="6" placeholder="Master strategy / goals for this plan\u2026" '
+        +   'style="width:100%;background:var(--inp);border:1px solid var(--bdr);color:var(--t2);border-radius:0.75rem;padding:0.75rem 1rem;font-size:0.8rem;font-family:var(--mono);resize:vertical;outline:none;box-sizing:border-box;" '
+        +   'onfocus="this.style.borderColor=\'var(--bdr-h)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea>'
+        + '</div>'
+        // Tasks pane
         + '<div id="plan-pane-tasks-' + encodedName + '" class="plan-detail-pane">'
         +   '<div id="target-list-' + encodedName + '" class="space-y-2 mb-3"></div>'
         +   '<button onclick="addPlanTaskPrompt(\'' + encodedName + '\')" class="ptask-add-btn" id="ptask-add-btn-' + encodedName + '">'
         +     '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Add Row'
         +   '</button>'
         + '</div>'
-        // Hidden pie anchor (calculatePlanPies uses this id)
+        // Tables pane (plantable.js spreadsheet)
+        + '<div id="plan-pane-table-' + encodedName + '" class="plan-detail-pane" style="display:none;">'
+        +   '<div id="plan-table-container-' + encodedName + '" class="pt-container">'
+        +     '<div class="pt-loading">Loading table\u2026</div>'
+        +   '</div>'
+        + '</div>'
+        // Hidden pie anchor
         + '<div id="pie-plan-' + encodedName + '" style="display:none;"></div>'
         + '</div>';
 
@@ -166,9 +176,11 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
 function openPlanDrawer(encodedName) {
     var plan = _planDataStore[encodedName];
     if (!plan) return;
+    var detailEl   = document.getElementById('plan_detail_' + encodedName);
+    var drawerBody = document.getElementById('plan-drawer-body');
+    if (!detailEl || !drawerBody) return;
 
     // Populate header
-    var catStyle = PLAN_CAT_STYLES[plan.category] || PLAN_CAT_STYLES.custom;
     var catLabel = plan.planSubject || PLAN_CAT_LABELS[plan.category] || plan.category;
     document.getElementById('plan-drawer-title').textContent = plan.title;
     document.getElementById('plan-drawer-badges').innerHTML =
@@ -179,90 +191,39 @@ function openPlanDrawer(encodedName) {
         ? '\ud83d\udcc5 ' + (plan.startDate ? formatPlanDate(plan.startDate) : '?') + (plan.endDate ? ' \u2192 ' + formatPlanDate(plan.endDate) : '')
         : '';
 
-    // Build drawer body
-    var drawerBody = document.getElementById('plan-drawer-body');
+    // Move entire detail DOM into drawer body
     drawerBody.innerHTML = '';
-
-    // Note section (hidden by default, toggle with 📝 button)
-    var noteEl  = document.getElementById('note-plan_card_' + encodedName);
-    var noteHtml = noteEl ? (noteEl.value || '') : '';
-    drawerBody.insertAdjacentHTML('beforeend',
-        '<div id="plan-drawer-note-sec" class="plan-drawer-note-sec" style="display:none;">'
-        + '<div class="ca-rte-toolbar">'
-        + '<div class="ca-rte-group">'
-        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"bold\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Bold (Ctrl+B)"><b>B</b></button>'
-        + '<button class="ca-rte-btn ca-rte-italic" onmousedown="event.preventDefault();document.execCommand(\"italic\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Italic (Ctrl+I)"><i>I</i></button>'
-        + '<button class="ca-rte-btn ca-rte-underline" onmousedown="event.preventDefault();document.execCommand(\"underline\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Underline (Ctrl+U)"><u>U</u></button>'
-        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"strikeThrough\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Strikethrough"><s>S</s></button>'
-        + '</div><span class="ca-rte-sep"></span>'
-        + '<div class="ca-rte-group">'
-        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"insertUnorderedList\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Bullets">&#8226; List</button>'
-        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"insertOrderedList\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Numbered">1. List</button>'
-        + '</div><span class="ca-rte-sep"></span>'
-        + '<div class="ca-rte-group ca-rte-colors">'
-        + '<button class="ca-rte-clr" style="background:#ef4444" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#ef4444\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Red"></button>'
-        + '<button class="ca-rte-clr" style="background:#f59e0b" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#f59e0b\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Amber"></button>'
-        + '<button class="ca-rte-clr" style="background:#10b981" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#10b981\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Green"></button>'
-        + '<button class="ca-rte-clr" style="background:#3b82f6" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#3b82f6\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Blue"></button>'
-        + '<button class="ca-rte-clr" style="background:#8b5cf6" onmousedown="event.preventDefault();document.execCommand(\"foreColor\",false,\"#8b5cf6\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Purple"></button>'
-        + '</div><span class="ca-rte-sep"></span>'
-        + '<button class="ca-rte-btn" onmousedown="event.preventDefault();document.execCommand(\"removeFormat\");document.getElementById(\"plan-drawer-note-editor\").focus()" title="Clear formatting">&#8856; Clear</button>'
-        + '<span id="plan-drawer-note-status" class="ca-rte-status"></span>'
-        + '</div>'
-        + '<div id="plan-drawer-note-editor" contenteditable="true" class="ca-word-editor" style="min-height:100px;font-size:0.82rem;" data-placeholder="Strategy note for this plan\u2026"></div>'
-        + '</div>');
-    var drawerNoteEditor = document.getElementById('plan-drawer-note-editor');
-    if (drawerNoteEditor) {
-        drawerNoteEditor.innerHTML = noteHtml;
-        drawerNoteEditor.oninput = function () {
-            if (noteEl) noteEl.value = drawerNoteEditor.innerHTML;
-            var statusEl = document.getElementById('plan-drawer-note-status');
-            if (statusEl) { statusEl.textContent = 'saving\u2026'; clearTimeout(window._planNoteTimer); window._planNoteTimer = setTimeout(function() { debouncedSync('plan_card_' + encodedName); if(statusEl) statusEl.textContent = '\u2713 Saved'; setTimeout(function(){if(statusEl)statusEl.textContent='';},1500); }, 800); }
-            else debouncedSync('plan_card_' + encodedName);
-        };
-    }
-
-    // Auto-setup panel (shown when plan has dates but no tasks yet)
-    var taskPane = document.getElementById('plan-pane-tasks-' + encodedName);
-    var targetList = document.getElementById('target-list-' + encodedName);
-    var hasTasks = targetList && Array.from(targetList.children).some(function(c) { return c.classList.contains('plan-trow'); });
-    if (!hasTasks && plan.startDate && plan.endDate) {
-        var days = Math.ceil((new Date(plan.endDate + 'T00:00:00') - new Date(plan.startDate + 'T00:00:00')) / 86400000) + 1;
-        // Determine best auto-mode based on date span
-        var autoMode, autoLabel, autoDesc;
-        if (days > 60) {
-            autoMode  = 'monthly';
-            autoLabel = '\ud83d\udcc5 Monthly \u2192 Weekly structure';
-            autoDesc  = days + ' days: months as rows, weeks as sub-rows';
-        } else if (days > 13) {
-            autoMode  = 'weekly';
-            autoLabel = '\ud83d\udcc5 Weekly \u2192 Daily structure';
-            autoDesc  = days + ' days: weeks as rows, days as sub-rows';
-        } else {
-            autoMode  = 'daily';
-            autoLabel = '\ud83d\udcc5 Generate Daily rows';
-            autoDesc  = days + ' day' + (days !== 1 ? 's' : '') + ': one row per day';
-        }
-        var autoHtml = '<div id="plan-auto-setup" class="plan-auto-setup">'
-            + '<div class="plan-auto-setup-label">\u26a1 Quick Setup \u2014 '
-            + (plan.startDate ? formatPlanDate(plan.startDate) : '?') + ' \u2192 ' + (plan.endDate ? formatPlanDate(plan.endDate) : '?')
-            + '</div>'
-            + '<div class="plan-auto-desc">' + autoDesc + '</div>'
-            + '<div class="plan-auto-setup-btns">'
-            + '<button class="plan-auto-btn plan-auto-btn-primary" onclick="generateAutoTasks(\'' + encodedName + '\',\'' + autoMode + '\')">' + autoLabel + '</button>'
-            + '</div></div>';
-        drawerBody.insertAdjacentHTML('beforeend', autoHtml);
-    }
-
-    // Move task pane (target-list + add button) into drawer
-    if (taskPane) {
-        taskPane.style.display = '';
-        drawerBody.appendChild(taskPane);
-    }
-
+    drawerBody.appendChild(detailEl);
+    detailEl.style.display = '';
     _activeDrawerPlan = encodedName;
 
-    // Update progress display
+    // Show/hide task auto-setup banner when Tasks tab has no rows and plan has dates
+    var targetList = document.getElementById('target-list-' + encodedName);
+    var hasTasks = targetList && Array.from(targetList.children).some(function(c) { return c.classList.contains('plan-trow'); });
+    var existingAutoSetup = document.getElementById('plan-auto-setup');
+    if (existingAutoSetup) existingAutoSetup.remove();
+    if (!hasTasks && plan.startDate && plan.endDate) {
+        var days = Math.ceil((new Date(plan.endDate + 'T00:00:00') - new Date(plan.startDate + 'T00:00:00')) / 86400000) + 1;
+        var autoMode, autoLabel, autoDesc;
+        if (days > 60)      { autoMode = 'monthly'; autoLabel = '\ud83d\udcc5 Monthly \u2192 Weekly structure'; autoDesc = days + ' days'; }
+        else if (days > 13) { autoMode = 'weekly';  autoLabel = '\ud83d\udcc5 Weekly \u2192 Daily structure';   autoDesc = days + ' days'; }
+        else                { autoMode = 'daily';   autoLabel = '\ud83d\udcc5 Generate Daily rows';             autoDesc = days + ' day' + (days !== 1 ? 's' : ''); }
+        var tasksPaneEl = document.getElementById('plan-pane-tasks-' + encodedName);
+        if (tasksPaneEl) {
+            tasksPaneEl.insertAdjacentHTML('afterbegin',
+                '<div id="plan-auto-setup" class="plan-auto-setup">'
+                + '<div class="plan-auto-setup-label">\u26a1 Quick Setup \u2014 ' + (plan.startDate ? formatPlanDate(plan.startDate) : '') + ' \u2192 ' + (plan.endDate ? formatPlanDate(plan.endDate) : '') + '</div>'
+                + '<div class="plan-auto-desc">' + autoDesc + '</div>'
+                + '<div class="plan-auto-setup-btns">'
+                + '<button class="plan-auto-btn plan-auto-btn-primary" onclick="generateAutoTasks(\'' + encodedName + '\',\'' + autoMode + '\')">' + autoLabel + '</button>'
+                + '</div></div>');
+        }
+    }
+
+    // Default to Tasks tab; if contentType is 'tables' start on Tables tab
+    var ct = plan.contentType || 'both';
+    switchDrawerTab(ct === 'tables' ? 'table' : 'tasks');
+
     _updateDrawerProgress(encodedName);
 
     // Open drawer
@@ -271,6 +232,19 @@ function openPlanDrawer(encodedName) {
     if (drawer)  drawer.style.transform = 'translateX(0)';
     if (overlay) overlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+}
+
+function switchDrawerTab(tab) {
+    var enc = _activeDrawerPlan;
+    if (!enc) return;
+    ['tasks', 'table', 'note'].forEach(function(t) {
+        var btn  = document.getElementById('pdt-' + t);
+        var pane = document.getElementById('plan-pane-' + t + '-' + enc);
+        if (btn)  btn.classList.toggle('active', t === tab);
+        if (pane) pane.style.display = (t === tab) ? '' : 'none';
+    });
+    if (tab === 'table' && typeof loadPlanTables === 'function') loadPlanTables(enc);
+    _activeDrawerTab = tab;
 }
 
 function _updateDrawerProgress(enc) {
@@ -286,23 +260,20 @@ function closePlanDrawer() {
     var enc = _activeDrawerPlan;
     if (!enc) return;
 
-    // Move task pane back to detail DOM
-    var taskPane = document.getElementById('plan-pane-tasks-' + enc);
-    var detailEl = document.getElementById('plan_detail_' + enc);
-    if (taskPane && detailEl) {
-        taskPane.style.display = 'none';
-        detailEl.appendChild(taskPane);
-    }
-
-    // Sync note value back to hidden note input
-    var drawerNoteEditor = document.getElementById('plan-drawer-note-editor');
-    var noteInp = document.getElementById('note-plan_card_' + enc);
-    if (drawerNoteEditor && noteInp) noteInp.value = drawerNoteEditor.innerHTML;
-    if (window.RTE) RTE.populate('note-plan_card_' + enc, noteInp ? noteInp.value : '');
-
-    // Clear drawer body
+    var detailEl   = document.getElementById('plan_detail_' + enc);
+    var wrapper    = document.getElementById('plan_card_wrapper_' + enc);
     var drawerBody = document.getElementById('plan-drawer-body');
-    if (drawerBody) drawerBody.innerHTML = '';
+
+    // Sync note textarea value before hiding
+    var noteTa = document.getElementById('note-plan_card_' + enc);
+    if (noteTa && window.RTE) RTE.populate('note-plan_card_' + enc, noteTa.value);
+
+    // Move detail DOM back to its card wrapper
+    if (detailEl) {
+        detailEl.style.display = 'none';
+        if (wrapper) wrapper.appendChild(detailEl);
+        else if (drawerBody) drawerBody.innerHTML = '';
+    }
 
     var drawer  = document.getElementById('plan-drawer');
     var overlay = document.getElementById('plan-drawer-overlay');
@@ -310,15 +281,7 @@ function closePlanDrawer() {
     if (overlay) overlay.classList.add('hidden');
     document.body.style.overflow = '';
     _activeDrawerPlan = null;
-}
-
-function toggleDrawerNote() {
-    var sec = document.getElementById('plan-drawer-note-sec');
-    var btn = document.getElementById('plan-drawer-note-btn');
-    if (!sec) return;
-    var showing = sec.style.display !== 'none';
-    sec.style.display = showing ? 'none' : '';
-    if (btn) btn.classList.toggle('plan-drawer-note-btn-active', !showing);
+    _activeDrawerTab  = 'tasks';
 }
 
 // ── Gantt Timeline ──────────────────────────────────────────────────────────
