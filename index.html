@@ -168,10 +168,13 @@
                         🔔
                         <span class="notif-count" style="display:none;"></span>
                     </button>
-                    <div id="notif-panel" class="hidden" style="position:absolute;top:calc(100% + 0.5rem);right:0;width:300px;z-index:200;">
+                    <div id="notif-panel" class="hidden" style="position:fixed;top:56px;right:0.75rem;width:320px;z-index:9500;">
                         <div class="notif-header">
                             <span class="notif-title">🔔 Alerts</span>
-                            <button class="notif-settings-link" onclick="toggleNotifPanel();openNotifSettings();">Settings</button>
+                            <div style="display:flex;align-items:center;gap:0.4rem;">
+                                <button class="notif-dismiss-all-btn" onclick="dismissAllNotifs()" title="Dismiss all">✕ All</button>
+                                <button class="notif-settings-link" onclick="toggleNotifPanel();openNotifSettings();">⚙ Settings</button>
+                            </div>
                         </div>
                         <div id="notif-list"><div class="notif-empty">No alerts</div></div>
                     </div>
@@ -880,13 +883,18 @@
     <!-- Toast notification container -->
     <!-- Clear Progress Confirm Modal -->
     <!-- NOTIFICATION SETTINGS MODAL -->
-    <div id="notif-settings-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="ns-card">
-            <div class="ns-title">&#128276; Notification Settings</div>
+    <div id="notif-settings-modal" class="hidden fixed inset-0 z-[9600] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="ns-card" style="max-height:90vh;overflow-y:auto;max-width:480px;">
+            <div class="ns-title">⚙ Notification Settings</div>
+
+            <!-- MASTER -->
             <div class="ns-row">
                 <div class="ns-label">Enable Notifications<div class="ns-sub">Master switch for all alerts</div></div>
                 <label class="ns-toggle"><input type="checkbox" id="ns-enabled"><span class="ns-slider"></span></label>
             </div>
+
+            <!-- PLAN ALERTS -->
+            <div class="ns-section-head">📋 Plan Alerts</div>
             <div class="ns-row">
                 <div class="ns-label">Plan Start Alert<div class="ns-sub">Days before start date</div></div>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -905,20 +913,88 @@
                 <div class="ns-label">Overdue Alert<div class="ns-sub">Flag plans past end date</div></div>
                 <label class="ns-toggle"><input type="checkbox" id="ns-overdue"><span class="ns-slider"></span></label>
             </div>
+
+            <!-- EXAM ALERTS -->
+            <div class="ns-section-head">🎯 Exam Countdown Alerts</div>
             <div class="ns-row">
-                <div class="ns-label">Browser Push<div class="ns-sub">OS-level notifications</div></div>
-                <label class="ns-toggle"><input type="checkbox" id="ns-browser-push"><span class="ns-slider"></span></label>
+                <div class="ns-label">Prelims Countdown Alert<div class="ns-sub">Alert when this many days remain</div></div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="ns-toggle"><input type="checkbox" id="ns-prelims-countdown"><span class="ns-slider"></span></label>
+                    <input type="number" id="ns-prelims-days" min="1" max="90" value="30" class="ns-input" style="width:3.5rem;">
+                </div>
             </div>
             <div class="ns-row">
-                <div class="ns-label">Daily Reminder<div class="ns-sub">Morning nudge</div></div>
+                <div class="ns-label">Mains Countdown Alert<div class="ns-sub">Alert when this many days remain</div></div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="ns-toggle"><input type="checkbox" id="ns-mains-countdown"><span class="ns-slider"></span></label>
+                    <input type="number" id="ns-mains-days" min="1" max="90" value="30" class="ns-input" style="width:3.5rem;">
+                </div>
+            </div>
+
+            <!-- PROGRESS ALERTS -->
+            <div class="ns-section-head">📊 Progress Alerts</div>
+            <div class="ns-row">
+                <div class="ns-label">Low Absorption Alert<div class="ns-sub">Alert when overall % is below threshold</div></div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="ns-toggle"><input type="checkbox" id="ns-low-absorption"><span class="ns-slider"></span></label>
+                    <input type="number" id="ns-absorption-pct" min="1" max="80" value="15" class="ns-input" style="width:3.5rem;"> <span style="font-size:0.62rem;color:var(--t4);font-family:var(--mono);">%</span>
+                </div>
+            </div>
+            <div class="ns-row">
+                <div class="ns-label">Study Streak Reminder<div class="ns-sub">Nudge if no focus session for X days</div></div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="ns-toggle"><input type="checkbox" id="ns-streak"><span class="ns-slider"></span></label>
+                    <input type="number" id="ns-streak-days" min="1" max="7" value="1" class="ns-input" style="width:3.5rem;">
+                </div>
+            </div>
+
+            <!-- REMINDERS -->
+            <div class="ns-section-head">⏰ Reminders</div>
+            <div class="ns-row">
+                <div class="ns-label">Daily Reminder<div class="ns-sub">Morning study nudge</div></div>
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                     <label class="ns-toggle"><input type="checkbox" id="ns-daily"><span class="ns-slider"></span></label>
                     <input type="time" id="ns-daily-time" value="09:00" class="ns-input">
                 </div>
             </div>
+            <div class="ns-row">
+                <div class="ns-label">Evening Review Reminder<div class="ns-sub">End-of-day check-in</div></div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <label class="ns-toggle"><input type="checkbox" id="ns-evening"><span class="ns-slider"></span></label>
+                    <input type="time" id="ns-evening-time" value="21:00" class="ns-input">
+                </div>
+            </div>
+            <div class="ns-row">
+                <div class="ns-label">Custom Reminder<div class="ns-sub">Set a one-line reminder with time</div></div>
+                <label class="ns-toggle"><input type="checkbox" id="ns-custom-reminder"><span class="ns-slider"></span></label>
+            </div>
+            <div id="ns-custom-wrap" style="display:none;padding:0.5rem 0 0.25rem;display:flex;flex-direction:column;gap:0.4rem;">
+                <input type="text" id="ns-custom-text" placeholder="e.g. Revise Polity notes" class="ns-input" style="width:100%;font-size:0.72rem;">
+                <input type="time" id="ns-custom-time" value="14:00" class="ns-input" style="width:7rem;">
+            </div>
+
+            <!-- PUSH -->
+            <div class="ns-section-head">🔔 Push</div>
+            <div class="ns-row">
+                <div class="ns-label">Browser Push Notifications<div class="ns-sub">OS-level alerts (requires permission)</div></div>
+                <label class="ns-toggle"><input type="checkbox" id="ns-browser-push"><span class="ns-slider"></span></label>
+            </div>
+
+            <!-- SNOOZE DEFAULT -->
+            <div class="ns-row">
+                <div class="ns-label">Default Snooze Duration<div class="ns-sub">How long to snooze an alert</div></div>
+                <select id="ns-snooze-default" class="ns-input">
+                    <option value="1">1 hour</option>
+                    <option value="4">4 hours</option>
+                    <option value="24" selected>1 day</option>
+                    <option value="72">3 days</option>
+                    <option value="168">1 week</option>
+                </select>
+            </div>
+
             <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.25rem;">
                 <button onclick="closeNotifSettings()" style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.25);color:var(--t2);border-radius:0.65rem;padding:0.55rem 1.1rem;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:var(--mono);">Cancel</button>
-                <button onclick="saveNotifSettings()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:white;border-radius:0.65rem;padding:0.55rem 1.3rem;font-size:0.72rem;font-weight:700;cursor:pointer;">Save</button>
+                <button onclick="saveNotifSettings()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:white;border-radius:0.65rem;padding:0.55rem 1.3rem;font-size:0.72rem;font-weight:700;cursor:pointer;">Save Settings</button>
             </div>
         </div>
     </div>
