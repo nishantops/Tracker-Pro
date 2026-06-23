@@ -43,6 +43,7 @@ function toggleTheme() {
     if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
 }
 function initTheme() {
+    // Theme already applied inline in <head>; just sync the icon
     const saved = localStorage.getItem('upsc_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
     const icon = document.getElementById('theme-toggle-icon');
