@@ -30,7 +30,105 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeAboutModal();
 });
 
-// ── Contact Admin Message ────────────────────────────────────────────────
+// ── Contact Admin — Chat System ───────────────────────────────────────────
+var _chatMessages = [], _chatLoaded = false, _chatChannel = null;
+var _msgLimitCache = null;
+
+async function _checkDailyLimit() {
+    var today = new Date().toISOString().slice(0,10);
+    if (_msgLimitCache && _msgLimitCache.date === today) return _msgLimitCache;
+    var limit = (typeof ENV !== 'undefined' && ENV.DEFAULT_DAILY_MSG_LIMIT) || 3;
+    try {
+        var r = await dbClient.from('upsc_messages').select('id', { count: 'exact', head: true })
+            .eq('user_id', currentUserId).eq('sender_type', 'user').gte('created_at', today + 'T00:00:00Z');
+        _msgLimitCache = { date: today, count: r.count || 0, limit: limit };
+    } catch(e) { _msgLimitCache = { date: today, count: 0, limit: limit }; }
+    return _msgLimitCache;
+}
+function _invalidateLimitCache() { _msgLimitCache = null; }
+
+async function _loadChatHistory() {
+    var el = document.getElementById('chat-messages');
+    if (!el) return;
+    if (!currentUserId || typeof dbClient === 'undefined') {
+        el.innerHTML = '<p style="color:var(--t3);font-family:var(--mono);font-size:0.65rem;text-align:center;padding:1.5rem;">Please log in to view messages.</p>';
+        return;
+    }
+    el.innerHTML = '<p style="color:var(--t3);font-family:var(--mono);font-size:0.65rem;text-align:center;padding:0.75rem;">Loading…</p>';
+    try {
+        var r = await dbClient.from('upsc_messages').select('*')
+            .eq('user_id', currentUserId).is('thread_id', null)
+            .order('created_at', { ascending: true });
+        _chatMessages = (r.data || []).map(function(m) { m._replies = []; return m; });
+        _chatLoaded = true;
+        if (_chatMessages.length) await _loadAllReplies();
+        _renderChat();
+        _subChat();
+    } catch(e) {
+        el.innerHTML = '<p style="color:#f87171;font-family:var(--mono);font-size:0.65rem;padding:0.75rem;">Error loading messages: ' + (e.message || 'unknown') + '</p>';
+    }
+}
+
+async function _loadAllReplies() {
+    if (!_chatMessages.length) return;
+    var ids = _chatMessages.map(function(m) { return m.id; });
+    try {
+        var r = await dbClient.from('upsc_messages').select('*')
+            .in('thread_id', ids).order('created_at', { ascending: true });
+        (r.data || []).forEach(function(rep) {
+            var p = _chatMessages.find(function(m) { return m.id === rep.thread_id; });
+            if (p) p._replies.push(rep);
+        });
+    } catch(e) {}
+}
+
+function _esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function _bubble(msg) {
+    var isAdmin = msg.sender_type === 'admin';
+    var time = new Date(msg.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    var align = isAdmin ? 'flex-end' : 'flex-start';
+    var bg = isAdmin ? 'rgba(99,102,241,0.14)' : 'var(--surf)';
+    var bc = isAdmin ? 'rgba(99,102,241,0.35)' : 'var(--bdr)';
+    var label = isAdmin ? '🛡 Admin' : '👤 ' + _esc(msg.display_name || 'You');
+    return '<div style="display:flex;justify-content:' + align + ';margin-bottom:0.45rem;">'
+        + '<div style="max-width:82%;background:' + bg + ';border:1px solid ' + bc + ';border-radius:0.65rem;padding:0.45rem 0.7rem;">'
+        + '<div style="font-size:0.58rem;font-weight:700;color:' + (isAdmin ? '#818cf8' : 'var(--t3)') + ';font-family:var(--mono);margin-bottom:0.15rem;">' + label + ' · ' + time + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--t1);white-space:pre-wrap;line-height:1.5;">' + _esc(msg.content) + '</div>'
+        + '</div></div>';
+}
+
+function _renderChat() {
+    var el = document.getElementById('chat-messages');
+    if (!el) return;
+    if (!_chatMessages.length) {
+        el.innerHTML = '<p style="color:var(--t3);font-family:var(--mono);font-size:0.65rem;text-align:center;padding:1.5rem;">No messages yet — start a conversation!</p>';
+        return;
+    }
+    var h = '';
+    _chatMessages.forEach(function(m) {
+        h += _bubble(m);
+        (m._replies || []).forEach(function(r) { h += '<div style="padding-left:1rem;">' + _bubble(r) + '</div>'; });
+    });
+    el.innerHTML = h;
+    el.scrollTop = el.scrollHeight;
+}
+
+function _subChat() {
+    if (_chatChannel || !currentUserId || typeof dbClient === 'undefined') return;
+    _chatChannel = dbClient.channel('chat_' + currentUserId)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'upsc_messages', filter: 'user_id=eq.' + currentUserId }, function(p) {
+            var msg = p.new;
+            if (!msg.thread_id) { msg._replies = []; _chatMessages.push(msg); }
+            else {
+                var par = _chatMessages.find(function(m) { return m.id === msg.thread_id; });
+                if (par) { if (!par._replies) par._replies = []; par._replies.push(msg); }
+            }
+            _renderChat();
+            refreshUnreadBadge();
+        }).subscribe();
+}
+
 async function submitContactMessage() {
     var inp = document.getElementById('contact-msg-input');
     var statusEl = document.getElementById('contact-status');
@@ -38,21 +136,24 @@ async function submitContactMessage() {
         if (statusEl) { statusEl.textContent = 'Please type a message.'; statusEl.style.color = '#f87171'; }
         return;
     }
+    var lim = await _checkDailyLimit();
+    if (lim.count >= lim.limit) {
+        if (statusEl) { statusEl.textContent = 'Daily message limit reached (' + lim.limit + '/day). Try tomorrow.'; statusEl.style.color = '#f87171'; }
+        return;
+    }
     if (statusEl) { statusEl.textContent = 'Sending…'; statusEl.style.color = 'var(--t3)'; }
-
-    var name = 'User';
-    try { if (typeof currentUserId !== 'undefined' && window._userProfile) name = window._userProfile.display_name || name; } catch(e) {}
-
+    var name = (window._userProfile && window._userProfile.display_name) || 'User';
     try {
         if (typeof dbClient === 'undefined' || !currentUserId) throw new Error('Not logged in');
         var res = await dbClient.from('upsc_messages').insert({
-            user_id: currentUserId,
-            display_name: name,
-            content: inp.value.trim()
+            user_id: currentUserId, display_name: name,
+            content: inp.value.trim(), sender_type: 'user', thread_id: null
         });
         if (res.error) throw res.error;
         inp.value = '';
-        if (statusEl) { statusEl.textContent = '✓ Message sent to admin.'; statusEl.style.color = '#10b981'; }
+        if (statusEl) { statusEl.textContent = ''; }
+        _invalidateLimitCache();
+        await _loadChatHistory();
     } catch(e) {
         if (statusEl) { statusEl.textContent = 'Error: ' + (e.message || 'Could not send'); statusEl.style.color = '#f87171'; }
     }

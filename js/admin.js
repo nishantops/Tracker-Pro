@@ -51,7 +51,7 @@ async function checkAdminRole(userId) {
         var email = gu.data && gu.data.user && gu.data.user.email;
 
         // 1. Admin email check — the primary admin by email
-        var ADMIN_EMAIL = 'admin@upsc-nishant.me';
+        var ADMIN_EMAIL = (typeof ENV !== 'undefined' && ENV.ADMIN_EMAIL) || 'admin@upsc-nishant.me';
         if (email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) return true;
 
         // 2. Check upsc_user_profiles.is_admin flag (set via SQL or admin dashboard)
@@ -155,6 +155,7 @@ async function loadOverview() {
         document.getElementById('last-refresh-ts').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
 
         // Top studiers
+        
         var hoursPerUser = {};
         focusRows.forEach(function(row) {
             var hrs = 0;
