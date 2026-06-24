@@ -3401,3 +3401,5 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 
 /* Header */
 [data-theme="light"] header { background: rgba(255,255,255,0.96) !important; border-bottom-color: rgba(109,40,217,0.15) !important; }
+
+.pt-filter-row td,.pt-filter-row th{background:var(--inp);padding:0.1rem 0.15rem;}.pt-fi{width:100%;background:transparent;border:none;border-bottom:1px solid var(--accent-l);color:var(--t1);font-size:0.7rem;padding:0.1rem 0.2rem;outline:none;}
