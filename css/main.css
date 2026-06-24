@@ -2696,25 +2696,29 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 /* ── Gantt Timeline ─────────────────────────────────────────── */
 .plan-gantt-outer {
   border-radius: 1rem;
-  overflow: hidden;
   border: 1px solid var(--bdr);
   background: var(--card);
-  max-height: 55vh;
-  overflow-y: auto;
+  max-height: 60vh;
+  overflow: auto;           /* both axes */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bdr) transparent;
+  position: relative;
 }
 .plan-gantt-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  /* wrapper no longer needed — kept for compatibility */
+  min-width: max-content;
 }
 .plan-gantt-grid {
   display: grid;
   min-width: max-content;
-  width: 100%;
+  /* Don't force width:100% — let horizontal scroll work naturally */
 }
 .plan-gantt-corner {
   position: sticky;
+  top: 0;
   left: 0;
-  z-index: 3;
+  z-index: 4;           /* above both headers and row labels */
   background: var(--bg2);
   border-bottom: 1px solid var(--bdr);
   border-right: 1px solid var(--bdr);
@@ -2729,6 +2733,10 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   align-items: center;
 }
 .plan-gantt-col-hdr {
+  position: sticky;
+  top: 0;
+  z-index: 2;           /* sticky column headers (months/weeks) */
+  background: var(--bg2);
   border-bottom: 1px solid var(--bdr);
   border-right: 1px solid rgba(255,255,255,0.04);
   padding: 0.4rem 0.2rem;

@@ -439,3 +439,107 @@ CREATE TRIGGER trg_plan_tables_updated_at
 CREATE TRIGGER trg_custom_plans_updated_at
     BEFORE UPDATE ON upsc_custom_plans
     FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();
+
+-- ============================================================================
+-- TABLE 8: User-to-Admin Messages (chat system)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS upsc_messages (
+    id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    display_name TEXT,
+    content      TEXT        NOT NULL,
+    sender_type  TEXT        DEFAULT 'user' CHECK (sender_type IN ('user','admin')),
+    thread_id    UUID        REFERENCES upsc_messages(id) ON DELETE CASCADE,
+    is_read      BOOLEAN     DEFAULT false,
+    created_at   TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_messages_user       ON upsc_messages(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_thread     ON upsc_messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_messages_unread     ON upsc_messages(user_id, is_read, sender_type);
+ALTER TABLE upsc_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own messages"     ON upsc_messages;
+DROP POLICY IF EXISTS "Users insert own messages"   ON upsc_messages;
+DROP POLICY IF EXISTS "Admin full access messages"  ON upsc_messages;
+CREATE POLICY "Users read own messages"   ON upsc_messages FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own messages" ON upsc_messages FOR INSERT WITH CHECK (auth.uid() = user_id AND sender_type = 'user');
+CREATE POLICY "Admin full access messages" ON upsc_messages FOR ALL
+  USING  (EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true))
+  WITH CHECK (EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true));
+
+-- ============================================================================
+-- TABLE 9: Monthly Feedback (star rating + message, 1 per user per month)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS upsc_feedback (
+    id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    display_name TEXT,
+    content      TEXT        NOT NULL DEFAULT '',
+    rating       INTEGER     CHECK (rating BETWEEN 1 AND 5),
+    month_key    TEXT        NOT NULL,  -- 'YYYY-MM'
+    created_at   TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (user_id, month_key)
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_user  ON upsc_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_month ON upsc_feedback(month_key);
+ALTER TABLE upsc_feedback ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users insert own feedback" ON upsc_feedback;
+DROP POLICY IF EXISTS "Users read own feedback"   ON upsc_feedback;
+DROP POLICY IF EXISTS "Admin reads all feedback"  ON upsc_feedback;
+CREATE POLICY "Users insert own feedback" ON upsc_feedback FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users read own feedback"   ON upsc_feedback FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admin reads all feedback"  ON upsc_feedback FOR SELECT USING (
+  EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true));
+
+-- ============================================================================
+-- TABLE 10: Per-User Settings (feature flags + daily message limit)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS upsc_user_settings (
+    user_id         UUID    PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    daily_msg_limit INTEGER DEFAULT 3,
+    features        JSONB   DEFAULT '{"plans":true,"tracker":true,"pyq":true,"ca":true,"focus":true,"ai":true}',
+    notes           TEXT,
+    updated_at      TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE upsc_user_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own settings"   ON upsc_user_settings;
+DROP POLICY IF EXISTS "Admin manage all settings" ON upsc_user_settings;
+CREATE POLICY "Users read own settings"   ON upsc_user_settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admin manage all settings" ON upsc_user_settings FOR ALL USING (
+  EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true))
+  WITH CHECK (
+  EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true));
+
+-- ============================================================================
+-- TABLE 11: Application Metrics Events
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS upsc_app_metrics (
+    id         UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id    UUID        REFERENCES auth.users(id) ON DELETE CASCADE,
+    event_type TEXT        NOT NULL,
+    event_data JSONB       DEFAULT '{}',
+    session_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_metrics_user ON upsc_app_metrics(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_type ON upsc_app_metrics(event_type, created_at DESC);
+ALTER TABLE upsc_app_metrics ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users insert own metrics" ON upsc_app_metrics;
+DROP POLICY IF EXISTS "Admin reads all metrics"  ON upsc_app_metrics;
+CREATE POLICY "Users insert own metrics" ON upsc_app_metrics FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admin reads all metrics"  ON upsc_app_metrics FOR SELECT USING (
+  EXISTS (SELECT 1 FROM upsc_user_sessions WHERE user_id = auth.uid() AND is_superuser = true));
+
+-- ============================================================================
+-- REALTIME: Enable for live chat updates
+-- ============================================================================
+ALTER PUBLICATION supabase_realtime ADD TABLE upsc_messages;
+
+-- ============================================================================
+-- updated_at trigger for new tables
+-- ============================================================================
+DROP TRIGGER IF EXISTS trg_plan_tables_updated_at  ON upsc_plan_tables;
+DROP TRIGGER IF EXISTS trg_custom_plans_updated_at ON upsc_custom_plans;
+DROP TRIGGER IF EXISTS trg_user_settings_updated_at ON upsc_user_settings;
+CREATE TRIGGER trg_plan_tables_updated_at   BEFORE UPDATE ON upsc_plan_tables   FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();
+CREATE TRIGGER trg_custom_plans_updated_at  BEFORE UPDATE ON upsc_custom_plans  FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();
+CREATE TRIGGER trg_user_settings_updated_at BEFORE UPDATE ON upsc_user_settings FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();

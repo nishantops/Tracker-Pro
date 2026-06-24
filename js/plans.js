@@ -755,10 +755,9 @@ function renderGanttTimeline(viewMode) {
     var maxD = new Date(Math.max.apply(null, allDates));
 
     var units = _ganttUnits(minD, maxD, viewMode);
-    if (units.length > 52) units = units.slice(0, 52);
-
-    var colMin = viewMode === 'month' ? '4.5rem' : '3rem';
-    var html = '<div class="plan-gantt-scroll"><div class="plan-gantt-grid" style="grid-template-columns:9rem repeat(' + units.length + ',minmax(' + colMin + ',1fr));">';
+    // No cap — support full 1-2 year ranges; scroll handles the width
+    var colMin = viewMode === 'month' ? '4.8rem' : '3.2rem';
+    var html = '<div class="plan-gantt-scroll"><div class="plan-gantt-grid" style="grid-template-columns:9rem repeat(' + units.length + ',minmax(' + colMin + ',1fr));min-width:max-content;">';
 
     // Header
     html += '<div class="plan-gantt-corner">PLAN</div>';
