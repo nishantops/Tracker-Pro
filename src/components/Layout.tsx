@@ -8,6 +8,7 @@ import { SyllabusView } from './syllabus/SyllabusView';
 import { PlansGrid } from './plans/PlansGrid';
 import { SourcesView } from './sources/SourcesView';
 import { PYQBrowser } from './pyq/PYQBrowser';
+import { FocusWidget } from './focus/FocusWidget';
 import { ENV } from '../lib/env';
 import {
   DEFAULT_NAV,
@@ -69,6 +70,7 @@ export function Layout() {
         <Countdown />
 
         <div className="header-right">
+          <FocusWidget />
           <span className="session-badge">Session: {elapsed}</span>
           <button className="theme-btn" onClick={toggle} title="Toggle theme">
             {theme === 'dark' ? '☀️' : '🌙'}
