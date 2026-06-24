@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useProfile } from '../hooks/useProfile';
 import { ProfileModal } from './ProfileModal';
 import { Countdown } from './Countdown';
+import { SyllabusView } from './syllabus/SyllabusView';
 import { ENV } from '../lib/env';
 import {
   DEFAULT_NAV,
@@ -151,14 +152,14 @@ export function Layout() {
               </nav>
 
               <main className="app-main">
-                <Placeholder label={`Syllabus → ${nav.stage}` } phase={4} />
+                <SyllabusView stage={nav.stage} />
               </main>
             </>
           )}
 
           {nav.marathon === 'ca' && (
             <main className="app-main">
-              <Placeholder label="Current Affairs" phase={4} />
+              <SyllabusView stage="prelims" />
             </main>
           )}
 

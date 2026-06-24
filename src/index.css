@@ -778,3 +778,237 @@ select.auth-input {
   .root-tabs, .sub-tabs, .stage-tabs { padding: 0 0.75rem; }
   .tab-btn { font-size: 0.6rem; padding: 0.5rem 0.5rem; }
 }
+
+/* ── Syllabus View ───────────────────────────────────────────────────────── */
+.syllabus-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sync-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--surf);
+  border-radius: 999px;
+  width: fit-content;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sync-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.sync-ok { background: var(--emerald-l); }
+.sync-saving { background: var(--amber-l); animation: pulse 1s infinite; }
+.sync-fail { background: var(--rose-l); }
+
+.sync-text { color: var(--t3); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Metrics HUD ─────────────────────────────────────────────────────────── */
+.metrics-hud {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r);
+}
+
+.metrics-ring-wrap {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  flex-shrink: 0;
+}
+
+.metrics-ring-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.metrics-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.metrics-pct {
+  font-family: var(--heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--t1);
+}
+
+.metrics-sub {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  color: var(--t4);
+}
+
+.metrics-pies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.metrics-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mini-pie {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.mini-label {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+/* ── Topic Sections ──────────────────────────────────────────────────────── */
+.topic-section {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--t1);
+  font-family: var(--heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.section-header:hover {
+  background: var(--surf);
+}
+
+.section-chevron {
+  font-size: 0.8rem;
+  color: var(--t3);
+  width: 1rem;
+  text-align: center;
+}
+
+.section-pie {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.section-label {
+  flex: 1;
+  text-align: left;
+}
+
+.section-count {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.topic-rows {
+  border-top: 1px solid var(--bdr);
+}
+
+/* ── Topic Row ───────────────────────────────────────────────────────────── */
+.topic-row {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  transition: background 0.15s;
+}
+
+.topic-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.topic-row:hover {
+  background: var(--surf);
+}
+
+.topic-done .topic-text {
+  color: var(--t4);
+  text-decoration: line-through;
+}
+
+.topic-label {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  gap: 0.75rem;
+}
+
+.topic-check {
+  margin-top: 0.15rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--indigo);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.topic-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--t2);
+  line-height: 1.5;
+  transition: color 0.2s, text-decoration 0.2s;
+}
+
+.topic-note {
+  margin-top: 0.5rem;
+  margin-left: 1.85rem;
+  width: calc(100% - 1.85rem);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bdr);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--t3);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.topic-note:focus {
+  border-color: var(--accent-l);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.topic-note[readonly] {
+  opacity: 0.5;
+  cursor: default;
+}
