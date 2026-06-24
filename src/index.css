@@ -887,6 +887,141 @@ select.auth-input {
   font-weight: 700;
 }
 
+/* ── Plans Grid ──────────────────────────────────────────────────────────── */
+.plans-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.create-plan-btn {
+  align-self: flex-start;
+  background: linear-gradient(135deg, var(--indigo), var(--accent));
+  color: white;
+  border: none;
+  border-radius: var(--r);
+  padding: 0.6rem 1.25rem;
+  font-family: var(--heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.create-plan-btn:hover { opacity: 0.85; }
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.plan-card {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.plan-card:hover {
+  border-color: var(--accent-l);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+}
+
+.plan-card-stripe {
+  height: 3px;
+}
+
+.plan-card-inner {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.plan-card-title {
+  font-family: var(--heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--t1);
+}
+
+.plan-card-del {
+  background: none;
+  border: none;
+  color: var(--t4);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.plan-card-del:hover { color: var(--rose-l); }
+
+.plan-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.plan-badge {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.plan-type-badge {
+  background: var(--surf);
+  color: var(--t2);
+}
+
+.plan-div-badge {
+  background: var(--surf);
+  color: var(--t3);
+}
+
+.plan-muted-badge {
+  background: none;
+}
+
+.plan-card-dates {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--t3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plan-days {
+  font-weight: 700;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.days-ok   { background: rgba(16,185,129,0.15); color: var(--emerald-l); }
+.days-warn { background: rgba(245,158,11,0.15); color: var(--amber-l); }
+.days-over { background: rgba(244,63,94,0.15); color: var(--rose-l); }
+
+/* ── Form Stack (shared plan/profile modal spacing) ──────────────────────── */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 /* ── Topic Sections ──────────────────────────────────────────────────────── */
 .topic-section {
   background: var(--card);
