@@ -3,19 +3,34 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useProfile } from '../hooks/useProfile';
 import { ProfileModal } from './ProfileModal';
+import { Countdown } from './Countdown';
 import { ENV } from '../lib/env';
+import {
+  DEFAULT_NAV,
+  type NavState,
+  type RootTab,
+  type MarathonTab,
+  type PlannerTab,
+  type StageTab,
+} from '../lib/navigation';
 
 export function Layout() {
   const { user, signOut } = useAuth();
   const { theme, toggle } = useTheme();
-  const { profile, initials } = useProfile();
+  const { profile, initials, features } = useProfile();
   const [elapsed, setElapsed] = useState('just started');
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [nav, setNav] = useState<NavState>(DEFAULT_NAV);
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
-  // Session badge timer
+  const setRoot = (root: RootTab) => setNav((n) => ({ ...n, root }));
+  const setMarathon = (marathon: MarathonTab) => setNav((n) => ({ ...n, marathon }));
+  const setPlanner = (planner: PlannerTab) => setNav((n) => ({ ...n, planner }));
+  const setStage = (stage: StageTab) => setNav((n) => ({ ...n, stage }));
+
+  // Session badge
   useEffect(() => {
     const start = Date.now();
     const id = setInterval(() => {
@@ -37,7 +52,7 @@ export function Layout() {
 
   return (
     <div className="app-shell">
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────────── */}
       <header className="app-header">
         <div className="header-left">
           <div className="header-avatar">{initials}</div>
@@ -47,18 +62,15 @@ export function Layout() {
           </div>
         </div>
 
+        <Countdown />
+
         <div className="header-right">
           <span className="session-badge">Session: {elapsed}</span>
-
           <button className="theme-btn" onClick={toggle} title="Toggle theme">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-
           <div className="profile-menu-wrap" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="header-settings-btn"
-              onClick={() => setMenuOpen((o) => !o)}
-            >
+            <button className="header-settings-btn" onClick={() => setMenuOpen((o) => !o)}>
               {initials}
             </button>
             {menuOpen && (
@@ -66,7 +78,9 @@ export function Layout() {
                 <p className="dropdown-email">{user?.email}</p>
                 <p className="dropdown-name">{displayName}</p>
                 {profile?.age && (
-                  <p className="dropdown-meta">Age {profile.age} · Attempt {profile.attempt}</p>
+                  <p className="dropdown-meta">
+                    Age {profile.age} · Attempt {profile.attempt}
+                  </p>
                 )}
                 <div className="dropdown-divider" />
                 <button
@@ -87,32 +101,139 @@ export function Layout() {
         </div>
       </header>
 
-      {/* Main content — placeholder for Phase 3+ */}
-      <main className="app-main">
-        <div className="welcome-card">
-          <h2>Welcome, {displayName} 👋</h2>
-          <p>
-            Phase 2 complete — Profile system with setup wizard, edit modal, and
-            feature gates.
-          </p>
-          <div className="profile-badges">
-            {profile?.age && <span className="info-badge">🎂 Age {profile.age}</span>}
-            {profile?.attempt && <span className="info-badge">📝 Attempt {profile.attempt}</span>}
-            {profile?.optional_subject && profile.optional_subject !== 'none' && (
-              <span className="info-badge">
-                📚 {profile.optional_subject_custom || profile.optional_subject}
-              </span>
-            )}
-          </div>
-          <p className="status-info">
-            ✓ Supabase connected · ✓ Session tracked · ✓ Auto-logout ·
-            ✓ Profile synced
-          </p>
-        </div>
-      </main>
+      {/* ── Root Tabs: Marathon / Planner ────────────────────────── */}
+      <nav className="root-tabs">
+        <TabBtn active={nav.root === 'marathon'} onClick={() => setRoot('marathon')} variant="root">
+          Marathon
+        </TabBtn>
+        {features.plans !== false && (
+          <TabBtn active={nav.root === 'planner'} onClick={() => setRoot('planner')} variant="root">
+            Planner
+          </TabBtn>
+        )}
+      </nav>
 
-      {/* Profile edit modal */}
+      {/* ── Marathon View ────────────────────────────────────────── */}
+      {nav.root === 'marathon' && (
+        <>
+          <nav className="sub-tabs">
+            <TabBtn active={nav.marathon === 'syllabus'} onClick={() => setMarathon('syllabus')} variant="sub">
+              Syllabus
+            </TabBtn>
+            <TabBtn active={nav.marathon === 'ca'} onClick={() => setMarathon('ca')} variant="sub">
+              Current Affairs
+            </TabBtn>
+            {features.pyq !== false && (
+              <TabBtn active={nav.marathon === 'pyq'} onClick={() => setMarathon('pyq')} variant="sub">
+                PYQ
+              </TabBtn>
+            )}
+            <TabBtn active={nav.marathon === 'testseries'} onClick={() => setMarathon('testseries')} variant="sub">
+              Test Series
+            </TabBtn>
+          </nav>
+
+          {/* Stage tabs (Syllabus view) */}
+          {nav.marathon === 'syllabus' && (
+            <>
+              <nav className="stage-tabs">
+                <TabBtn active={nav.stage === 'prelims'} onClick={() => setStage('prelims')} variant="stage">
+                  Stage I: Prelims
+                </TabBtn>
+                <TabBtn active={nav.stage === 'mains'} onClick={() => setStage('mains')} variant="stage">
+                  Stage II: Mains
+                </TabBtn>
+                <TabBtn active={nav.stage === 'anthro'} onClick={() => setStage('anthro')} variant="stage">
+                  Stage III: {profile?.optional_subject && profile.optional_subject !== 'none'
+                    ? (profile.optional_subject_custom || profile.optional_subject).substring(0, 14)
+                    : 'Optional'}
+                </TabBtn>
+              </nav>
+
+              <main className="app-main">
+                <Placeholder label={`Syllabus → ${nav.stage}` } phase={4} />
+              </main>
+            </>
+          )}
+
+          {nav.marathon === 'ca' && (
+            <main className="app-main">
+              <Placeholder label="Current Affairs" phase={4} />
+            </main>
+          )}
+
+          {nav.marathon === 'pyq' && (
+            <main className="app-main">
+              <Placeholder label="PYQ Browser" phase={9} />
+            </main>
+          )}
+
+          {nav.marathon === 'testseries' && (
+            <main className="app-main">
+              <Placeholder label="Test Series" phase={9} />
+            </main>
+          )}
+        </>
+      )}
+
+      {/* ── Planner View ─────────────────────────────────────────── */}
+      {nav.root === 'planner' && (
+        <>
+          <nav className="sub-tabs">
+            <TabBtn active={nav.planner === 'master'} onClick={() => setPlanner('master')} variant="sub">
+              Master Plan
+            </TabBtn>
+            <TabBtn active={nav.planner === 'plans'} onClick={() => setPlanner('plans')} variant="sub">
+              My Plans
+            </TabBtn>
+            {features.sources !== false && (
+              <TabBtn active={nav.planner === 'sources'} onClick={() => setPlanner('sources')} variant="sub">
+                Sources
+              </TabBtn>
+            )}
+          </nav>
+
+          <main className="app-main">
+            {nav.planner === 'master' && <Placeholder label="Master Plan (Gantt + Pie + Calendar)" phase={8} />}
+            {nav.planner === 'plans' && <Placeholder label="My Plans" phase={5} />}
+            {nav.planner === 'sources' && <Placeholder label="Sources" phase={10} />}
+          </main>
+        </>
+      )}
+
+      {/* Profile modal */}
       <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+    </div>
+  );
+}
+
+// ── Tab button component ─────────────────────────────────────────────────────
+function TabBtn({
+  active,
+  onClick,
+  variant,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  variant: 'root' | 'sub' | 'stage';
+  children: React.ReactNode;
+}) {
+  const base = `tab-btn tab-${variant}`;
+  return (
+    <button className={`${base} ${active ? 'tab-active' : ''}`} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+// ── Placeholder for unbuilt phases ───────────────────────────────────────────
+function Placeholder({ label, phase }: { label: string; phase: number }) {
+  return (
+    <div className="welcome-card">
+      <h2>{label}</h2>
+      <p>Coming in Phase {phase}.</p>
+      <p className="status-info">Navigation is wired. Content will be added incrementally.</p>
     </div>
   );
 }

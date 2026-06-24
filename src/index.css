@@ -619,3 +619,162 @@ select.auth-input {
 .dropdown-logout {
   color: var(--rose-l) !important;
 }
+
+/* ── Countdown Row ───────────────────────────────────────────────────────── */
+.countdown-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.countdown-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+  font-family: var(--mono);
+  line-height: 1.2;
+}
+
+.countdown-prelims { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); }
+.countdown-mains   { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+.countdown-label {
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--t4);
+}
+
+.countdown-value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--t1);
+}
+
+/* ── Navigation Tabs ─────────────────────────────────────────────────────── */
+.root-tabs,
+.sub-tabs,
+.stage-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.root-tabs {
+  padding-top: 0.75rem;
+}
+
+.tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: var(--r);
+  font-family: var(--heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  background: none;
+  color: var(--t3);
+}
+
+.tab-btn:hover:not(.tab-active) {
+  color: var(--accent-l);
+  background: var(--surf);
+}
+
+/* Root tab active */
+.tab-root.tab-active {
+  background: linear-gradient(135deg, var(--indigo), var(--accent));
+  color: white;
+  border-color: var(--indigo);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+/* Sub tab styling */
+.tab-sub {
+  font-size: 0.7rem;
+  padding: 0.6rem 1rem;
+}
+
+.tab-sub.tab-active {
+  background: linear-gradient(135deg, var(--emerald), #0d9488);
+  color: white;
+  border-color: var(--emerald);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+/* Stage tab styling */
+.tab-stage {
+  font-size: 0.65rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.tab-stage.tab-active {
+  background: var(--indigo);
+  color: white;
+  border-color: var(--indigo);
+}
+
+/* ── Toast System ─────────────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast-item {
+  background: var(--card);
+  backdrop-filter: blur(12px);
+  color: var(--t1);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bdr);
+  border-left: 3px solid var(--accent-l);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  pointer-events: all;
+  cursor: pointer;
+  animation: toastIn 0.3s ease-out;
+  max-width: 22rem;
+}
+
+.toast-exit {
+  animation: toastOut 0.4s ease-in forwards;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(1rem); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(1rem); }
+}
+
+/* ── Status Info ─────────────────────────────────────────────────────────── */
+.status-info {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--t4);
+  margin-top: 0.75rem;
+}
+
+/* ── Mobile responsive ───────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .countdown-row { display: none; }
+  .root-tabs, .sub-tabs, .stage-tabs { padding: 0 0.75rem; }
+  .tab-btn { font-size: 0.6rem; padding: 0.5rem 0.5rem; }
+}
