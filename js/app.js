@@ -39,11 +39,15 @@ function toggleTheme() {
     const next  = (html.getAttribute('data-theme') || 'dark') === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('upsc_theme', next);
+    localStorage.setItem('upsc_theme_user_set', '1'); // user explicitly chose
     const icon = document.getElementById('theme-toggle-icon');
     if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
 }
 function initTheme() {
-    // Theme already applied inline in <head>; just sync the icon
+    // If user never explicitly chose a theme, always default to dark
+    if (!localStorage.getItem('upsc_theme_user_set')) {
+        localStorage.setItem('upsc_theme', 'dark');
+    }
     const saved = localStorage.getItem('upsc_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
     const icon = document.getElementById('theme-toggle-icon');

@@ -18,6 +18,7 @@ async function syncLatestCloudState() {
             plansRes.data.forEach(plan => {
                 buildPlanCardDOM(plan.plan_title, plan.plan_id, plan.plan_type, plan.start_date, plan.end_date, plan.plan_category || 'common', plan.plan_division || 'both', plan.notif_enabled !== false, plan.plan_subject || '', plan.content_type || 'both');
             });
+            if (typeof sortPlanCards === 'function') sortPlanCards();
         }
 
         if (progressRes.data) {

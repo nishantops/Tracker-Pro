@@ -121,7 +121,7 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
         + '<div class="plan-card-stripe" style="background:linear-gradient(90deg,' + catStyle.text + '99,' + catStyle.text + '22);"></div>'
         + '<div class="plan-card-inner">'
         +   '<div class="plan-card-top">'
-        +     '<span class="plan-card-title">' + title + '</span>'
+        +     '<span class="plan-card-title" id="pcard-title-' + encodedName + '">' + title + '</span>'
         +     '<button class="plan-card-del" onclick="event.stopPropagation();eraseCustomNode(\'plan_meta_' + encodedName + '\',this)" title="Delete plan">\xd7</button>'
         +   '</div>'
         +   '<div class="plan-card-badges">'
@@ -174,37 +174,57 @@ function buildPlanCardDOM(title, encodedName, type, startDate, endDate, category
 
 // ── Plan Drawer ─────────────────────────────────────────────────────────────
 // ── Plan Edit ──────────────────────────────────────────────────────────────
+function _peField(label, content) {
+    return '<div style="display:flex;flex-direction:column;gap:0.2rem;">'
+        + '<label style="font-size:0.58rem;font-weight:700;color:var(--t3);font-family:var(--mono);text-transform:uppercase;">' + label + '</label>'
+        + content + '</div>';
+}
+function _peInput(id, type, val, extra) {
+    return '<input id="' + id + '" type="' + type + '" value="' + val + '" ' + (extra||'') + ' style="width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:0.4rem;padding:0.3rem 0.55rem;font-size:0.72rem;color:var(--t1);font-family:var(--mono);">';
+}
+function _peSelect(id, options, curVal) {
+    return '<select id="' + id + '" style="width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:0.4rem;padding:0.3rem 0.55rem;font-size:0.72rem;color:var(--t1);font-family:var(--mono);">'
+        + options.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===curVal?' selected':'')+'>'+o[1]+'</option>'; }).join('')
+        + '</select>';
+}
+
 function openPlanEdit() {
     var enc = _activeDrawerPlan;
     var plan = enc && _planDataStore[enc];
     if (!plan) return;
     var existing = document.getElementById('plan-edit-inline');
-    if (existing) { existing.remove(); return; } // toggle off
+    if (existing) { existing.remove(); return; }
 
     var header = document.getElementById('plan-drawer-header');
     if (!header) return;
+    var catVal = plan.category || 'common';
+    var catOpts = [['common','Common'],['gs1','GS 1'],['gs2','GS 2'],['gs3','GS 3'],['gs4','GS 4'],['essay','Essay'],['optional','Optional'],['custom','Custom']];
+    var divOpts = [['both','Prelims + Mains'],['prelims','Prelims Only'],['mains','Mains Only']];
+    var typeOpts = [['weekly','Weekly Sprint'],['monthly','Monthly'],['custom_block','Custom Block'],['daily','Daily Target']];
+    var contOpts = [['both','✓ Tasks + ⊞ Tables'],['tasks','✓ Tasks Only'],['tables','⊞ Tables Only']];
+
     var form = document.createElement('div');
     form.id = 'plan-edit-inline';
-    form.style.cssText = 'padding:0.75rem 1.25rem 0.85rem;border-bottom:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;gap:0.55rem;';
+    form.style.cssText = 'padding:0.8rem 1.25rem 0.9rem;border-bottom:1px solid var(--bdr);background:var(--bg2);display:flex;flex-direction:column;gap:0.5rem;';
     form.innerHTML =
-        '<div style="font-size:0.65rem;font-weight:800;color:var(--accent1);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.1rem;">\u270e Edit Plan</div>'
-        + '<div style="display:flex;flex-direction:column;gap:0.35rem;">'
-        +   '<label style="font-size:0.6rem;font-weight:700;color:var(--t3);font-family:var(--mono);text-transform:uppercase;">Title</label>'
-        +   '<input id="pe-title" type="text" value="' + plan.title.replace(/"/g,'&quot;') + '" style="width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:0.45rem;padding:0.35rem 0.6rem;font-size:0.78rem;color:var(--t1);font-family:var(--mono);">'
+        '<div style="font-size:0.62rem;font-weight:800;color:var(--accent1);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;">\u270e Edit Plan</div>'
+        + _peField('Title', _peInput('pe-title','text', plan.title.replace(/"/g,'&quot;')))
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">'
+        +   _peField('Start Date', _peInput('pe-start','date', plan.startDate||''))
+        +   _peField('End Date',   _peInput('pe-end',  'date', plan.endDate||''))
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">'
-        +   '<div style="display:flex;flex-direction:column;gap:0.25rem;">'
-        +     '<label style="font-size:0.6rem;font-weight:700;color:var(--t3);font-family:var(--mono);text-transform:uppercase;">Start Date</label>'
-        +     '<input id="pe-start" type="date" value="' + (plan.startDate || '') + '" style="background:var(--surf);border:1px solid var(--bdr);border-radius:0.45rem;padding:0.32rem 0.5rem;font-size:0.72rem;color:var(--t1);font-family:var(--mono);width:100%;">'
-        +   '</div>'
-        +   '<div style="display:flex;flex-direction:column;gap:0.25rem;">'
-        +     '<label style="font-size:0.6rem;font-weight:700;color:var(--t3);font-family:var(--mono);text-transform:uppercase;">End Date</label>'
-        +     '<input id="pe-end" type="date" value="' + (plan.endDate || '') + '" style="background:var(--surf);border:1px solid var(--bdr);border-radius:0.45rem;padding:0.32rem 0.5rem;font-size:0.72rem;color:var(--t1);font-family:var(--mono);width:100%;">'
-        +   '</div>'
+        +   _peField('Category',  _peSelect('pe-cat',  catOpts,  catVal))
+        +   _peField('Division',  _peSelect('pe-div',  divOpts,  plan.division||'both'))
         + '</div>'
-        + '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.1rem;">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">'
+        +   _peField('Plan Type', _peSelect('pe-type', typeOpts, (plan.type||'weekly').toLowerCase().replace(' ','_').replace(' sprint','').replace(' ','_')))
+        +   _peField('Mode',      _peSelect('pe-cont', contOpts, plan.contentType||'both'))
+        + '</div>'
+        + _peField('Focus Area / Subject (optional)', _peInput('pe-subj','text', (plan.planSubject||'').replace(/"/g,'&quot;')))
+        + '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.15rem;">'
         +   '<button onclick="document.getElementById(\'plan-edit-inline\').remove()" style="background:none;border:1px solid var(--bdr);color:var(--t3);border-radius:0.4rem;padding:0.28rem 0.75rem;font-size:0.65rem;font-family:var(--mono);cursor:pointer;">Cancel</button>'
-        +   '<button onclick="savePlanEdit()" style="background:var(--accent1);border:none;color:#fff;border-radius:0.4rem;padding:0.28rem 0.85rem;font-size:0.65rem;font-weight:700;font-family:var(--mono);cursor:pointer;">Save</button>'
+        +   '<button onclick="savePlanEdit()" style="background:var(--accent1);border:none;color:#fff;border-radius:0.4rem;padding:0.28rem 0.9rem;font-size:0.65rem;font-weight:700;font-family:var(--mono);cursor:pointer;">Save</button>'
         + '</div>';
     header.insertAdjacentElement('afterend', form);
     document.getElementById('pe-title').focus();
@@ -214,48 +234,59 @@ async function savePlanEdit() {
     var enc = _activeDrawerPlan;
     var plan = enc && _planDataStore[enc];
     if (!plan) return;
-    var newTitle = (document.getElementById('pe-title').value || '').trim();
-    var newStart = document.getElementById('pe-start').value || null;
-    var newEnd   = document.getElementById('pe-end').value   || null;
-    if (!newTitle) { alert('Title cannot be empty'); return; }
+    var newTitle   = (document.getElementById('pe-title').value || '').trim();
+    var newStart   = document.getElementById('pe-start').value || null;
+    var newEnd     = document.getElementById('pe-end').value   || null;
+    var newCat     = document.getElementById('pe-cat').value   || plan.category;
+    var newDiv     = document.getElementById('pe-div').value   || plan.division;
+    var newType    = document.getElementById('pe-type').value  || plan.type;
+    var newCont    = document.getElementById('pe-cont').value  || plan.contentType;
+    var newSubj    = (document.getElementById('pe-subj').value || '').trim();
+    if (!newTitle) { if (typeof showToast === 'function') showToast('Title cannot be empty', 'error'); return; }
 
     // Update in-memory store
-    plan.startDate = newStart;
-    plan.endDate   = newEnd;
+    plan.title = newTitle;
+    plan.startDate  = newStart; plan.endDate    = newEnd;
+    plan.category   = newCat;   plan.division   = newDiv;
+    plan.type       = newType;  plan.contentType = newCont;
+    plan.planSubject = newSubj;
 
-    // Update plan card date display
-    var dateEl = document.getElementById('pcard-dates-' + enc);
-    if (dateEl) {
-        dateEl.textContent = (newStart || newEnd)
-            ? (newStart ? formatPlanDate(newStart) : '?') + (newEnd ? ' \u2192 ' + formatPlanDate(newEnd) : '')
-            : '';
-    }
-    var daysEl = document.getElementById('pcard-days-' + enc);
-    if (daysEl) {
-        if (newEnd) {
-            var diff = Math.ceil((new Date(newEnd + 'T00:00:00') - new Date()) / 86400000);
-            daysEl.textContent = diff > 0 ? diff + 'd left' : (diff === 0 ? 'Due today' : Math.abs(diff) + 'd over');
-            daysEl.className = 'pcard-days ' + (diff < 0 ? 'pcard-days-over' : diff <= 7 ? 'pcard-days-warn' : 'pcard-days-ok');
-            daysEl.style.display = '';
-        } else {
-            daysEl.style.display = 'none';
-        }
-    }
+    var catStyle = PLAN_CAT_STYLES[newCat] || PLAN_CAT_STYLES.custom;
+    var catLabel = newSubj || PLAN_CAT_LABELS[newCat] || newCat;
 
-    // Update drawer header dates
+    // Update drawer header
+    document.getElementById('plan-drawer-title').textContent = newTitle;
+    document.getElementById('plan-drawer-badges').innerHTML =
+        '<span class="plan-badge plan-type-badge">' + newType + '</span>'
+        + '<span class="plan-badge plan-cat-badge plan-cat-' + newCat + '">' + catLabel + '</span>'
+        + '<span class="plan-badge plan-div-badge">' + (PLAN_DIV_LABELS[newDiv] || newDiv) + '</span>';
     document.getElementById('plan-drawer-dates').textContent = (newStart || newEnd)
-        ? '\ud83d\udcc5 ' + (newStart ? formatPlanDate(newStart) : '?') + (newEnd ? ' \u2192 ' + formatPlanDate(newEnd) : '')
-        : '';
+        ? '\ud83d\udcc5 ' + (newStart ? formatPlanDate(newStart) : '?') + (newEnd ? ' \u2192 ' + formatPlanDate(newEnd) : '') : '';
+
+    // Update plan card DOM
+    var titleEl = document.getElementById('pcard-title-' + enc);
+    if (titleEl) titleEl.textContent = newTitle;
+    var dateEl = document.getElementById('pcard-dates-' + enc);
+    if (dateEl) dateEl.textContent = (newStart || newEnd) ? (newStart ? formatPlanDate(newStart) : '?') + (newEnd ? ' \u2192 ' + formatPlanDate(newEnd) : '') : '';
+    var daysEl = document.getElementById('pcard-days-' + enc);
+    if (daysEl && newEnd) {
+        var diff = Math.ceil((new Date(newEnd + 'T00:00:00') - new Date()) / 86400000);
+        daysEl.textContent = diff > 0 ? diff + 'd left' : (diff === 0 ? 'Due today' : Math.abs(diff) + 'd over');
+        daysEl.className = 'pcard-days ' + (diff < 0 ? 'pcard-days-over' : diff <= 7 ? 'pcard-days-warn' : 'pcard-days-ok');
+        daysEl.style.display = '';
+    } else if (daysEl) { daysEl.style.display = 'none'; }
 
     // Persist to DB
     if (dbClient && currentUserId) {
         await dbClient.from('upsc_custom_plans').update({
-            start_date: newStart, end_date: newEnd
+            plan_title: newTitle, start_date: newStart, end_date: newEnd,
+            plan_category: newCat, plan_division: newDiv, plan_type: newType,
+            content_type: newCont, plan_subject: newSubj || null
         }).eq('plan_id', enc).eq('user_id', currentUserId);
     }
 
     document.getElementById('plan-edit-inline').remove();
-    // Refresh gantt + calendar
+    sortPlanCards();
     if (typeof renderGanttTimeline === 'function') renderGanttTimeline('month');
     if (typeof renderPlannerCal    === 'function') renderPlannerCal();
 }
@@ -770,7 +801,23 @@ var PLAN_CAT_STYLES = {
     optional: { bg: 'rgba(244,63,94,0.15)',   text: '#fb7185', bdr: 'rgba(244,63,94,0.35)'   },
     custom:   { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', bdr: 'rgba(156,163,175,0.35)' }
 };
-var PLAN_CAT_LABELS = { common:'Common', gs1:'GS 1', gs2:'GS 2', gs3:'GS 3', gs4:'GS 4', essay:'Essay', optional:'Optional', custom:'Custom' };
+var PLAN_CAT_ORDER = { gs1:1, gs2:2, gs3:3, gs4:4, essay:5, optional:6, common:7, custom:8 };
+
+function sortPlanCards() {
+    var grid = document.getElementById('planner-grid');
+    if (!grid) return;
+    var wrappers = Array.from(grid.querySelectorAll('.plan-card-wrapper'));
+    wrappers.sort(function(a, b) {
+        var encA = a.id.replace('plan_card_wrapper_', '');
+        var encB = b.id.replace('plan_card_wrapper_', '');
+        var pA = _planDataStore[encA] || {}, pB = _planDataStore[encB] || {};
+        var oA = PLAN_CAT_ORDER[pA.category] || 99, oB = PLAN_CAT_ORDER[pB.category] || 99;
+        if (oA !== oB) return oA - oB;
+        return (pA.title || '').localeCompare(pB.title || '');
+    });
+    wrappers.forEach(function(w) { grid.appendChild(w); });
+}
+
 var PLAN_DIV_LABELS = { prelims:'Prelims', mains:'Mains', both:'P + M' };
 
 // ── Inline task entry ───────────────────────────────────────────────────────
