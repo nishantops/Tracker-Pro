@@ -34,14 +34,14 @@ var MetricsService = (function() {
         if (!_queue.length || !_userId() || typeof dbClient === 'undefined') return;
         var batch = _queue.splice(0, 50); // max 50 per flush
         try {
+            await dbClient.auth.getSession();
             var res = await dbClient.from('upsc_app_metrics').insert(batch);
             if (res.error) {
-                // Put back on error (idempotency via retry)
-                _queue.unshift.apply(_queue, batch);
+                // RLS or auth error — drop batch to stop retry flood
                 console.warn('[Metrics] flush err:', res.error.message);
             }
         } catch(e) {
-            _queue.unshift.apply(_queue, batch);
+            // Network error — silently drop, metrics are non-critical
         }
         // Schedule next flush if queue still has items
         if (_queue.length) {

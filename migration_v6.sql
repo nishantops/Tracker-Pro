@@ -6,17 +6,29 @@
 -- ─── 1. Add plan_title column to upsc_plan_tables (human-readable) ───────────
 ALTER TABLE upsc_plan_tables ADD COLUMN IF NOT EXISTS plan_title TEXT;
 
--- Backfill existing rows (decode base64 plan_id → plan_title)
-UPDATE upsc_plan_tables
-SET plan_title = CONVERT_FROM(DECODE(plan_id, 'base64'), 'UTF8')
-WHERE plan_title IS NULL
-  AND plan_id IS NOT NULL
-  AND plan_id != 'master_sheet';
+-- Backfill existing rows — use a safe function that handles non-base64 plan_ids
+CREATE OR REPLACE FUNCTION _safe_decode_plan_id(pid TEXT)
+RETURNS TEXT LANGUAGE plpgsql AS $$
+BEGIN
+  IF pid IS NULL OR pid = 'master_sheet' OR pid = 'ca_notes' THEN
+    RETURN pid;
+  END IF;
+  -- Try standard base64 decode
+  BEGIN
+    RETURN CONVERT_FROM(DECODE(pid, 'base64'), 'UTF8');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN pid;  -- Not valid base64, return as-is
+  END;
+END; $$;
 
--- Master sheet gets literal title
 UPDATE upsc_plan_tables
-SET plan_title = 'Master Sheet'
-WHERE plan_id = 'master_sheet' AND plan_title IS NULL;
+SET plan_title = CASE
+  WHEN plan_id = 'master_sheet' THEN 'Master Sheet'
+  WHEN plan_id = 'ca_notes' THEN 'CA Notes'
+  ELSE _safe_decode_plan_id(plan_id)
+END
+WHERE plan_title IS NULL
+  AND plan_id IS NOT NULL;
 
 -- ─── 2. Add table_type column (plan vs master) ──────────────────────────────
 ALTER TABLE upsc_plan_tables ADD COLUMN IF NOT EXISTS table_type TEXT DEFAULT 'plan';
