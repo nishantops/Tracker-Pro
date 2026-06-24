@@ -531,8 +531,8 @@ function _ptFindStatusCol(cols) {
 }
 
 // Extract only spreadsheet table rows for a given plan enc (checkbox tasks excluded)
-function _masterGetPlanItems(enc, planTitle, periodStr) {
-    var items = []; // only spreadsheet table rows — checkbox tasks excluded
+function _masterGetPlanItems(enc, planTitle, periodStr, planCat) {
+    var items = [];
 
     if (typeof _ptCache !== 'undefined' && _ptCache[enc]) {
         _ptCache[enc].forEach(function(sheet, si) {
@@ -554,27 +554,26 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
             (sheet.rows_data || []).forEach(function(row, ri) {
                 var subj   = _cellVal(row, subjectCols);
                 var target = _cellVal(row, targetCols);
-                // Skip rows where both primary content fields are empty
                 if (!subj && !target) return;
 
                 var dateStr = _cellVal(row, datesCols);
                 var note    = _cellVal(row, remarksCols);
                 var status  = statusColId && row.cells[statusColId] ? String(row.cells[statusColId].v || '').trim() : '';
-
                 var taskParts = [subj, target].filter(Boolean);
-                var taskLabel = taskParts.length ? taskParts.join(' \u2014 ') : '';
-
                 var statusLabel = status || '\u25cb Pending';
                 items.push({ id: 'tbl_' + enc + '_' + si + '_' + ri,
-                    plan: planTitle, period: dateStr || periodStr,
-                    task: taskLabel, statusLabel: statusLabel, statusColor: _ptStatusColor(statusLabel),
-                    done: status === '\u2713 Done', note: note, fromTable: true });
+                    plan: planTitle, planCat: planCat || 'common',
+                    period: dateStr || periodStr,
+                    task: taskParts.join(' \u2014 '), statusLabel: statusLabel,
+                    statusColor: _ptStatusColor(statusLabel),
+                    done: status === '\u2713 Done', note: note });
             });
         });
     }
 
     return items;
 }
+
 function buildMasterAggSheet() {
     var entries = Object.entries(_planDataStore || {});
     if (typeof _ptZoom !== 'undefined' && _ptZoom['master_sheet'] === undefined) _ptZoom['master_sheet'] = 1.0;
@@ -593,10 +592,13 @@ function buildMasterAggSheet() {
         { id: 'c_note',   name: 'Note',        width: 175 }
     ];
 
+    function _ymKey(d)   { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+    function _ymLabel(d) { return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }); }
     function _fmtDate(d) { return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+
     function _mkRow(id, item, showPlan) {
         return { id: id, cells: {
-            c_plan:   { v: showPlan ? item.plan : '', b: showPlan },
+            c_plan:   { v: showPlan ? item.plan : '', b: showPlan ? true : undefined },
             c_period: { v: item.period },
             c_task:   { v: item.task },
             c_status: { v: item.statusLabel || '\u25cb Pending', fg: item.statusColor || '#f59e0b' },
@@ -604,46 +606,102 @@ function buildMasterAggSheet() {
         }};
     }
 
+    function _sortItems(items) {
+        return items.slice().sort(function(a, b) {
+            var oA = (typeof PLAN_CAT_ORDER !== 'undefined' ? PLAN_CAT_ORDER[a.planCat] : 0) || 99;
+            var oB = (typeof PLAN_CAT_ORDER !== 'undefined' ? PLAN_CAT_ORDER[b.planCat] : 0) || 99;
+            if (oA !== oB) return oA - oB;
+            return a.plan.localeCompare(b.plan);
+        });
+    }
+
+    function _buildRowsWithGrouping(items) {
+        var rows = [], lastPlan = null;
+        items.forEach(function(item) {
+            var showPlan = item.plan !== lastPlan;
+            lastPlan = item.plan;
+            rows.push(_mkRow('r_' + item.id, item, showPlan));
+        });
+        return rows.length ? rows : [{ id: 'r_empty', cells: { c_plan:{v:'(no items)'}, c_period:{v:''}, c_task:{v:''}, c_status:{v:''}, c_note:{v:''} } }];
+    }
+
     var allItems = [];
+    var monthBuckets = {};  // ymKey -> { label, yk, items:[] }
 
     entries.forEach(function(kv) {
         var enc = kv[0], plan = kv[1];
         var planTitle = plan.title || 'Plan';
+        var planCat   = plan.category || 'common';
         var sd = plan.startDate ? new Date(plan.startDate + 'T00:00:00') : null;
         var ed = plan.endDate   ? new Date(plan.endDate   + 'T00:00:00') : null;
         var periodStr = (sd && ed)
             ? _fmtDate(sd).replace(', ' + sd.getFullYear(), '') + ' \u2013 ' + _fmtDate(ed)
             : 'No dates set';
 
-        var items = _masterGetPlanItems(enc, planTitle, periodStr);
+        // Register months
+        if (sd && ed) {
+            var cur = new Date(sd); cur.setDate(1);
+            while (cur <= ed) {
+                var yk = _ymKey(cur);
+                if (!monthBuckets[yk]) monthBuckets[yk] = { label: _ymLabel(cur), yk: yk, seen: {}, items: [] };
+                cur.setMonth(cur.getMonth() + 1);
+            }
+        }
+
+        var items = _masterGetPlanItems(enc, planTitle, periodStr, planCat);
         items.forEach(function(item) { item.sd = sd; });
         allItems = allItems.concat(items);
-    });
 
-    // Sort: plans with dates first (by start date), then by plan name
-    allItems.sort(function(a, b) {
-        if (a.sd && b.sd) {
-            if (a.sd.getTime() !== b.sd.getTime()) return a.sd - b.sd;
-            return a.plan.localeCompare(b.plan);
+        if (sd && ed) {
+            items.forEach(function(item) {
+                var cur2 = new Date(sd); cur2.setDate(1);
+                while (cur2 <= ed) {
+                    var yk2 = _ymKey(cur2);
+                    if (monthBuckets[yk2] && !monthBuckets[yk2].seen[item.id]) {
+                        monthBuckets[yk2].seen[item.id] = true;
+                        monthBuckets[yk2].items.push(item);
+                    }
+                    cur2.setMonth(cur2.getMonth() + 1);
+                }
+            });
         }
-        if (a.sd) return -1; if (b.sd) return 1;
-        return a.plan.localeCompare(b.plan);
     });
 
-    // Build rows with plan grouping: show plan name bold on first row of each plan, blank on subsequent
-    var allRows = [];
-    var lastPlan = null;
-    allItems.forEach(function(item) {
-        var showPlan = item.plan !== lastPlan;
-        lastPlan = item.plan;
-        allRows.push(_mkRow('rall_' + item.id, item, showPlan));
-    });
-    if (!allRows.length) allRows.push({ id: 'r_empty_all', cells: {
-        c_plan:{v:'(no table rows yet — add rows in plan spreadsheets)'}, c_period:{v:''}, c_task:{v:''}, c_status:{v:''}, c_note:{v:''}
-    }});
+    // ★ All Items: sort by category order then plan name
+    var sortedAll = _sortItems(allItems);
+    var allRows = _buildRowsWithGrouping(sortedAll);
 
-    // Single "★ All Items" sheet — no separate monthly tabs
-    var sheets = [{ id: null, plan_id: 'master_sheet', sheet_name: '\u2605 All Items', columns_data: allCols, rows_data: allRows, sort_order: 0 }];
+    var sheets = [{ id: null, plan_id: 'master_sheet', sheet_name: '\u2605 All Items',
+        columns_data: allCols, rows_data: allRows, sort_order: 0 }];
+
+    // Monthly tabs: 1 per month, plans sorted by category, plan name shown once
+    var sortedMonths = Object.values(monthBuckets).sort(function(a, b) { return a.yk.localeCompare(b.yk); });
+    sortedMonths.forEach(function(m, idx) {
+        var sorted = _sortItems(m.items);
+        var rows = _buildRowsWithGrouping(sorted);
+        sheets.push({ id: null, plan_id: 'master_sheet', sheet_name: m.label,
+            columns_data: allCols.map(function(c) { return Object.assign({}, c); }),
+            rows_data: rows, sort_order: idx + 1 });
+    });
+
+    // Fallback: no dated plans → one tab per plan
+    if (!sortedMonths.length && allItems.length) {
+        var byPlan = {};
+        allItems.forEach(function(item) {
+            if (!byPlan[item.plan]) byPlan[item.plan] = { cat: item.planCat, items: [] };
+            byPlan[item.plan].items.push(item);
+        });
+        Object.keys(byPlan).sort(function(a, b) {
+            var oA = (typeof PLAN_CAT_ORDER !== 'undefined' ? PLAN_CAT_ORDER[byPlan[a].cat] : 0) || 99;
+            var oB = (typeof PLAN_CAT_ORDER !== 'undefined' ? PLAN_CAT_ORDER[byPlan[b].cat] : 0) || 99;
+            return oA !== oB ? oA - oB : a.localeCompare(b);
+        }).forEach(function(planTitle, idx) {
+            var short = planTitle.length > 14 ? planTitle.substring(0, 12) + '\u2026' : planTitle;
+            sheets.push({ id: null, plan_id: 'master_sheet', sheet_name: short,
+                columns_data: allCols.map(function(c) { return Object.assign({}, c); }),
+                rows_data: _buildRowsWithGrouping(byPlan[planTitle].items), sort_order: idx + 1 });
+        });
+    }
 
     _ptCache['master_sheet'] = sheets;
     if (typeof renderPlanTableUI === 'function') renderPlanTableUI('master_sheet');
@@ -1008,6 +1066,11 @@ function _subTaskChecked(subId) {
 function generateAutoTasks(enc, mode) {
     var plan = _planDataStore[enc];
     if (!plan || !plan.startDate || !plan.endDate) return;
+
+    // For plans using Tables mode (or both), generate spreadsheet rows instead of checkbox tasks
+    var useTable = (plan.contentType === 'tables' || plan.contentType === 'both');
+    if (useTable) { generateAutoTableRows(enc, mode); return; }
+
     var start = new Date(plan.startDate + 'T00:00:00');
     var end   = new Date(plan.endDate   + 'T00:00:00');
     var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1117,6 +1180,82 @@ function formatPlanDate(dateStr) {
         var d = new Date(dateStr + 'T00:00:00');
         return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch(e) { return dateStr; }
+}
+
+// ── Auto-generate table rows for Quick Setup ────────────────────────────────
+function generateAutoTableRows(enc, mode) {
+    var plan = _planDataStore[enc];
+    if (!plan || !plan.startDate || !plan.endDate) return;
+    var start = new Date(plan.startDate + 'T00:00:00');
+    var end   = new Date(plan.endDate   + 'T00:00:00');
+
+    function fmtRange(d1, d2) {
+        return d1.toLocaleDateString('en-IN', { day:'numeric', month:'short' })
+             + ' \u2013 ' + d2.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+    }
+
+    // Ensure the plan's table cache is loaded, then add rows
+    var doAdd = function() {
+        var sheets = _ptCache[enc];
+        if (!sheets || !sheets.length) return;
+        var sheet = sheets[0];
+        var newRows = [];
+
+        if (mode === 'monthly') {
+            var d = new Date(start.getFullYear(), start.getMonth(), 1);
+            var mNum = 1;
+            while (d <= end) {
+                var mEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+                if (mEnd > end) mEnd = new Date(end);
+                // Month header row
+                var mLabel = 'Month ' + mNum + ' — ' + d.toLocaleDateString('en-IN', { month: 'long', year:'numeric' });
+                var mCells = {}; sheet.columns_data.forEach(function(c) { mCells[c.id] = {v:''}; });
+                mCells['c_subj'] = {v: mLabel, b: true};
+                newRows.push({ id:'r_auto_m'+mNum+'_'+Date.now(), cells: mCells });
+                // Weekly sub-rows
+                var wStart = new Date(d < start ? start : d), wNum = 1;
+                while (wStart <= mEnd) {
+                    var wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+                    if (wEnd > mEnd) wEnd = new Date(mEnd);
+                    var wCells = {}; sheet.columns_data.forEach(function(c) { wCells[c.id] = {v:''}; });
+                    wCells['c_dates'] = {v: 'Wk '+wNum+' ('+fmtRange(wStart,wEnd)+')'};
+                    newRows.push({ id:'r_auto_w'+wNum+'_'+Date.now()+wNum, cells: wCells });
+                    wStart.setDate(wStart.getDate() + 7); wNum++;
+                }
+                d.setMonth(d.getMonth() + 1); mNum++;
+            }
+        } else if (mode === 'weekly') {
+            var wStart = new Date(start), wNum = 1;
+            while (wStart <= end) {
+                var wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+                if (wEnd > end) wEnd = new Date(end);
+                var wCells = {}; sheet.columns_data.forEach(function(c) { wCells[c.id] = {v:''}; });
+                wCells['c_dates'] = {v: 'Wk '+wNum+' ('+fmtRange(wStart,wEnd)+')'};
+                newRows.push({ id:'r_auto_wk'+wNum+'_'+Date.now()+wNum, cells: wCells });
+                wStart.setDate(wStart.getDate() + 7); wNum++;
+            }
+        } else { // daily
+            var d2 = new Date(start), dayNum = 1;
+            while (d2 <= end) {
+                var dCells = {}; sheet.columns_data.forEach(function(c) { dCells[c.id] = {v:''}; });
+                dCells['c_dates'] = {v: 'Day '+dayNum+' — '+d2.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})};
+                newRows.push({ id:'r_auto_d'+dayNum+'_'+Date.now()+dayNum, cells: dCells });
+                d2.setDate(d2.getDate() + 1); dayNum++;
+            }
+        }
+
+        newRows.forEach(function(r) { sheet.rows_data.push(r); });
+        // Remove quick-setup banner
+        var banner = document.getElementById('plan-auto-setup');
+        if (banner) banner.remove();
+        // Switch to Tables tab and re-render
+        switchDrawerTab('table');
+        if (typeof renderPlanTableUI === 'function') renderPlanTableUI(enc);
+        ptDebounce(enc, 0);
+    };
+
+    if (_ptCache[enc]) { doAdd(); }
+    else { loadPlanTables(enc).then ? loadPlanTables(enc).then(doAdd) : setTimeout(function(){doAdd();},500); }
 }
 
 // ── Planner Mini Calendar ───────────────────────────────────────────────────
