@@ -409,16 +409,16 @@ function renderMasterAggregate() {
     var doneTasks = stats.reduce(function(a, s) { return a + s.done; }, 0);
     var overallPct = totalTasks ? Math.round(doneTasks / totalTasks * 100) : 0;
 
-    // Build bar chart rows
+    // Build bar chart rows — slimmer for scalability
     var bars = stats.map(function(s) {
         var pct = s.total ? Math.round(s.done / s.total * 100) : 0;
-        return '<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.45rem;">'
-            + '<span style="min-width:10rem;max-width:10rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.68rem;color:var(--t2);font-family:var(--mono);" title="'+s.title+'">'+s.title+'</span>'
-            + '<div style="flex:1;background:var(--bdr);border-radius:1rem;overflow:hidden;height:0.7rem;">'
+        return '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">'
+            + '<span style="min-width:7.5rem;max-width:7.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.63rem;color:var(--t2);font-family:var(--mono);" title="'+s.title+'">'+s.title+'</span>'
+            + '<div style="flex:1;background:var(--bdr);border-radius:1rem;overflow:hidden;height:0.42rem;">'
             +   '<div style="width:'+pct+'%;background:'+s.color+';height:100%;border-radius:1rem;transition:width 0.4s;"></div>'
             + '</div>'
-            + '<span style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);min-width:2.8rem;text-align:right;">'+s.done+'/'+s.total+'</span>'
-            + '<span style="font-size:0.65rem;font-weight:700;color:var(--t2);font-family:var(--mono);min-width:2.2rem;text-align:right;">'+pct+'%</span>'
+            + '<span style="font-size:0.6rem;color:var(--t3);font-family:var(--mono);min-width:2.5rem;text-align:right;">'+s.done+'/'+s.total+'</span>'
+            + '<span style="font-size:0.6rem;font-weight:700;color:var(--t2);font-family:var(--mono);min-width:2rem;text-align:right;">'+pct+'%</span>'
             + '</div>';
     }).join('');
 

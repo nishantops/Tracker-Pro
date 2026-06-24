@@ -23,10 +23,19 @@ function activatePlannerTab(id) {
     });
     if (id === 'sources') loadSources();
     if (id === 'master' && typeof renderGanttTimeline === 'function') {
-        renderGanttTimeline('month');
-        if (typeof renderMasterAggregate === 'function') renderMasterAggregate();
-        if (typeof buildMasterAggSheet === 'function') buildMasterAggSheet();
-        if (typeof renderPlannerCal === 'function') renderPlannerCal();
+        var _doRenderMaster = function() {
+            renderGanttTimeline('month');
+            if (typeof renderMasterAggregate === 'function') renderMasterAggregate();
+            if (typeof buildMasterAggSheet === 'function') buildMasterAggSheet();
+            if (typeof renderPlannerCal === 'function') renderPlannerCal();
+        };
+        // Pre-load ALL plan table caches so master sheet/bar chart include every plan
+        if (typeof _ptLoadCacheOnly === 'function' && typeof _planDataStore !== 'undefined') {
+            var _planIds = Object.keys(_planDataStore || {});
+            Promise.all(_planIds.map(function(enc) { return _ptLoadCacheOnly(enc); })).then(_doRenderMaster);
+        } else {
+            _doRenderMaster();
+        }
     }
 }
 
