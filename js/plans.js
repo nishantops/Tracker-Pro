@@ -849,6 +849,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+var PLAN_CAT_LABELS = { common:'Common', gs1:'GS 1', gs2:'GS 2', gs3:'GS 3', gs4:'GS 4', essay:'Essay', optional:'Optional', custom:'Custom' };
 var PLAN_CAT_STYLES = {
     common:   { bg: 'rgba(99,102,241,0.15)',  text: '#818cf8', bdr: 'rgba(99,102,241,0.35)'  },
     gs1:      { bg: 'rgba(245,158,11,0.15)',  text: '#fbbf24', bdr: 'rgba(245,158,11,0.35)'  },
