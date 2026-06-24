@@ -7,6 +7,7 @@ import { Countdown } from './Countdown';
 import { SyllabusView } from './syllabus/SyllabusView';
 import { PlansGrid } from './plans/PlansGrid';
 import { SourcesView } from './sources/SourcesView';
+import { PYQBrowser } from './pyq/PYQBrowser';
 import { ENV } from '../lib/env';
 import {
   DEFAULT_NAV,
@@ -167,7 +168,7 @@ export function Layout() {
 
           {nav.marathon === 'pyq' && (
             <main className="app-main">
-              <Placeholder label="PYQ Browser" phase={9} />
+              <PYQBrowser />
             </main>
           )}
 

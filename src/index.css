@@ -1113,6 +1113,197 @@ select.auth-input {
   overflow: hidden;
 }
 
+/* ── PYQ Browser ─────────────────────────────────────────────────────────── */
+.pyq-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pyq-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pyq-sec-btn {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--bdr);
+  background: var(--surf);
+  color: var(--t3);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.pyq-sec-btn:hover { color: var(--t1); border-color: var(--accent-l); }
+
+.pyq-sec-active {
+  background: linear-gradient(135deg, var(--indigo), var(--accent));
+  color: white;
+  border-color: var(--indigo);
+}
+
+.pyq-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pyq-count {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--t4);
+}
+
+.pyq-topic {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.pyq-topic-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--t1);
+  font-family: var(--heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pyq-topic-header:hover { background: var(--surf); }
+
+.pyq-topic-name { flex: 1; text-align: left; }
+
+.pyq-topic-count {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--accent-l);
+  font-weight: 700;
+}
+
+.pyq-questions {
+  border-top: 1px solid var(--bdr);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.pyq-q-card {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pyq-q-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pyq-year {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: var(--indigo);
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.pyq-marks {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.pyq-sub {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  color: var(--t4);
+}
+
+.pyq-passage {
+  font-size: 0.75rem;
+  color: var(--t3);
+  background: rgba(0,0,0,0.15);
+  border-left: 3px solid var(--accent-l);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  line-height: 1.6;
+}
+
+.pyq-q-text {
+  font-size: 0.8rem;
+  color: var(--t1);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pyq-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pyq-option {
+  font-size: 0.75rem;
+  color: var(--t2);
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.pyq-correct {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--emerald-l);
+  color: var(--emerald-l);
+  font-weight: 700;
+}
+
+.pyq-opt-key {
+  font-family: var(--mono);
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+
+.pyq-reveal {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  color: var(--accent-l);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pyq-reveal:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
 /* ── Topic Sections ──────────────────────────────────────────────────────── */
 .topic-section {
   background: var(--card);
