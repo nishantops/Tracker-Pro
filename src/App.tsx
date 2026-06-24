@@ -3,6 +3,7 @@ import { useProfile } from './hooks/useProfile';
 import { AuthGate } from './components/AuthGate';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Layout } from './components/Layout';
+import { AIChatFAB } from './components/chat/AIChatFAB';
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
@@ -19,5 +20,10 @@ export default function App() {
 
   if (!user) return <AuthGate />;
   if (!isComplete && !isSuperuser) return <ProfileSetup />;
-  return <Layout />;
+  return (
+    <>
+      <Layout />
+      <AIChatFAB />
+    </>
+  );
 }
