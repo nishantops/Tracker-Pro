@@ -191,6 +191,7 @@
                         <button onclick="openProfileEdit()">✏️ Update Profile</button>
                         <button onclick="openSWManager()">💡 Strengths &amp; Weaknesses</button>
                         <button onclick="openNotifSettings()">🔔 Notification Settings</button>
+                        <button onclick="openAboutModal()">ℹ️ About &amp; Contact Admin</button>
                         <div style="border-top:1px solid var(--bdr);margin:0.3rem 0;"></div>
                         <button onclick="handleLogout()" style="color:#f87171;">⏻ Sign Out</button>
                     </div>
@@ -1383,5 +1384,104 @@ Use the toolbar above for bullets, colors and more."></div>
         </div>
     </div>
     <script src="js/ai-chat.js?v=5"></script>
+    <script src="js/about.js?v=1"></script>
+
+    <!-- ================================================ -->
+    <!-- ABOUT & CONTACT ADMIN MODAL                       -->
+    <!-- ================================================ -->
+    <div id="about-modal" class="hidden fixed inset-0 z-[9500] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:1.2rem;width:min(680px,95vw);max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.5);display:flex;flex-direction:column;">
+        <!-- Header -->
+        <div style="padding:1.2rem 1.5rem 0.9rem;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:900;color:var(--t1);font-family:var(--heading);">ℹ️ About UPSC Command Centre</h2>
+            <p style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);margin-top:0.2rem;">v1.0 · Built for UPSC CSE 2027</p>
+          </div>
+          <button onclick="closeAboutModal()" style="background:none;border:none;color:var(--t3);font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+        <!-- Tabs -->
+        <div id="about-tab-bar" style="display:flex;border-bottom:1px solid var(--bdr);">
+          <button class="about-tab active" id="abt-features" onclick="switchAboutTab('features')">📋 Features</button>
+          <button class="about-tab" id="abt-shortcuts" onclick="switchAboutTab('shortcuts')">⌨️ Shortcuts</button>
+          <button class="about-tab" id="abt-contact"  onclick="switchAboutTab('contact')">💬 Contact Admin</button>
+          <button class="about-tab" id="abt-feedback" onclick="switchAboutTab('feedback')">📝 Monthly Feedback</button>
+        </div>
+        <!-- Body -->
+        <div style="padding:1.2rem 1.5rem;flex:1;">
+
+          <!-- Features tab -->
+          <div id="about-pane-features">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="about-feature-card"><h4>📊 Marathon Tracker</h4><p>Track all UPSC syllabus topics (Prelims GS1/CSAT, Mains GS1-GS4, Anthropology, Ethics) with checkboxes, notes, and completion percentages per section.</p></div>
+              <div class="about-feature-card"><h4>🗺️ Strategy Planner</h4><p>Create custom study plans with dates, categories (GS1-4, Optional, Essay), Gantt timeline, master spreadsheet aggregation, and per-plan spreadsheet tables.</p></div>
+              <div class="about-feature-card"><h4>📅 Mission Timeline (Gantt)</h4><p>Visual Gantt chart showing all plans on a monthly/weekly axis. Hover calendar dates to see active plans. Click plans to open them.</p></div>
+              <div class="about-feature-card"><h4>⊞ Plan Spreadsheets</h4><p>Each plan has a rich spreadsheet with sort, filter, merge/split cells, text/fill color, zoom, fullscreen, multiple sheets, auto-save to cloud.</p></div>
+              <div class="about-feature-card"><h4>📰 Current Affairs</h4><p>Monthly CA tracker with rich text notes, word-style editor, and monthly navigation.</p></div>
+              <div class="about-feature-card"><h4>📝 PYQ Tracker</h4><p>Previous Year Questions for Prelims and Mains — searchable by topic, year, and keyword.</p></div>
+              <div class="about-feature-card"><h4>⏱️ Focus Timer</h4><p>Study session timer with cloud sync across devices. Tracks daily and session totals.</p></div>
+              <div class="about-feature-card"><h4>💡 Strengths &amp; Weaknesses</h4><p>Track your strong areas and improvement zones on the homepage dashboard.</p></div>
+            </div>
+          </div>
+
+          <!-- Shortcuts tab -->
+          <div id="about-pane-shortcuts" style="display:none;">
+            <div style="font-size:0.72rem;color:var(--t1);font-family:var(--mono);">
+              <div class="about-shortcut-section">
+                <h4>📋 Spreadsheet Keyboard Shortcuts</h4>
+                <table class="about-shortcut-table">
+                  <tr><td>Ctrl+A</td><td>Select all cells in current sheet</td></tr>
+                  <tr><td>Ctrl+C</td><td>Copy selected cells (tab-separated, pastes into Excel/Sheets)</td></tr>
+                  <tr><td>Ctrl+X</td><td>Cut selected cells (copy + clear values)</td></tr>
+                  <tr><td>Ctrl+V</td><td>Paste from clipboard (Excel-compatible TSV format)</td></tr>
+                  <tr><td>Click #</td><td>Select entire row</td></tr>
+                  <tr><td>Click column header</td><td>Select entire column</td></tr>
+                  <tr><td>Click row num (top-left)</td><td>Select all cells</td></tr>
+                  <tr><td>Shift+click</td><td>Extend selection range</td></tr>
+                  <tr><td>Sort ⇅ button</td><td>Toggle ascending/descending sort on column</td></tr>
+                  <tr><td>Filter button</td><td>Show/hide per-column text filter inputs</td></tr>
+                </table>
+              </div>
+              <div class="about-shortcut-section" style="margin-top:1rem;">
+                <h4>🎨 Formatting</h4>
+                <table class="about-shortcut-table">
+                  <tr><td>B / I / U / S</td><td>Bold, Italic, Underline, Strikethrough</td></tr>
+                  <tr><td>A (text color)</td><td>Change cell text color</td></tr>
+                  <tr><td>■ (fill color)</td><td>Change cell background color</td></tr>
+                  <tr><td>Merge / Split</td><td>Merge or unmerge selected cells</td></tr>
+                  <tr><td>- / + (zoom)</td><td>Zoom in/out the spreadsheet</td></tr>
+                  <tr><td>⊞ (fullscreen)</td><td>Open in fullscreen mode (all shortcuts work there too)</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Admin tab -->
+          <div id="about-pane-contact" style="display:none;">
+            <p style="font-size:0.72rem;color:var(--t2);margin-bottom:1rem;">Send a message to the admin. You can report bugs, request features, or ask questions. Messages are private — only the admin can see them.</p>
+            <div style="display:flex;flex-direction:column;gap:0.65rem;">
+              <textarea id="contact-msg-input" rows="5" placeholder="Type your message here…" style="width:100%;background:var(--inp);border:1px solid var(--bdr);border-radius:0.6rem;padding:0.75rem;font-size:0.78rem;color:var(--t1);font-family:var(--mono);resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--bdr-h)'" onblur="this.style.borderColor='var(--bdr)'"></textarea>
+              <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button onclick="submitContactMessage()" style="background:var(--accent1);border:none;color:#fff;border-radius:0.5rem;padding:0.45rem 1.1rem;font-size:0.7rem;font-weight:700;font-family:var(--mono);cursor:pointer;">Send Message</button>
+              </div>
+              <div id="contact-status" style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);min-height:1rem;"></div>
+            </div>
+          </div>
+
+          <!-- Monthly Feedback tab -->
+          <div id="about-pane-feedback" style="display:none;">
+            <div id="feedback-status-banner" style="font-size:0.68rem;color:var(--t3);font-family:var(--mono);margin-bottom:0.75rem;padding:0.4rem 0.6rem;background:var(--surf);border-radius:0.4rem;border:1px solid var(--bdr);"></div>
+            <p style="font-size:0.72rem;color:var(--t2);margin-bottom:0.75rem;">Share your monthly experience, progress summary, or suggestions. <strong>Feedback is locked for 1 month</strong> after submission and cannot be edited.</p>
+            <textarea id="feedback-input" rows="6" placeholder="This month I covered…&#10;Challenges: …&#10;Next month plan: …" style="width:100%;background:var(--inp);border:1px solid var(--bdr);border-radius:0.6rem;padding:0.75rem;font-size:0.78rem;color:var(--t1);font-family:var(--mono);resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--bdr-h)'" onblur="this.style.borderColor='var(--bdr)'"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.65rem;">
+              <span id="feedback-month-label" style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);"></span>
+              <button id="feedback-submit-btn" onclick="submitMonthlyFeedback()" style="background:var(--accent1);border:none;color:#fff;border-radius:0.5rem;padding:0.45rem 1.1rem;font-size:0.7rem;font-weight:700;font-family:var(--mono);cursor:pointer;">Submit Feedback</button>
+            </div>
+            <div id="feedback-status" style="font-size:0.65rem;color:var(--t3);font-family:var(--mono);min-height:1rem;margin-top:0.4rem;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>
