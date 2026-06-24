@@ -205,6 +205,7 @@ async function showApp(knownEmail) {
         initFocusMode();
         setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
         setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
+        setTimeout(function() { if (typeof checkWeeklyFeedbackPrompt === 'function') checkWeeklyFeedbackPrompt(); }, 8000);
         return;
     }
 
@@ -260,6 +261,7 @@ async function showApp(knownEmail) {
     initFocusMode();
     setTimeout(function() { if (typeof initNotifications === 'function') initNotifications(); }, 2000);
     setTimeout(function() { if (typeof loadSWData === 'function') loadSWData(); }, 800);
+    setTimeout(function() { if (typeof checkWeeklyFeedbackPrompt === 'function') checkWeeklyFeedbackPrompt(); }, 8000);
 }
 
 function applyProfileToUI(profile) {
