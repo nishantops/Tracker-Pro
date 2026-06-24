@@ -2726,13 +2726,13 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   background: var(--bg2);
   border-bottom: 1px solid var(--bdr);
   border-right: 1px solid var(--bdr);
-  padding: 0.55rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   cursor: pointer;
   transition: background 0.15s;
 }
 .plan-gantt-row-label:hover { background: var(--surf); }
 .plan-gantt-plan-name {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: var(--t1);
   white-space: nowrap;
@@ -2740,14 +2740,14 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   text-overflow: ellipsis;
   max-width: 8rem;
 }
-.plan-gantt-plan-sub { font-size: 0.58rem; font-weight: 600; margin-top: 0.1rem; }
-.plan-gantt-pct { font-size: 0.53rem; color: var(--t3); font-family: var(--mono); margin-top: 0.05rem; }
+.plan-gantt-plan-sub { font-size: 0.55rem; font-weight: 600; margin-top: 0.05rem; }
+.plan-gantt-pct { font-size: 0.5rem; color: var(--t3); font-family: var(--mono); margin-top: 0.03rem; }
 .plan-gantt-bar-cell {
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--bdr);
 }
 .plan-gantt-empty-cell {
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  border-right: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--bdr);
+  border-right: 1px solid var(--bdr);
 }
 .plan-gantt-undated {
   padding: 0.65rem 1rem;
@@ -2848,6 +2848,7 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   text-align: center; font-size: 0.7rem; font-family: var(--mono);
   color: var(--t2); padding: 0.32rem 0.05rem; border-radius: 0.28rem;
   cursor: default; line-height: 1.3; transition: background 0.1s;
+  min-height: 2.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .planner-cal-cell.other-month { color: var(--t4); }
 .planner-cal-cell.today {
@@ -3253,3 +3254,73 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 [data-theme="light"] .rte-editor:focus { background: #fafafa; border-color: rgba(99,102,241,0.4); }
 [data-theme="light"] .rte-tb-btn  { color: #374151; }
 [data-theme="light"] .rte-tb-btn:hover { background: rgba(99,102,241,0.09); }
+
+/* ── LIGHT MODE — General visibility fixes ─────────────────── */
+
+/* Gantt */
+[data-theme="light"] .plan-gantt-outer { background: #fff; border-color: rgba(109,40,217,0.2); }
+[data-theme="light"] .plan-gantt-corner { background: #f3f0ff; color: #6b5ea8; }
+[data-theme="light"] .plan-gantt-col-hdr { color: #3a2b78; border-right-color: rgba(109,40,217,0.1); }
+[data-theme="light"] .plan-gantt-row-label { background: #f3f0ff; }
+[data-theme="light"] .plan-gantt-row-label:hover { background: #ece8fe; }
+[data-theme="light"] .plan-gantt-plan-name { color: #1e1248; }
+[data-theme="light"] .plan-gantt-pct { color: #6b5ea8; }
+[data-theme="light"] .plan-gantt-now-col { background: rgba(99,102,241,0.08); }
+[data-theme="light"] .plan-gantt-empty-msg { color: #6b5ea8; }
+[data-theme="light"] .plan-gantt-undated { border-top-color: rgba(109,40,217,0.18); }
+
+/* Calendar */
+[data-theme="light"] .planner-cal-wrap { background: #fff; border-color: rgba(109,40,217,0.2); }
+[data-theme="light"] .planner-cal-title { color: #1e1248; }
+[data-theme="light"] .planner-cal-day-hdr { color: #6b5ea8; }
+[data-theme="light"] .planner-cal-cell { color: #3a2b78; }
+[data-theme="light"] .planner-cal-cell.other-month { color: #b0a8d8; }
+[data-theme="light"] .planner-cal-cell.today { background: rgba(99,102,241,0.14); color: #4f46e5; }
+[data-theme="light"] .planner-cal-cell:hover:not(.other-month) { background: rgba(99,102,241,0.07); }
+[data-theme="light"] .planner-cal-nav { border-color: rgba(109,40,217,0.25); color: #3a2b78; }
+[data-theme="light"] .planner-cal-today { background: rgba(99,102,241,0.08); color: #4f46e5; }
+
+/* Plan cards */
+[data-theme="light"] .plan-card { background: #fff; border-color: rgba(109,40,217,0.18); }
+[data-theme="light"] .plan-card-title { color: #1e1248; }
+[data-theme="light"] .plan-card-dates { color: #4b3e8a; }
+[data-theme="light"] .plan-badge { color: #3a2b78 !important; }
+
+/* Drawer */
+[data-theme="light"] #plan-drawer { background: #fff; }
+[data-theme="light"] .plan-drawer-header { background: #f3f0ff !important; }
+[data-theme="light"] .plan-drawer-tab { color: #4b3e8a; background: #f3f0ff; }
+[data-theme="light"] .plan-drawer-tab.active { color: #fff; }
+
+/* Spreadsheet table */
+[data-theme="light"] .pt-table { background: #fff; }
+[data-theme="light"] .pt-th { background: #f3f0ff; color: #1e1248; border-color: rgba(109,40,217,0.18); }
+[data-theme="light"] .pt-td { color: #1e1248; border-color: rgba(109,40,217,0.1); }
+[data-theme="light"] .pt-td-num { color: #6b5ea8; background: #f8f5ff; }
+[data-theme="light"] .pt-sheet-bar { background: #f3f0ff; border-top-color: rgba(109,40,217,0.15); }
+[data-theme="light"] .pt-sheet-tab { color: #3a2b78; background: transparent; border-color: rgba(109,40,217,0.2); }
+[data-theme="light"] .pt-sheet-tab.active { background: #6366f1; color: #fff; }
+[data-theme="light"] .pt-toolbar2 { background: #f8f5ff; border-bottom-color: rgba(109,40,217,0.15); }
+[data-theme="light"] .pt-fmt-btn { color: #3a2b78; }
+[data-theme="light"] .pt-fmt-btn:hover { background: rgba(99,102,241,0.1); }
+[data-theme="light"] .pt-status-sel { color: #1e1248; background: transparent; }
+[data-theme="light"] .pt-status-pending { color: #b45309; }
+[data-theme="light"] .pt-status-done { color: #047857; }
+[data-theme="light"] .pt-status-progress { color: #4338ca; }
+
+/* Master aggregate */
+[data-theme="light"] .master-agg-section { color: #1e1248; }
+
+/* Task rows */
+[data-theme="light"] .task-row { background: rgba(99,102,241,0.03); border-color: rgba(109,40,217,0.12); }
+[data-theme="light"] .task-row label { color: #1e1248; }
+[data-theme="light"] .plan-trow-note { color: #4b3e8a; background: rgba(99,102,241,0.04); }
+
+/* Neo-card in light mode */
+[data-theme="light"] .neo-card { background: #fff; border-color: rgba(109,40,217,0.18); box-shadow: 0 2px 16px rgba(99,102,241,0.08); }
+
+/* Source cards */
+[data-theme="light"] .source-card { background: #fff; border-color: rgba(109,40,217,0.18); }
+
+/* Header */
+[data-theme="light"] header { background: rgba(255,255,255,0.96) !important; border-bottom-color: rgba(109,40,217,0.15) !important; }
