@@ -396,7 +396,7 @@ function renderMasterAggregate() {
                     });
                     if (!hasContent) return;
                     total++;
-                    if (statusColId && row.cells[statusColId] && String(row.cells[statusColId].v || '').trim() !== '') done++;
+                    if (statusColId && row.cells[statusColId] && String(row.cells[statusColId].v || '').trim() === '✓ Done') done++;
                 });
             });
         }
@@ -497,8 +497,15 @@ function _ptFindStatusCol(cols) {
 }
 
 // Extract all items (checkbox tasks + non-empty table rows) for a given plan enc
+function _ptStatusColor(v) {
+    if (v === '✓ Done')        return '#10b981';
+    if (v === '⟳ In Progress') return '#818cf8';
+    if (v === '○ Pending' || !v) return '#f59e0b';
+    return '#94a3b8'; // custom
+}
+
 function _masterGetPlanItems(enc, planTitle, periodStr) {
-    var items = []; // { id, plan, period, task, done, note, fromTable }
+    var items = []; // { id, plan, period, task, statusLabel, statusColor, note, fromTable }
 
     // 1. Checkbox tasks
     var boxes = document.querySelectorAll('.plan-task-box-' + CSS.escape(enc));
@@ -507,8 +514,10 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
         var txt = lbl ? lbl.textContent.trim() : cb.id;
         var noteEl = document.getElementById('note-' + cb.id);
         var isSub = cb.id.indexOf('sub_') !== -1;
+        var statusLabel = cb.checked ? '✓ Done' : '○ Pending';
         items.push({ id: 'cb_' + cb.id, plan: planTitle, period: periodStr,
             task: (isSub ? '  \u21b3 ' : '') + txt,
+            statusLabel: statusLabel, statusColor: _ptStatusColor(statusLabel),
             done: cb.checked, note: noteEl ? noteEl.value.trim() : '', fromTable: false });
     });
 
@@ -517,7 +526,6 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
         _ptCache[enc].forEach(function(sheet, si) {
             var cols = sheet.columns_data || [];
             var statusColId  = _ptFindStatusCol(cols);
-            // Map common plantable columns to master fields
             var subjectCols  = cols.filter(function(c) { return /subj|subject|topic/i.test(c.name) || c.id === 'c_subj'; });
             var targetCols   = cols.filter(function(c) { return /target|task|goal/i.test(c.name) || c.id === 'c_target'; });
             var datesCols    = cols.filter(function(c) { return /date|week|period/i.test(c.name) || c.id === 'c_dates'; });
@@ -532,7 +540,6 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
             }
 
             (sheet.rows_data || []).forEach(function(row, ri) {
-                // Skip entirely blank rows
                 var hasContent = Object.keys(row.cells || {}).some(function(k) {
                     return String(row.cells[k] && row.cells[k].v || '').trim() !== '';
                 });
@@ -544,19 +551,16 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
                 var note    = _cellVal(row, remarksCols);
                 var status  = statusColId && row.cells[statusColId] ? String(row.cells[statusColId].v || '').trim() : '';
 
-                // Build task label: "Subject — Target" or whichever is available
                 var taskParts = [subj, target].filter(Boolean);
                 var taskLabel = taskParts.length ? taskParts.join(' \u2014 ') : cols.map(function(c) {
                     return c.id !== statusColId ? String(row.cells[c.id] && row.cells[c.id].v || '').trim() : '';
                 }).filter(Boolean).join(' | ');
 
-                var rowPeriod = dateStr || periodStr;
-                var isDone = status !== '';
-
+                var statusLabel = status || '○ Pending';
                 items.push({ id: 'tbl_' + enc + '_' + si + '_' + ri,
-                    plan: planTitle, period: rowPeriod,
-                    task: taskLabel, done: isDone, note: note + (status ? (note ? ' | ' : '') + 'Status: ' + status : ''),
-                    fromTable: true });
+                    plan: planTitle, period: dateStr || periodStr,
+                    task: taskLabel, statusLabel: statusLabel, statusColor: _ptStatusColor(statusLabel),
+                    done: status === '✓ Done', note: note, fromTable: true });
             });
         });
     }
@@ -589,7 +593,7 @@ function buildMasterAggSheet() {
             c_plan:   { v: item.plan },
             c_period: { v: item.period },
             c_task:   { v: item.task },
-            c_status: { v: item.done ? '\u2713 Done' : '\u25cb Pending', fg: item.done ? '#10b981' : '#f59e0b' },
+            c_status: { v: item.statusLabel || (item.done ? '\u2713 Done' : '\u25cb Pending'), fg: item.statusColor || (item.done ? '#10b981' : '#f59e0b') },
             c_note:   { v: item.note }
         }};
     }

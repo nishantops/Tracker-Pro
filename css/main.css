@@ -1027,6 +1027,17 @@ tr:hover .pt-td-del button { opacity: 1; }
 }
 .pt-sheet-tab:hover .pt-sheet-del,
 .pt-sheet-tab.active .pt-sheet-del { opacity: 1; color: #f87171; }
+/* Status dropdown cells */
+.pt-td-status { padding: 0 !important; }
+.pt-status-sel {
+  width: 100%; border: none; background: transparent; cursor: pointer; outline: none;
+  font-family: var(--mono); font-size: 0.72rem; padding: 0.3rem 0.4rem;
+  appearance: none; -webkit-appearance: none;
+}
+.pt-status-pending  { color: #f59e0b; font-weight: 600; }
+.pt-status-done     { color: #10b981; font-weight: 700; }
+.pt-status-progress { color: #818cf8; font-weight: 600; }
+.pt-status-custom   { color: var(--t2); }
 .pt-sheet-rename-input {
   background: var(--inp); border: 1px solid var(--bdr-h); color: var(--t1);
   border-radius: 0.25rem; padding: 0.1rem 0.25rem; font-size: 0.63rem;
