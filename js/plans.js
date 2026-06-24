@@ -576,6 +576,24 @@ function _masterGetPlanItems(enc, planTitle, periodStr, planCat) {
     return items;
 }
 
+// Parse a task's period string to determine its month key (YYYY-MM).
+// Uses the month name found in the string (e.g. "22nd-29th June" → "2026-06").
+// Returns null if no month can be parsed.
+function _guessTaskMonth(periodStr, planStart, planEnd) {
+    if (!periodStr || periodStr === 'No dates set') return null;
+    var MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    var lower = (periodStr || '').toLowerCase();
+    for (var m = 0; m < MONTHS.length; m++) {
+        if (lower.indexOf(MONTHS[m]) >= 0) {
+            // Determine year: try to parse from string, else use plan year
+            var yrMatch = periodStr.match(/\b(20\d{2})\b/);
+            var yr = yrMatch ? parseInt(yrMatch[1]) : (planStart ? planStart.getFullYear() : new Date().getFullYear());
+            return yr + '-' + String(m + 1).padStart(2, '0');
+        }
+    }
+    return null;
+}
+
 function buildMasterAggSheet() {
     var entries = Object.entries(_planDataStore || {});
     if (typeof _ptZoom !== 'undefined' && _ptZoom['master_sheet'] === undefined) _ptZoom['master_sheet'] = 1.0;
@@ -656,14 +674,19 @@ function buildMasterAggSheet() {
 
         if (sd && ed) {
             items.forEach(function(item) {
-                var cur2 = new Date(sd); cur2.setDate(1);
-                while (cur2 <= ed) {
-                    var yk2 = _ymKey(cur2);
-                    if (monthBuckets[yk2] && !monthBuckets[yk2].seen[item.id]) {
-                        monthBuckets[yk2].seen[item.id] = true;
-                        monthBuckets[yk2].items.push(item);
+                // Determine which month tab this task belongs to based on its DATE column,
+                // NOT the full plan span (avoids showing June tasks in July/Aug tabs)
+                var taskYk = _guessTaskMonth(item.period, sd, ed);
+                if (taskYk && monthBuckets[taskYk] && !monthBuckets[taskYk].seen[item.id]) {
+                    monthBuckets[taskYk].seen[item.id] = true;
+                    monthBuckets[taskYk].items.push(item);
+                } else if (!taskYk) {
+                    // No parseable date — add to plan's start month only
+                    var startYk = _ymKey(sd);
+                    if (monthBuckets[startYk] && !monthBuckets[startYk].seen[item.id]) {
+                        monthBuckets[startYk].seen[item.id] = true;
+                        monthBuckets[startYk].items.push(item);
                     }
-                    cur2.setMonth(cur2.getMonth() + 1);
                 }
             });
         }
