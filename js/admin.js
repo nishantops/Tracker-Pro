@@ -930,3 +930,22 @@ function _renderMetrics(data) {
             }).join('') + '</tbody></table>'
         + '</div></div>';
 }
+
+// ── Admin Theme Toggle ────────────────────────────────────────────────────
+function adminToggleTheme() {
+    var html = document.documentElement;
+    var current = html.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    try { localStorage.setItem('admin_theme', next); } catch(e) {}
+    var btn = document.getElementById('admin-theme-btn');
+    if (btn) btn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+}
+
+// Restore theme on load
+document.addEventListener('DOMContentLoaded', function() {
+    var saved = localStorage.getItem('admin_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    var btn = document.getElementById('admin-theme-btn');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+});
