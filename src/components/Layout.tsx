@@ -6,6 +6,7 @@ import { ProfileModal } from './ProfileModal';
 import { Countdown } from './Countdown';
 import { SyllabusView } from './syllabus/SyllabusView';
 import { PlansGrid } from './plans/PlansGrid';
+import { SourcesView } from './sources/SourcesView';
 import { ENV } from '../lib/env';
 import {
   DEFAULT_NAV,
@@ -198,7 +199,7 @@ export function Layout() {
           <main className="app-main">
             {nav.planner === 'master' && <Placeholder label="Master Plan (Gantt + Pie + Calendar)" phase={8} />}
             {nav.planner === 'plans' && <PlansGrid />}
-            {nav.planner === 'sources' && <Placeholder label="Sources" phase={10} />}
+            {nav.planner === 'sources' && <SourcesView />}
           </main>
         </>
       )}
