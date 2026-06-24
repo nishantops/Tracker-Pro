@@ -379,31 +379,27 @@ function renderMasterAggregate() {
     var entries = Object.entries(_planDataStore || {});
     if (!entries.length) { el.innerHTML = ''; return; }
 
-    // Gather task stats per plan — counts both checkbox tasks AND spreadsheet table rows
+    // Gather task stats per plan — counts only spreadsheet table rows
     var stats = entries.map(function(kv) {
         var enc = kv[0], p = kv[1];
-        // 1. Checkbox tasks
-        var boxes = document.querySelectorAll('.plan-task-box-' + CSS.escape(enc));
-        var total = boxes.length, done = 0;
-        boxes.forEach(function(b) { if (b.checked) done++; });
-        // 2. Spreadsheet table rows from _ptCache[enc]
+        var total = 0, done = 0;
         if (typeof _ptCache !== 'undefined' && _ptCache[enc]) {
             _ptCache[enc].forEach(function(sheet) {
                 var statusColId = _ptFindStatusCol(sheet.columns_data);
+                var subjectCols = (sheet.columns_data || []).filter(function(c) { return /subj|subject|topic/i.test(c.name) || c.id === 'c_subj'; });
+                var targetCols  = (sheet.columns_data || []).filter(function(c) { return /target|task|goal/i.test(c.name) || c.id === 'c_target'; });
+                function _cv(row, colList) { for (var i=0;i<colList.length;i++){var v=row.cells&&row.cells[colList[i].id]&&String(row.cells[colList[i].id].v||'').trim();if(v)return v;} return ''; }
                 (sheet.rows_data || []).forEach(function(row) {
-                    var hasContent = Object.keys(row.cells || {}).some(function(k) {
-                        return row.cells[k] && String(row.cells[k].v || '').trim() !== '';
-                    });
-                    if (!hasContent) return;
+                    if (!_cv(row, subjectCols) && !_cv(row, targetCols)) return;
                     total++;
-                    if (statusColId && row.cells[statusColId] && String(row.cells[statusColId].v || '').trim() === '✓ Done') done++;
+                    if (statusColId && row.cells[statusColId] && String(row.cells[statusColId].v || '').trim() === '\u2713 Done') done++;
                 });
             });
         }
         return { title: p.title || 'Plan', total: total, done: done, color: p._color || '#818cf8' };
     }).filter(function(s) { return s.total > 0; });
 
-    if (!stats.length) { el.innerHTML = '<p style="font-size:0.7rem;color:var(--t3);font-family:var(--mono);text-align:center;padding:1rem 0;">No task data yet — add tasks or table rows in plans.</p>'; return; }
+    if (!stats.length) { el.innerHTML = '<p style="font-size:0.7rem;color:var(--t3);font-family:var(--mono);text-align:center;padding:1rem 0;">No table rows yet — add rows in your plan spreadsheets.</p>'; return; }
 
     var totalTasks = stats.reduce(function(a, s) { return a + s.total; }, 0);
     var doneTasks = stats.reduce(function(a, s) { return a + s.done; }, 0);
@@ -486,6 +482,13 @@ function renderMasterAggregate() {
 
 // ── Master Aggregate Spreadsheet Builder (date-intelligent) ─────────────────
 
+function _ptStatusColor(v) {
+    if (v === '\u2713 Done')         return '#10b981';
+    if (v === '\u27f3 In Progress')  return '#818cf8';
+    if (v === '\u25cb Pending' || !v) return '#f59e0b';
+    return '#94a3b8';
+}
+
 // Find the status/self-status column id in a sheet's column list
 function _ptFindStatusCol(cols) {
     if (!cols) return null;
@@ -496,32 +499,10 @@ function _ptFindStatusCol(cols) {
     return found;
 }
 
-// Extract all items (checkbox tasks + non-empty table rows) for a given plan enc
-function _ptStatusColor(v) {
-    if (v === '✓ Done')        return '#10b981';
-    if (v === '⟳ In Progress') return '#818cf8';
-    if (v === '○ Pending' || !v) return '#f59e0b';
-    return '#94a3b8'; // custom
-}
-
+// Extract only spreadsheet table rows for a given plan enc (checkbox tasks excluded)
 function _masterGetPlanItems(enc, planTitle, periodStr) {
-    var items = []; // { id, plan, period, task, statusLabel, statusColor, note, fromTable }
+    var items = []; // only spreadsheet table rows — checkbox tasks excluded
 
-    // 1. Checkbox tasks
-    var boxes = document.querySelectorAll('.plan-task-box-' + CSS.escape(enc));
-    boxes.forEach(function(cb) {
-        var lbl = document.querySelector('label[for="' + cb.id + '"]');
-        var txt = lbl ? lbl.textContent.trim() : cb.id;
-        var noteEl = document.getElementById('note-' + cb.id);
-        var isSub = cb.id.indexOf('sub_') !== -1;
-        var statusLabel = cb.checked ? '✓ Done' : '○ Pending';
-        items.push({ id: 'cb_' + cb.id, plan: planTitle, period: periodStr,
-            task: (isSub ? '  \u21b3 ' : '') + txt,
-            statusLabel: statusLabel, statusColor: _ptStatusColor(statusLabel),
-            done: cb.checked, note: noteEl ? noteEl.value.trim() : '', fromTable: false });
-    });
-
-    // 2. Spreadsheet table rows from _ptCache[enc]
     if (typeof _ptCache !== 'undefined' && _ptCache[enc]) {
         _ptCache[enc].forEach(function(sheet, si) {
             var cols = sheet.columns_data || [];
@@ -540,27 +521,23 @@ function _masterGetPlanItems(enc, planTitle, periodStr) {
             }
 
             (sheet.rows_data || []).forEach(function(row, ri) {
-                var hasContent = Object.keys(row.cells || {}).some(function(k) {
-                    return String(row.cells[k] && row.cells[k].v || '').trim() !== '';
-                });
-                if (!hasContent) return;
+                var subj   = _cellVal(row, subjectCols);
+                var target = _cellVal(row, targetCols);
+                // Skip rows where both primary content fields are empty
+                if (!subj && !target) return;
 
-                var subj    = _cellVal(row, subjectCols);
-                var target  = _cellVal(row, targetCols);
                 var dateStr = _cellVal(row, datesCols);
                 var note    = _cellVal(row, remarksCols);
                 var status  = statusColId && row.cells[statusColId] ? String(row.cells[statusColId].v || '').trim() : '';
 
                 var taskParts = [subj, target].filter(Boolean);
-                var taskLabel = taskParts.length ? taskParts.join(' \u2014 ') : cols.map(function(c) {
-                    return c.id !== statusColId ? String(row.cells[c.id] && row.cells[c.id].v || '').trim() : '';
-                }).filter(Boolean).join(' | ');
+                var taskLabel = taskParts.length ? taskParts.join(' \u2014 ') : '';
 
-                var statusLabel = status || '○ Pending';
+                var statusLabel = status || '\u25cb Pending';
                 items.push({ id: 'tbl_' + enc + '_' + si + '_' + ri,
                     plan: planTitle, period: dateStr || periodStr,
                     task: taskLabel, statusLabel: statusLabel, statusColor: _ptStatusColor(statusLabel),
-                    done: status === '✓ Done', note: note, fromTable: true });
+                    done: status === '\u2713 Done', note: note, fromTable: true });
             });
         });
     }
@@ -578,28 +555,25 @@ function buildMasterAggSheet() {
     }
 
     var allCols = [
-        { id: 'c_plan',   name: 'Plan',       width: 150 },
-        { id: 'c_period', name: 'Date Range',  width: 155 },
-        { id: 'c_task',   name: 'Task / Row',  width: 240 },
-        { id: 'c_status', name: 'Status',      width: 100 },
+        { id: 'c_plan',   name: 'Plan',       width: 140 },
+        { id: 'c_period', name: 'Date / Week', width: 145 },
+        { id: 'c_task',   name: 'Task / Row',  width: 255 },
+        { id: 'c_status', name: 'Status',      width: 105 },
         { id: 'c_note',   name: 'Note',        width: 175 }
     ];
 
-    function _ymKey(d)   { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
-    function _ymLabel(d) { return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }); }
     function _fmtDate(d) { return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
-    function _mkRow(id, item) {
+    function _mkRow(id, item, showPlan) {
         return { id: id, cells: {
-            c_plan:   { v: item.plan },
+            c_plan:   { v: showPlan ? item.plan : '', b: showPlan },
             c_period: { v: item.period },
             c_task:   { v: item.task },
-            c_status: { v: item.statusLabel || (item.done ? '\u2713 Done' : '\u25cb Pending'), fg: item.statusColor || (item.done ? '#10b981' : '#f59e0b') },
+            c_status: { v: item.statusLabel || '\u25cb Pending', fg: item.statusColor || '#f59e0b' },
             c_note:   { v: item.note }
         }};
     }
 
     var allItems = [];
-    var monthBuckets = {};
 
     entries.forEach(function(kv) {
         var enc = kv[0], plan = kv[1];
@@ -610,63 +584,35 @@ function buildMasterAggSheet() {
             ? _fmtDate(sd).replace(', ' + sd.getFullYear(), '') + ' \u2013 ' + _fmtDate(ed)
             : 'No dates set';
 
-        if (sd && ed) {
-            var cur = new Date(sd); cur.setDate(1);
-            while (cur <= ed) {
-                var yk = _ymKey(cur);
-                if (!monthBuckets[yk]) monthBuckets[yk] = { label: _ymLabel(cur), yk: yk, seen: {}, rows: [] };
-                cur.setMonth(cur.getMonth() + 1);
-            }
-        }
-
-        // Get both checkbox tasks AND spreadsheet rows for this plan
         var items = _masterGetPlanItems(enc, planTitle, periodStr);
         items.forEach(function(item) { item.sd = sd; });
         allItems = allItems.concat(items);
-
-        if (sd && ed) {
-            items.forEach(function(item) {
-                var cur2 = new Date(sd); cur2.setDate(1);
-                while (cur2 <= ed) {
-                    var yk2 = _ymKey(cur2);
-                    if (monthBuckets[yk2] && !monthBuckets[yk2].seen[item.id]) {
-                        monthBuckets[yk2].seen[item.id] = true;
-                        monthBuckets[yk2].rows.push(_mkRow('r_' + yk2 + '_' + item.id, item));
-                    }
-                    cur2.setMonth(cur2.getMonth() + 1);
-                }
-            });
-        }
     });
 
+    // Sort: plans with dates first (by start date), then by plan name
     allItems.sort(function(a, b) {
-        if (a.sd && b.sd) return a.sd - b.sd;
+        if (a.sd && b.sd) {
+            if (a.sd.getTime() !== b.sd.getTime()) return a.sd - b.sd;
+            return a.plan.localeCompare(b.plan);
+        }
         if (a.sd) return -1; if (b.sd) return 1;
         return a.plan.localeCompare(b.plan);
     });
 
-    var allRows = allItems.map(function(item) { return _mkRow('rall_' + item.id, item); });
-    if (!allRows.length) allRows.push({ id: 'r_empty_all', cells: { c_plan:{v:''}, c_period:{v:''}, c_task:{v:'(add tasks or table rows to plans)'}, c_status:{v:''}, c_note:{v:''} } });
-
-    var sheets = [{ id: null, plan_id: 'master_sheet', sheet_name: '\u2605 All Items', columns_data: allCols, rows_data: allRows, sort_order: 0 }];
-
-    var sortedMonths = Object.values(monthBuckets).sort(function(a, b) { return a.yk.localeCompare(b.yk); });
-    sortedMonths.forEach(function(m, idx) {
-        var rows = m.rows.length ? m.rows : [{ id: 'r_empty_' + m.yk, cells: { c_plan:{v:''}, c_period:{v:''}, c_task:{v:'(no items this period)'}, c_status:{v:''}, c_note:{v:''} } }];
-        sheets.push({ id: null, plan_id: 'master_sheet', sheet_name: m.label, columns_data: allCols.map(function(c) { return Object.assign({}, c); }), rows_data: rows, sort_order: idx + 1 });
+    // Build rows with plan grouping: show plan name bold on first row of each plan, blank on subsequent
+    var allRows = [];
+    var lastPlan = null;
+    allItems.forEach(function(item) {
+        var showPlan = item.plan !== lastPlan;
+        lastPlan = item.plan;
+        allRows.push(_mkRow('rall_' + item.id, item, showPlan));
     });
+    if (!allRows.length) allRows.push({ id: 'r_empty_all', cells: {
+        c_plan:{v:'(no table rows yet — add rows in plan spreadsheets)'}, c_period:{v:''}, c_task:{v:''}, c_status:{v:''}, c_note:{v:''}
+    }});
 
-    if (!sortedMonths.length) {
-        entries.forEach(function(kv, idx) {
-            var enc = kv[0], plan = kv[1];
-            var planTitle = plan.title || 'Plan ' + (idx + 1);
-            var items = _masterGetPlanItems(enc, planTitle, 'No dates');
-            var rows = items.map(function(item) { return _mkRow('r_' + item.id, item); });
-            if (!rows.length) rows.push({ id: 'r_empty_' + enc, cells: { c_plan:{v:planTitle}, c_period:{v:'No dates'}, c_task:{v:'(no items yet)'}, c_status:{v:''}, c_note:{v:''} } });
-            var short = planTitle.length > 14 ? planTitle.substring(0, 12) + '\u2026' : planTitle;
-            sheets.push({ id: null, plan_id: 'master_sheet', sheet_name: short, columns_data: allCols.map(function(c) { return Object.assign({}, c); }), rows_data: rows, sort_order: idx + 1 });
-        });
-    }
+    // Single "★ All Items" sheet — no separate monthly tabs
+    var sheets = [{ id: null, plan_id: 'master_sheet', sheet_name: '\u2605 All Items', columns_data: allCols, rows_data: allRows, sort_order: 0 }];
 
     _ptCache['master_sheet'] = sheets;
     if (typeof renderPlanTableUI === 'function') renderPlanTableUI('master_sheet');

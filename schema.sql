@@ -185,3 +185,52 @@ ALTER TABLE upsc_custom_plans ADD COLUMN IF NOT EXISTS content_type TEXT DEFAULT
 --  plan card note:id = 'plan_card_{enc}'
 --  CA word note:  id = 'ca_note_word_doc'
 --  All store HTML rich-text in topic_note TEXT column.
+
+-- ============================================================================
+-- TABLE 7: Plan Spreadsheet Sheets (plantable.js — CRITICAL for auto-save)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS upsc_plan_tables (
+    id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    plan_id      TEXT        NOT NULL,
+    sheet_name   TEXT        NOT NULL DEFAULT 'Sheet 1',
+    columns_data JSONB       NOT NULL DEFAULT '[]',
+    rows_data    JSONB       NOT NULL DEFAULT '[]',
+    sort_order   INTEGER     DEFAULT 0,
+    updated_at   TIMESTAMPTZ DEFAULT now(),
+    created_at   TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_plan_tables_user ON upsc_plan_tables(user_id);
+CREATE INDEX IF NOT EXISTS idx_plan_tables_plan ON upsc_plan_tables(user_id, plan_id);
+ALTER TABLE upsc_plan_tables ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read own plan tables"   ON upsc_plan_tables FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own plan tables" ON upsc_plan_tables FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own plan tables" ON upsc_plan_tables FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users delete own plan tables" ON upsc_plan_tables FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- MIGRATIONS v4+ (run these to upgrade existing databases)
+-- ============================================================================
+
+-- v4: profile extras — phone, profile_data (S&W), updated_at
+ALTER TABLE upsc_user_profiles ADD COLUMN IF NOT EXISTS phone        TEXT;
+ALTER TABLE upsc_user_profiles ADD COLUMN IF NOT EXISTS profile_data JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE upsc_user_profiles ADD COLUMN IF NOT EXISTS updated_at   TIMESTAMPTZ DEFAULT now();
+
+-- v4: updated_at auto-trigger (idempotent)
+CREATE OR REPLACE FUNCTION _upsc_set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+DROP TRIGGER IF EXISTS trg_plan_tables_updated_at  ON upsc_plan_tables;
+DROP TRIGGER IF EXISTS trg_custom_plans_updated_at ON upsc_custom_plans;
+
+CREATE TRIGGER trg_plan_tables_updated_at
+    BEFORE UPDATE ON upsc_plan_tables
+    FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();
+
+CREATE TRIGGER trg_custom_plans_updated_at
+    BEFORE UPDATE ON upsc_custom_plans
+    FOR EACH ROW EXECUTE PROCEDURE _upsc_set_updated_at();
