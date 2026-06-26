@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { GridLayout } from 'react-grid-layout';
+import { GridLayout, noCompactor } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -52,15 +52,14 @@ export function PlansGrid() {
 
   // Pin / Lock state (persisted in localStorage)
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => loadSet(PINNED_LS_KEY));
-  const [locked, setLocked] = useState(() => localStorage.getItem(LOCKED_LS_KEY) === '1');
+  const [locked, setLocked] = useState(() => localStorage.getItem(LOCKED_LS_KEY) !== '0');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useContainerWidth(containerRef);
 
   // plans are already sorted GS-wise by usePlans hook
-  // Reset layout is exposed from usePlanLayouts
   const planIds = useMemo(() => plans.map((p) => p.plan_id), [plans]);
-  const { layout, saveLayout, removeLayout, resetLayout, loaded } = usePlanLayouts(planIds);
+  const { layout, saveLayout, removeLayout, loaded } = usePlanLayouts(planIds);
 
   // Apply static=true for pinned/locked cards
   const effectiveLayout = useMemo(() =>
@@ -121,22 +120,15 @@ export function PlansGrid() {
         <h2 className="heading-font text-xl font-black">My Plans</h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { if (window.confirm('Reset all card positions to compact default (6 per row)?')) resetLayout(); }}
-            className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all font-mono border bg-slate-500/10 border-slate-500/30 text-slate-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
-            title="Reset all card positions to compact grid"
-          >
-            ↺ RESET
-          </button>
-          <button
             onClick={toggleLock}
-            title={locked ? 'Click to unlock — allows drag & resize' : 'Click to lock — prevents accidental changes'}
+            title={locked ? 'Unlock grid (allow drag/resize)' : 'Lock grid (prevent all changes)'}
             className={`cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all font-mono border ${
               locked
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
                 : 'bg-slate-500/10 border-slate-500/30 text-slate-400 hover:bg-slate-500/20'
             }`}
           >
-            {locked ? '🔓 UNLOCK' : '🔒 LOCK'}
+            {locked ? '🔒 LOCKED' : '🔓 LOCK'}
           </button>
           <button
             onClick={() => setModalOpen(true)}
@@ -160,6 +152,7 @@ export function PlansGrid() {
             gridConfig={{ cols: COLS, rowHeight: ROW_HEIGHT, margin: [12, 12], containerPadding: [0, 0] }}
             dragConfig={{ enabled: !locked }}
             resizeConfig={{ enabled: !locked, handles: ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'] }}
+            compactor={noCompactor}
             width={containerWidth}
             onLayoutChange={(rgl) => {
               if (!locked) saveLayout([...rgl].map(({ i, x, y, w, h, minW, minH }) => ({ i, x, y, w, h, minW, minH })));

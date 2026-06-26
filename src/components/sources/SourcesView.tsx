@@ -34,7 +34,7 @@ export function SourcesView() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => loadSet(SRC_PINNED_KEY));
-  const [locked, setLocked] = useState(() => localStorage.getItem(SRC_LOCKED_KEY) === '1');
+  const [locked, setLocked] = useState(() => localStorage.getItem(SRC_LOCKED_KEY) !== '0');
 
   const sortedSources = [
     ...sources.filter((s) => pinnedIds.has(s.source_id)),

@@ -50,7 +50,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
   const { layout, onLayoutChange, reset } = usePieLayouts(keys);
 
   // Lock state (persisted in localStorage)
-  const [locked, setLocked] = useState(() => localStorage.getItem('pie-grid-locked') === '1');
+  const [locked, setLocked] = useState(() => localStorage.getItem('pie-grid-locked') !== '0');
   const toggleLock = () => setLocked(prev => {
     const next = !prev;
     localStorage.setItem('pie-grid-locked', next ? '1' : '0');
