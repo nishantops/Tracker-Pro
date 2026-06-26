@@ -133,7 +133,7 @@ export function SourcesView() {
               color: locked ? '#f87171' : '#a5b4fc',
             }}
           >
-            {locked ? '🔒 LOCK' : '🔓 UNLOCK'}
+            {locked ? '� UNLOCK' : '🔒 LOCK'}
           </button>
           <button
             onClick={openCreate}

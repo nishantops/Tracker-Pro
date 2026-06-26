@@ -121,14 +121,14 @@ export function PlansGrid() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggleLock}
-            title={locked ? 'Unlock grid (allow drag/resize)' : 'Lock grid (prevent all changes)'}
+            title={locked ? 'Click to unlock — allows drag & resize' : 'Click to lock — prevents accidental changes'}
             className={`cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all font-mono border ${
               locked
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
                 : 'bg-slate-500/10 border-slate-500/30 text-slate-400 hover:bg-slate-500/20'
             }`}
           >
-            {locked ? '🔒 LOCKED' : '🔓 LOCK'}
+            {locked ? '🔓 UNLOCK' : '🔒 LOCK'}
           </button>
           <button
             onClick={() => setModalOpen(true)}
