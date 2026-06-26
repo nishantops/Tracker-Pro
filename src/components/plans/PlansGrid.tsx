@@ -158,7 +158,7 @@ export function PlansGrid() {
               if (!locked) saveLayout([...rgl].map(({ i, x, y, w, h, minW, minH }) => ({ i, x, y, w, h, minW, minH })));
             }}
           >
-            {sortedPlans.map((p) => (
+            {plans.map((p) => (
               <div key={p.plan_id}>
                 <PlanCard
                   plan={p}
