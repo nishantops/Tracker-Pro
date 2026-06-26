@@ -48,8 +48,8 @@ export type PYQSection =
   | 'essay';
 
 export const PYQ_SECTION_LABELS: Record<PYQSection, string> = {
-  gs1: 'Prelims GS1',
-  csat: 'Prelims CSAT',
+  gs1: 'GS Paper I',
+  csat: 'CSAT Paper II',
   anthro_p1: 'Anthro Paper I',
   anthro_p2: 'Anthro Paper II',
   mains_gs1: 'Mains GS I',

@@ -3,3 +3,12 @@ node_modules/
 dist/
 .venv/
 *.pyc
+*.tsbuildinfo
+
+# Environment — contains secrets; never commit
+.env
+.env.local
+.env.*.local
+
+# Old app archive — not part of new build
+old/

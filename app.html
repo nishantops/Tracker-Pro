@@ -4,11 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UPSC Command Centre</title>
+    <script>!function(){var t=localStorage.getItem('upsc_theme')||'dark';document.documentElement.setAttribute('data-theme',t);}();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Cloudflare Web Analytics — free, no DB cost, no cookies -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "42b5db79e73040c7b0cef82ffec71b6e"}'></script>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="text-slate-800 antialiased min-h-screen flex flex-col custom-scrollbar">
+    <div id="root" class="flex-1 flex flex-col w-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

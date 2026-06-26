@@ -177,9 +177,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Sign out ───────────────────────────────────────────────────────────────
-  const signOut = useCallback(async (force = false) => {
-    if (!force && !confirm('Are you sure you want to logout? Your progress is auto-saved.')) return;
+  const signOut = useCallback(async (_force = false) => {
+    // Confirmation is handled by the calling UI layer
+    // Stop focus mode before logout (matching old app behavior)
+    window.dispatchEvent(new Event('upsc-logout'));
     sessionStartRef.current = null;
+    // Clear activity + focus timestamps so next login starts fresh
+    try {
+      localStorage.removeItem('upsc_last_activity_ts');
+      localStorage.removeItem('upsc_focus_active');
+    } catch { /* ignore */ }
     await supabase.auth.signOut();
   }, []);
 
@@ -220,40 +227,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.user) return;
 
+    // Superuser skips auto-logout entirely
+    if (isSuperuser(state.user.email)) return;
+
+    const LS_ACTIVITY_KEY = 'upsc_last_activity_ts';
+    const LS_FOCUS_KEY    = 'upsc_focus_active';
+    const TIMEOUT         = ENV.AUTO_LOGOUT_MS; // 15 min
+
+    // ── 2. Activity listener ─────────────────────────────────────────────────
     const onActivity = () => {
-      lastActivityRef.current = Date.now();
+      const now = Date.now();
+      lastActivityRef.current = now;
+      try { localStorage.setItem(LS_ACTIVITY_KEY, String(now)); } catch { /* ignore */ }
     };
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const;
     events.forEach((ev) => document.addEventListener(ev, onActivity, { passive: true, capture: true }));
 
-    const interval = setInterval(async () => {
-      const idle = Date.now() - lastActivityRef.current;
-      if (idle > ENV.AUTO_LOGOUT_MS) {
-        signOut(true);
-        return;
+    // ── 1. Stale-session check on mount (async to handle cross-device focus) ─
+    (async () => {
+      const storedTs = Number(localStorage.getItem(LS_ACTIVITY_KEY) ?? 0);
+      const localFocusActive = !!localStorage.getItem(LS_FOCUS_KEY);
+      if (storedTs > 0 && !localFocusActive && Date.now() - storedTs > TIMEOUT) {
+        // Check DB: focus might be active on another device → don't logout if so
+        let dbFocusActive = false;
+        try {
+          const { data } = await supabase
+            .from('upsc_user_sessions')
+            .select('focus_active')
+            .eq('user_id', state.user!.id)
+            .single();
+          dbFocusActive = data?.focus_active ?? false;
+        } catch { /* non-critical */ }
+        if (!dbFocusActive) { signOut(true); return; }
       }
-      // User was active — update DB
-      if (isSuperuser(state.user?.email)) return;
+      // Seed lastActivityRef from localStorage so continuity survives page reloads
+      lastActivityRef.current = storedTs > 0 ? storedTs : Date.now();
+    })();
+
+    // ── 3. Visibility-change: fires when user returns to tab / wakes device ──
+    const onVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return;
+      // Check localStorage first (instant); if not set, ask DB (cross-device focus)
+      if (localStorage.getItem(LS_FOCUS_KEY)) return;
+      try {
+        const { data } = await supabase
+          .from('upsc_user_sessions')
+          .select('focus_active')
+          .eq('user_id', state.user!.id)
+          .single();
+        if (data?.focus_active) return; // focus active on another device — stay logged in
+      } catch { /* non-critical, proceed to idle check */ }
+      const idle = Date.now() - lastActivityRef.current;
+      if (idle > TIMEOUT) { signOut(true); return; }
+      try {
+        const { data: { session: live } } = await supabase.auth.getSession();
+        if (!live) signOut(true);
+      } catch { /* proceed */ }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // ── 4. Periodic check every 2 min ────────────────────────────────────────
+    const interval = setInterval(async () => {
+      // Check localStorage first (same device, instant); fall back to DB (cross-device)
+      let focusActive = !!localStorage.getItem(LS_FOCUS_KEY);
+      if (!focusActive) {
+        try {
+          const { data } = await supabase
+            .from('upsc_user_sessions')
+            .select('focus_active')
+            .eq('user_id', state.user!.id)
+            .single();
+          focusActive = data?.focus_active ?? false;
+        } catch { /* non-critical */ }
+      }
+
+      if (focusActive) {
+        // Focus mode is ON (this device or another) — keep heartbeat, never timeout
+        const now = Date.now();
+        lastActivityRef.current = now;
+        try { localStorage.setItem(LS_ACTIVITY_KEY, String(now)); } catch { /* ignore */ }
+      } else {
+        const idle = Date.now() - lastActivityRef.current;
+        if (idle > TIMEOUT) { signOut(true); return; }
+      }
+      // Update DB for admin dashboard visibility
       try {
         const now = new Date().toISOString();
         await supabase.from('upsc_user_sessions').upsert(
-          {
-            user_id: state.user!.id,
-            email: state.user!.email,
-            is_superuser: false,
-            last_active: now,
-          },
+          { user_id: state.user!.id, email: state.user!.email, is_superuser: false, last_active: now },
           { onConflict: 'user_id' },
         );
-      } catch {
-        /* non-critical */
-      }
-    }, 2 * 60 * 1000);
+        await supabase
+          .from('upsc_user_profiles')
+          .update({ last_active: now })
+          .eq('user_id', state.user!.id);
+      } catch { /* non-critical */ }
+    }, ENV.SESSION_CHECK_INTERVAL_MS);
 
     return () => {
       events.forEach((ev) =>
         document.removeEventListener(ev, onActivity, { capture: true } as EventListenerOptions),
       );
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       clearInterval(interval);
     };
   }, [state.user, signOut]);

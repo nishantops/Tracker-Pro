@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 interface Toast {
   id: number;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'focus';
 }
 
 interface ToastContextType {
@@ -23,19 +23,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
   }, []);
 
+  const iconMap: Record<string, string> = {
+    success: '✓',
+    error: '✕',
+    info: 'ℹ',
+    focus: '🎯',
+  };
+
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container">
+      <div id="toast-container">
         {toasts.map((t) => (
-          <ToastItem key={t.id} toast={t} onDismiss={() => setToasts((s) => s.filter((x) => x.id !== t.id))} />
+          <ToastItem key={t.id} toast={t} icon={iconMap[t.type]} onDismiss={() => setToasts((s) => s.filter((x) => x.id !== t.id))} />
         ))}
       </div>
     </ToastContext.Provider>
   );
 }
 
-function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+function ToastItem({ toast, icon, onDismiss }: { toast: Toast; icon: string; onDismiss: () => void }) {
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
@@ -43,14 +50,12 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
     return () => clearTimeout(timer);
   }, []);
 
-  const colorMap = { success: 'var(--emerald-l)', error: 'var(--rose-l)', info: 'var(--accent-l)' };
-
   return (
     <div
-      className={`toast-item ${exiting ? 'toast-exit' : ''}`}
-      style={{ borderLeftColor: colorMap[toast.type] }}
+      className={`toast toast-${toast.type}${exiting ? ' toast-out' : ''}`}
       onClick={onDismiss}
     >
+      <span className="toast-icon">{icon}</span>
       {toast.message}
     </div>
   );

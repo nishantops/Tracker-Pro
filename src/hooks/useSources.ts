@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { ENV } from '../lib/env';
 
 export interface Source {
   source_id: string;
@@ -35,6 +36,15 @@ export const TOPIC_COLORS: Record<string, string> = {
   YouTube: '#ef4444', 'Test Series': '#6366f1', Other: '#94a3b8',
 };
 
+// ── Module-level SWR cache (survives tab switches, cleared on sign-out) ───────
+const SOURCES_CACHE_TTL = ENV.TRACKER_CACHE_TTL_MS; // reuse same TTL (60s)
+const _sourcesCache = new Map<string, { data: Source[]; ts: number }>();
+
+export function clearSourcesCache(userId?: string) {
+  if (userId) _sourcesCache.delete(userId);
+  else _sourcesCache.clear();
+}
+
 export function useSources() {
   const { user } = useAuth();
   const [sources, setSources] = useState<Source[]>([]);
@@ -43,13 +53,22 @@ export function useSources() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      const cached = _sourcesCache.get(user.id);
+      if (cached) {
+        setSources(cached.data);
+        setLoading(false);
+        if (Date.now() - cached.ts < SOURCES_CACHE_TTL) return; // still fresh
+      }
+
       try {
         const { data } = await supabase
           .from('upsc_user_sources')
           .select('source_id, title, link, topic, notes')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
-        setSources(data ?? []);
+        const list = (data ?? []) as Source[];
+        _sourcesCache.set(user.id, { data: list, ts: Date.now() });
+        setSources(list);
       } finally {
         setLoading(false);
       }
@@ -77,8 +96,11 @@ export function useSources() {
         setSources((prev) => {
           const idx = prev.findIndex((s) => s.source_id === sourceId);
           const src: Source = { source_id: sourceId, title: form.title, link: form.link || null, topic: form.topic, notes: form.notes || null };
-          if (idx >= 0) { const c = [...prev]; c[idx] = src; return c; }
-          return [src, ...prev];
+          const updated = idx >= 0
+            ? prev.map((s, i) => (i === idx ? src : s))
+            : [src, ...prev];
+          _sourcesCache.set(user.id, { data: updated, ts: Date.now() });
+          return updated;
         });
       }
     },
@@ -89,7 +111,11 @@ export function useSources() {
     async (sourceId: string) => {
       if (!user) return;
       await supabase.from('upsc_user_sources').delete().eq('source_id', sourceId).eq('user_id', user.id);
-      setSources((prev) => prev.filter((s) => s.source_id !== sourceId));
+      setSources((prev) => {
+        const updated = prev.filter((s) => s.source_id !== sourceId);
+        _sourcesCache.set(user.id, { data: updated, ts: Date.now() });
+        return updated;
+      });
     },
     [user],
   );

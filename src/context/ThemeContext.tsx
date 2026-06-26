@@ -23,12 +23,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'light') {
-      root.setAttribute('data-theme', 'light');
-    } else {
-      root.removeAttribute('data-theme');
-    }
+    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('upsc_theme', theme);
   }, [theme]);
 

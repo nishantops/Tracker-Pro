@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { ENV } from '../lib/env';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface Profile {
@@ -105,7 +106,7 @@ export function useProfile() {
     (email?: string | null) => {
       if (!email) return false;
       const lower = email.toLowerCase();
-      return lower === 'sanit@upsc-nishant.me' || lower === 'sanit';
+      return lower === ENV.SUPERUSER_EMAIL.toLowerCase() || lower === ENV.SUPERUSER_ALIAS.toLowerCase();
     },
     [],
   );

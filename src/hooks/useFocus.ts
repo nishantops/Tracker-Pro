@@ -19,10 +19,42 @@ export function useFocus() {
   const sessionRef = useRef<{ id: string; start: number } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Load history + totals ──────────────────────────────────────────────
+  // ── Load history + totals (also closes orphaned sessions) ────────────────
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      // Close orphaned sessions (browser closed mid-session)
+      try {
+        const { data: orphans } = await supabase
+          .from('upsc_focus_sessions')
+          .select('id, started_at')
+          .eq('user_id', user.id)
+          .is('ended_at', null);
+        if (orphans && orphans.length > 0) {
+          const now = Date.now();
+          const toUpdate = orphans.filter((s) => {
+            const dur = Math.floor((now - new Date(s.started_at).getTime()) / 1000);
+            return dur > 5 && dur < 86_400;
+          });
+          const toDelete = orphans
+            .filter((s) => !toUpdate.includes(s))
+            .map((s) => s.id);
+
+          const updates = toUpdate.map((s) => {
+            const dur = Math.floor((now - new Date(s.started_at).getTime()) / 1000);
+            return supabase
+              .from('upsc_focus_sessions')
+              .update({ ended_at: new Date(now).toISOString(), duration_seconds: dur })
+              .eq('id', s.id);
+          });
+          const deletions = toDelete.length > 0
+            ? [supabase.from('upsc_focus_sessions').delete().in('id', toDelete)]
+            : [];
+
+          await Promise.all([...updates, ...deletions]);
+        }
+      } catch { /* non-critical */ }
+
       const { data } = await supabase
         .from('upsc_focus_sessions')
         .select('id, started_at, ended_at, duration_seconds')
@@ -68,6 +100,14 @@ export function useFocus() {
     }
     setActive(true);
     setElapsed(0);
+    try { localStorage.setItem('upsc_focus_active', '1'); } catch { /* ignore */ }
+    // Sync focus state to DB for cross-device awareness
+    try {
+      await supabase.from('upsc_user_sessions').upsert(
+        { user_id: user.id, focus_active: true },
+        { onConflict: 'user_id' },
+      );
+    } catch { /* non-critical */ }
     intervalRef.current = setInterval(() => {
       if (sessionRef.current) {
         setElapsed(Math.floor((Date.now() - sessionRef.current.start) / 1000));
@@ -104,9 +144,30 @@ export function useFocus() {
     sessionRef.current = null;
     setActive(false);
     setElapsed(0);
+    try { localStorage.removeItem('upsc_focus_active'); } catch { /* ignore */ }
+    // Sync focus state to DB for cross-device awareness
+    try {
+      await supabase.from('upsc_user_sessions').upsert(
+        { user_id: user.id, focus_active: false },
+        { onConflict: 'user_id' },
+      );
+    } catch { /* non-critical */ }
+    // Update last focus timestamp for streak reminders
+    try { localStorage.setItem('upsc_last_focus_ts', String(Date.now())); } catch { /* ignore */ }
 
     return dur;
   }, [user]);
+
+  // Auto-stop focus when user logs out (listens to custom event from AuthContext)
+  useEffect(() => {
+    const handleLogout = () => {
+      if (sessionRef.current) {
+        stop();
+      }
+    };
+    window.addEventListener('upsc-logout', handleLogout);
+    return () => window.removeEventListener('upsc-logout', handleLogout);
+  }, [stop]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useFocus, formatDuration, formatDurationShort } from '../../hooks/useFocus';
 import { useToast } from '../common/Toast';
 
@@ -17,68 +18,119 @@ export function FocusWidget() {
     }
   };
 
+  const lastSession = history[0];
+  const lastDur = lastSession ? formatDurationShort(lastSession.duration_seconds ?? 0) : '—';
+
   return (
     <>
-      {/* Compact widget in header */}
-      <button
-        className={`focus-widget ${active ? 'focus-active' : ''}`}
+      {/* Compact widget in header — matches old HTML exactly */}
+      <div
+        id="focus-mode-widget"
+        className={`flex items-center gap-2 rounded-xl px-3 py-1.5 cursor-pointer${active ? ' focus-widget-active' : ''}`}
+        style={{ background: 'var(--surf)', border: '1px solid var(--bdr)' }}
         onClick={() => setPanelOpen((o) => !o)}
-        title="Focus Mode"
+        title="Focus Mode — click to open study tracker panel"
       >
-        <span className="focus-icon">🎯</span>
-        <span className="focus-timer-mini">
-          {active ? formatDuration(elapsed) : 'FOCUS'}
+        <button
+          id="focus-mode-btn"
+          type="button"
+          className={`flex items-center gap-1.5${active ? ' focus-active' : ''}`}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--t3)' }}
+        >
+          <span className="focus-dot" />
+          <span id="focus-status-label" className="text-[10px] font-black uppercase tracking-widest">
+            {active ? 'STUDYING' : 'FOCUS'}
+          </span>
+        </button>
+        <span
+          id="focus-timer-display"
+          className="px-2 py-0.5 rounded-md text-[10px] font-mono"
+          style={{ minWidth: '5.5ch', textAlign: 'center', background: 'var(--card)', color: 'var(--t3)', border: '1px solid var(--bdr)' }}
+        >
+          {formatDuration(active ? elapsed : 0)}
         </span>
-      </button>
+        {todayTotal > 0 && (
+          <span id="focus-today-total" className="text-[9px] font-bold" style={{ color: 'var(--t4)' }}>
+            Today: {formatDurationShort(todayTotal)}
+          </span>
+        )}
+      </div>
 
-      {/* Panel */}
-      {panelOpen && (
-        <div className="focus-panel" onClick={(e) => e.stopPropagation()}>
-          <div className="focus-panel-header">
-            <h3>Focus Mode</h3>
-            <button className="modal-close" onClick={() => setPanelOpen(false)}>×</button>
+      {/* Focus Panel — rendered via portal to escape header backdrop-filter stacking context */}
+      {panelOpen && createPortal(
+        <div id="focus-panel" style={{ display: 'block' }} onClick={(e) => e.stopPropagation()}>
+          {/* Header row */}
+          <div className="fp-status-row" style={{ marginBottom: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1rem' }}>🎯</span>
+              <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--t1)' }}>Focus Mode</span>
+              <span className="fp-db-badge">Live</span>
+            </div>
+            <button className="fp-close-btn" onClick={() => setPanelOpen(false)}>✕</button>
           </div>
 
-          <div className="focus-big-timer">{formatDuration(active ? elapsed : 0)}</div>
+          {/* Status badge */}
+          <div style={{ marginBottom: '0.6rem' }}>
+            <span className={`fp-status-badge${active ? ' fp-status-active' : ''}`}>
+              {active ? 'STUDYING' : 'IDLE'}
+            </span>
+          </div>
 
+          {/* Big timer */}
+          <div className="fp-big-timer">{formatDuration(active ? elapsed : 0)}</div>
+
+          {/* Start/Stop button */}
           <button
-            className={`focus-toggle-btn ${active ? 'focus-stop' : 'focus-start'}`}
+            className={active ? 'fp-stop-btn' : 'fp-start-btn'}
             onClick={handleToggle}
           >
             {active ? 'STOP SESSION' : 'START SESSION'}
           </button>
 
-          <div className="focus-stats">
-            <div className="focus-stat">
-              <span className="focus-stat-label">Today</span>
-              <span className="focus-stat-value">{formatDurationShort(todayTotal)}</span>
+          {/* Stats grid */}
+          <div className="fp-stat-grid">
+            <div className="fp-stat">
+              <div className="fp-stat-label">Today</div>
+              <div className="fp-stat-value">{todayTotal > 0 ? formatDurationShort(todayTotal) : '—'}</div>
             </div>
-            <div className="focus-stat">
-              <span className="focus-stat-label">This Week</span>
-              <span className="focus-stat-value">{formatDurationShort(weekTotal)}</span>
+            <div className="fp-stat">
+              <div className="fp-stat-label">Last session</div>
+              <div className="fp-stat-value">{lastDur}</div>
+            </div>
+            <div className="fp-stat">
+              <div className="fp-stat-label">7-day total</div>
+              <div className="fp-stat-value">{weekTotal > 0 ? formatDurationShort(weekTotal) : '—'}</div>
             </div>
           </div>
 
-          {history.length > 0 && (
-            <div className="focus-history">
-              <h4 className="focus-hist-title">Recent Sessions</h4>
-              {history.slice(0, 10).map((s) => (
-                <div key={s.id} className="focus-hist-row">
-                  <span className="focus-hist-date">
-                    {new Date(s.started_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </span>
-                  <span className="focus-hist-time">
-                    {new Date(s.started_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                  </span>
-                  <span className="focus-hist-dur">
-                    {formatDurationShort(s.duration_seconds ?? 0)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="fp-divider" />
+
+          {/* Recent Sessions */}
+          <div className="fp-section-title">Recent Sessions</div>
+          <div>
+            {history.length === 0 ? (
+              <div className="fp-empty">No sessions yet</div>
+            ) : (
+              history.slice(0, 10).map((s) => {
+                const d = new Date(s.started_at);
+                const ago = Math.floor((Date.now() - d.getTime()) / 3600000);
+                const agoStr = ago < 1 ? 'just now' : ago < 24 ? `${ago}h ago` : `${Math.floor(ago / 24)}d ago`;
+                return (
+                  <div key={s.id} className="fp-hist-item">
+                    <span className="fp-hist-date">
+                      {d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <span className="fp-hist-dur">
+                      {formatDurationShort(s.duration_seconds ?? 0)}
+                    </span>
+                    <span className="fp-hist-ago">{agoStr}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }

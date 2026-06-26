@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
+import { ENV } from '../lib/env';
+
+// ── Module-level SWR cache ────────────────────────────────────────────────
+const PLANS_CACHE_TTL = ENV.PLANS_CACHE_TTL_MS;
+const _plansCache = new Map<string, { data: Plan[]; ts: number }>();
+
 export interface Plan {
   plan_id: string;          // btoa(title)
   plan_title: string;
@@ -13,6 +19,9 @@ export interface Plan {
   notif_enabled: boolean;
   plan_subject: string;
   content_type: string;     // both | tasks | tables
+  // Computed progress (not stored in DB)
+  taskTotal?: number;
+  taskDone?: number;
 }
 
 export interface PlanFormData {
@@ -45,21 +54,61 @@ export function usePlans() {
   const [loading, setLoading] = useState(true);
 
   // ── Load plans ─────────────────────────────────────────────────────────
+  const loadPlans = useCallback(async (silent = false) => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('upsc_custom_plans')
+        .select('plan_id, plan_title, plan_type, start_date, end_date, plan_category, plan_division, notif_enabled, plan_subject, content_type')
+        .eq('user_id', user.id);
+
+      const planList = (data ?? []) as Plan[];
+
+      // Fetch task progress for all plans in one query
+      if (planList.length > 0) {
+        const { data: progressData } = await supabase
+          .from('upsc_tracker_progress')
+          .select('id, is_checked')
+          .eq('user_id', user.id)
+          .like('id', 'plan_task_%');
+
+        if (progressData) {
+          for (const plan of planList) {
+            const prefix = `plan_task_${plan.plan_id}_`;
+            const planTasks = progressData.filter((r) => r.id.startsWith(prefix) && !r.id.includes('_sub_'));
+            plan.taskTotal = planTasks.length;
+            plan.taskDone = planTasks.filter((r) => r.is_checked).length;
+          }
+        }
+      }
+
+      // Sort plans by category order, then title
+      planList.sort((a, b) => {
+        const oA = PLAN_CAT_ORDER[a.plan_category] ?? 99;
+        const oB = PLAN_CAT_ORDER[b.plan_category] ?? 99;
+        if (oA !== oB) return oA - oB;
+        return a.plan_title.localeCompare(b.plan_title);
+      });
+
+      _plansCache.set(user.id, { data: planList, ts: Date.now() });
+      setPlans(planList);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      try {
-        const { data } = await supabase
-          .from('upsc_custom_plans')
-          .select('*')
-          .eq('user_id', user.id);
-        setPlans(data ?? []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [user]);
+    const cached = _plansCache.get(user.id);
+    if (cached) {
+      setPlans(cached.data);
+      setLoading(false);
+      // Revalidate silently if stale
+      if (Date.now() - cached.ts > PLANS_CACHE_TTL) loadPlans(true);
+      return;
+    }
+    loadPlans();
+  }, [loadPlans, user]);
 
   // ── Create / Update ────────────────────────────────────────────────────
   const savePlan = useCallback(
@@ -100,12 +149,9 @@ export function usePlans() {
             plan_subject: form.subject,
             content_type: form.contentType,
           };
-          if (idx >= 0) {
-            const copy = [...prev];
-            copy[idx] = plan;
-            return copy;
-          }
-          return [plan, ...prev];
+          const updated = idx >= 0 ? prev.map((p, i) => i === idx ? plan : p) : [plan, ...prev];
+          _plansCache.set(user.id, { data: updated, ts: Date.now() });
+          return updated;
         });
       }
     },
@@ -117,15 +163,23 @@ export function usePlans() {
     async (planId: string) => {
       if (!user) return;
       await supabase.from('upsc_custom_plans').delete().eq('plan_id', planId).eq('user_id', user.id);
-      setPlans((prev) => prev.filter((p) => p.plan_id !== planId));
+      setPlans((prev) => {
+        const updated = prev.filter((p) => p.plan_id !== planId);
+        _plansCache.set(user.id, { data: updated, ts: Date.now() });
+        return updated;
+      });
     },
     [user],
   );
 
-  return { plans, loading, savePlan, deletePlan, EMPTY_FORM };
+  return { plans, loading, savePlan, deletePlan, EMPTY_FORM, refresh: loadPlans };
 }
 
 // ── Label maps (ported from old plans.js) ────────────────────────────────────
+export const PLAN_CAT_ORDER: Record<string, number> = {
+  gs1: 1, gs2: 2, gs3: 3, gs4: 4, essay: 5, optional: 6, common: 7, custom: 8,
+};
+
 export const PLAN_CAT_LABELS: Record<string, string> = {
   common: 'Common', gs1: 'GS 1', gs2: 'GS 2', gs3: 'GS 3', gs4: 'GS 4',
   essay: 'Essay', optional: 'Optional', custom: 'Custom',

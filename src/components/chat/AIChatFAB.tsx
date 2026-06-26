@@ -1,8 +1,38 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAIChat } from '../../hooks/useAIChat';
+import { useTracker } from '../../hooks/useTracker';
+import { useProfile } from '../../hooks/useProfile';
+import { ENV } from '../../lib/env';
 
 export function AIChatFAB() {
-  const { messages, loading, send, clear, setCustomKey } = useAIChat();
+  const { progress, getGlobalMetrics, getMetrics } = useTracker();
+  const { profile } = useProfile();
+
+  const getLiveContext = useCallback(() => {
+    const name = profile?.display_name || 'User';
+    const global = getGlobalMetrics();
+    const pct = global.total > 0 ? Math.round((global.checked / global.total) * 100) : 0;
+
+    // Section-wise completion
+    const sectionKeys = ['p1', 'p2', 'gs1', 'gs2', 'gs3', 'gs4', 'a1', 'a2', 'ca'];
+    const sections = sectionKeys.map((k) => {
+      const m = getMetrics(k);
+      const p = m.total > 0 ? Math.round((m.checked / m.total) * 100) : 0;
+      return `${k.toUpperCase()}: ${p}%`;
+    }).join(', ');
+
+    // Countdown
+    const now = new Date().getTime();
+    const prelims = Math.ceil((new Date(ENV.PRELIMS_DATE).getTime() - now) / 86400000);
+    const mains = Math.ceil((new Date(ENV.MAINS_DATE).getTime() - now) / 86400000);
+
+    return `Student: ${name}
+Overall Progress: ${pct}% (${global.checked}/${global.total} units checked)
+Countdown: Prelims ${prelims} days, Mains ${mains} days
+Section Completion: ${sections}`;
+  }, [progress, profile, getGlobalMetrics, getMetrics]);
+
+  const { messages, loading, send, clear, setCustomKey } = useAIChat(getLiveContext);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [showSettings, setShowSettings] = useState(false);

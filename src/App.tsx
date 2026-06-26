@@ -4,10 +4,11 @@ import { AuthGate } from './components/AuthGate';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Layout } from './components/Layout';
 import { AIChatFAB } from './components/chat/AIChatFAB';
+import { FeedbackPrompt } from './components/common/FeedbackPrompt';
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
-  const { loading: profileLoading, isComplete, isSuperuser } = useProfile();
+  const { loading: profileLoading, isComplete, isSuperuser, features } = useProfile();
 
   if (authLoading || (user && profileLoading)) {
     return (
@@ -23,7 +24,8 @@ export default function App() {
   return (
     <>
       <Layout />
-      <AIChatFAB />
+      {features.ai_chat !== false && <AIChatFAB />}
+      <FeedbackPrompt />
     </>
   );
 }

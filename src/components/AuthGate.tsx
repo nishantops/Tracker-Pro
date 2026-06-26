@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { ENV } from '../lib/env';
 
 export function AuthGate() {
   const { signIn, signUp, signInWithGoogle, error, loading, confirmationSent, clearError } =
@@ -17,101 +16,211 @@ export function AuthGate() {
   };
 
   return (
-    <div className="auth-screen">
+    <div id="auth-screen">
       <div className="auth-card">
-        {/* Header */}
-        <div className="auth-header">
-          <div className="auth-avatar">{ENV.HEADER_AVATAR}</div>
-          <h1 className="auth-title">{ENV.APP_NAME}</h1>
-          <p className="auth-tagline">{ENV.APP_TAGLINE}</p>
+        <div className="text-center mb-6">
+          <div
+            className="h-16 w-16 mx-auto rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-2xl tracking-tighter shadow-xl shadow-violet-500/30 mb-4"
+            style={{ animation: 'cardSlideUp 0.4s ease-out' }}
+          >
+            SAN
+          </div>
+          <h2
+            style={{
+              fontFamily: "'Cabinet Grotesk',sans-serif",
+              fontSize: '1.5rem',
+              fontWeight: 900,
+              background: 'linear-gradient(135deg,#4f46e5,#7c3aed,#db2777)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            UPSC Command Center
+          </h2>
+          <p
+            style={{
+              fontSize: '0.7rem',
+              color: '#64748b',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginTop: '0.25rem',
+            }}
+          >
+            by SAN Labs &nbsp;&middot;&nbsp; Sign in to continue
+          </p>
         </div>
 
-        {/* Form */}
-        <form
-          className="auth-form"
-          onSubmit={(e) => handleSubmit(e, 'login')}
-          onChange={clearError}
-        >
-          <div className="auth-field">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="auth-input"
-              autoComplete="email"
-              required
-            />
-          </div>
-
-          <div className="auth-field auth-password-field">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="auth-input"
-              autoComplete="current-password"
-              minLength={6}
-              required
-            />
-            <button
-              type="button"
-              className="auth-toggle-pw"
-              onClick={() => setShowPassword((s) => !s)}
-              tabIndex={-1}
-            >
-              {showPassword ? '🙈' : '👁'}
-            </button>
-          </div>
-
-          {/* Error / Confirmation */}
-          {error && <p className="auth-error">{error}</p>}
-          {confirmationSent && (
-            <p className="auth-success">✓ Account created! Check your email to confirm, then sign in.</p>
-          )}
-
-          {/* Buttons */}
-          <div className="auth-buttons">
-            <button type="submit" className="auth-btn auth-btn-primary" disabled={loading}>
-              {loading ? 'SIGNING IN…' : 'SIGN IN'}
-            </button>
-            <button
-              type="button"
-              className="auth-btn auth-btn-secondary"
-              disabled={loading}
-              onClick={(e) => handleSubmit(e as unknown as FormEvent, 'signup')}
-            >
-              {loading ? 'CREATING…' : 'SIGN UP'}
-            </button>
-          </div>
-        </form>
-
-        {/* Divider */}
-        <div className="auth-divider">
-          <span>or</span>
-        </div>
-
-        {/* Google */}
+        {/* Google Sign In */}
         <button
-          type="button"
-          className="auth-btn auth-btn-google"
           onClick={signInWithGoogle}
+          className="auth-social-btn"
+          style={{ marginBottom: '0.75rem' }}
           disabled={loading}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4" />
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853" />
-            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05" />
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335" />
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
           Continue with Google
         </button>
 
-        {/* Footer */}
-        <p className="auth-footer">
-          {ENV.DEVELOPER_NAME} &middot; v{ENV.APP_VERSION}
-        </p>
+        <div className="auth-divider">
+          <span
+            style={{
+              fontSize: '0.65rem',
+              color: '#94a3b8',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+            }}
+          >
+            or use email
+          </span>
+        </div>
+
+        {/* Email/Password Section */}
+        <form
+          id="auth-email-section"
+          onSubmit={(e) => handleSubmit(e, 'login')}
+          onChange={clearError}
+        >
+          <div>
+            <label
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#475569',
+              }}
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <label
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#475569',
+              }}
+            >
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ paddingRight: '2.8rem' }}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                title="Show/hide password"
+                style={{
+                  position: 'absolute',
+                  right: '0.7rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  color: '#94a3b8',
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+              >
+                {showPassword ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: '0.8rem',
+                background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                boxShadow: '0 4px 15px -3px rgba(139,92,246,0.5)',
+                transition: 'all 0.2s',
+              }}
+            >
+              {loading ? 'Signing In\u2026' : 'Sign In'}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as unknown as FormEvent, 'signup')}
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: '0.8rem',
+                background: 'linear-gradient(135deg,#059669,#10b981,#34d399)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                boxShadow: '0 4px 15px -3px rgba(16,185,129,0.4)',
+                transition: 'all 0.2s',
+              }}
+            >
+              {loading ? 'Creating\u2026' : 'Sign Up'}
+            </button>
+          </div>
+          <p
+            style={{
+              fontSize: '0.6rem',
+              color: '#94a3b8',
+              textAlign: 'center',
+              marginTop: '0.75rem',
+            }}
+          >
+            Sign Up creates a new account. Sign In for existing users.
+          </p>
+        </form>
+
+        {error && (
+          <div id="auth-error" style={{ display: 'block' }}>
+            {error}
+          </div>
+        )}
+
+        {confirmationSent && (
+          <p style={{ color: '#10b981', fontSize: '0.75rem', marginTop: '0.75rem', fontWeight: 700, textAlign: 'center' }}>
+            ✓ Account created! Check your email to confirm, then sign in.
+          </p>
+        )}
       </div>
     </div>
   );

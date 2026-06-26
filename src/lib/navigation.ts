@@ -14,6 +14,6 @@ export interface NavState {
 export const DEFAULT_NAV: NavState = {
   root: 'marathon',
   marathon: 'syllabus',
-  planner: 'master',
+  planner: 'plans',
   stage: 'prelims',
 };
