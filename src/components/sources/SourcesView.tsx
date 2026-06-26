@@ -114,7 +114,6 @@ export function SourcesView() {
             gridConfig={{ cols: ENV.SOURCE_GRID_COLS, rowHeight: ENV.SOURCE_ROW_HEIGHT, margin: [ENV.SOURCE_GRID_MARGIN, ENV.SOURCE_GRID_MARGIN], containerPadding: [0, 0] }}
             dragConfig={{ enabled: !locked }}
             resizeConfig={{ enabled: !locked, handles: ALL_HANDLES }}
-            compactor={verticalCompactor}
             width={containerWidth}
             onLayoutChange={(rgl) => { if (!locked) saveLayout(rgl); }}
           >
