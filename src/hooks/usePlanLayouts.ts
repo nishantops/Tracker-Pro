@@ -120,5 +120,27 @@ export function usePlanLayouts(planIds: string[]) {
     [user],
   );
 
-  return { layout, saveLayout, removeLayout, loaded };
+  /** Delete all saved positions and regenerate compact defaults (6 per row). */
+  const resetLayout = useCallback(
+    async () => {
+      const fresh = planIds.map((id, idx) => defaultItem(id, idx));
+      setLayout(fresh);
+      if (!user) return;
+      // Delete all saved rows then re-save compact defaults immediately
+      await supabase.from(DB_TABLE).delete().eq('user_id', user.id);
+      const rows = fresh.map((item) => ({
+        user_id: user.id,
+        plan_id: item.i,
+        col: item.x,
+        row_pos: item.y,
+        col_span: item.w,
+        row_span: item.h,
+        updated_at: new Date().toISOString(),
+      }));
+      await supabase.from(DB_TABLE).upsert(rows, { onConflict: 'user_id,plan_id' });
+    },
+    [user, planIds],
+  );
+
+  return { layout, saveLayout, removeLayout, resetLayout, loaded };
 }

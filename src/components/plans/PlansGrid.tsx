@@ -58,8 +58,9 @@ export function PlansGrid() {
   const containerWidth = useContainerWidth(containerRef);
 
   // plans are already sorted GS-wise by usePlans hook
+  // Reset layout is exposed from usePlanLayouts
   const planIds = useMemo(() => plans.map((p) => p.plan_id), [plans]);
-  const { layout, saveLayout, removeLayout, loaded } = usePlanLayouts(planIds);
+  const { layout, saveLayout, removeLayout, resetLayout, loaded } = usePlanLayouts(planIds);
 
   // Apply static=true for pinned/locked cards
   const effectiveLayout = useMemo(() =>
@@ -119,6 +120,13 @@ export function PlansGrid() {
       <div className="flex justify-between items-center gap-2 flex-wrap">
         <h2 className="heading-font text-xl font-black">My Plans</h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { if (window.confirm('Reset all card positions to compact default (6 per row)?')) resetLayout(); }}
+            className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all font-mono border bg-slate-500/10 border-slate-500/30 text-slate-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
+            title="Reset all card positions to compact grid"
+          >
+            ↺ RESET
+          </button>
           <button
             onClick={toggleLock}
             title={locked ? 'Click to unlock — allows drag & resize' : 'Click to lock — prevents accidental changes'}
