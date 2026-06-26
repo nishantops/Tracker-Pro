@@ -15,11 +15,11 @@ import { PlanTable } from '../plans/PlanTable';
 
 // ── Grid constants ────────────────────────────────────────────────────────────
 const COLS       = 12;
-const ROW_HEIGHT = 90;
-const DEFAULT_W  = 4;
+const ROW_HEIGHT = 60;
+const DEFAULT_W  = 3;
 const DEFAULT_H  = 3;
-const MIN_W      = 2;
-const MIN_H      = 2;
+const MIN_W      = 1;
+const MIN_H      = 1;
 
 const SRC_LAYOUT_KEY = 'source-card-layout';
 const SRC_PINNED_KEY = 'source-card-pinned';
