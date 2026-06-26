@@ -2,17 +2,17 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export function AuthGate() {
-  const { signIn, signUp, signInWithGoogle, error, loading, confirmationSent, clearError } =
+  const { signIn, signInWithGoogle, error, loading, confirmationSent, clearError } =
     useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
-  const handleSubmit = async (e: FormEvent, mode: 'login' | 'signup') => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
-    if (mode === 'login') await signIn(email.trim(), password);
-    else await signUp(email.trim(), password);
+    await signIn(email.trim(), password);
   };
 
   return (
@@ -67,6 +67,7 @@ export function AuthGate() {
           Continue with Google
         </button>
 
+        {showAdminLogin && (
         <div className="auth-divider">
           <span
             style={{
@@ -80,11 +81,13 @@ export function AuthGate() {
             or use email
           </span>
         </div>
+        )}
 
-        {/* Email/Password Section */}
+        {/* Email/Password Section — visible only when admin toggle is on */}
+        {showAdminLogin && (
         <form
           id="auth-email-section"
-          onSubmit={(e) => handleSubmit(e, 'login')}
+          onSubmit={(e) => handleSubmit(e)}
           onChange={clearError}
         >
           <div>
@@ -187,6 +190,24 @@ export function AuthGate() {
             Sign In for existing users. New accounts via Google only.
           </p>
         </form>
+        )}
+
+        {/* Small admin toggle — barely visible, only for superuser to know about */}
+        {!showAdminLogin && (
+          <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdminLogin(true)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '0.55rem', color: '#334155', opacity: 0.35,
+                fontFamily: 'var(--mono)', letterSpacing: '0.05em',
+              }}
+            >
+              New accounts via Google only
+            </button>
+          </p>
+        )}
 
         {error && (
           <div id="auth-error" style={{ display: 'block' }}>
