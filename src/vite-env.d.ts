@@ -56,6 +56,16 @@ interface ImportMetaEnv {
   readonly VITE_PLAN_GRID_MARGIN: string;
   readonly VITE_PLAN_LAYOUT_DEBOUNCE_MS: string;
 
+  // Source Grid
+  readonly VITE_SOURCE_GRID_COLS: string;
+  readonly VITE_SOURCE_CARD_DEFAULT_W: string;
+  readonly VITE_SOURCE_CARD_DEFAULT_H: string;
+  readonly VITE_SOURCE_CARD_MIN_W: string;
+  readonly VITE_SOURCE_CARD_MIN_H: string;
+  readonly VITE_SOURCE_ROW_HEIGHT: string;
+  readonly VITE_SOURCE_GRID_MARGIN: string;
+  readonly VITE_SOURCE_LAYOUT_DEBOUNCE_MS: string;
+
   // Cache TTLs
   readonly VITE_TRACKER_CACHE_TTL_MS: string;
   readonly VITE_PLANS_CACHE_TTL_MS: string;

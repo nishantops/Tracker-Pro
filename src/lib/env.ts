@@ -72,9 +72,20 @@ export const ENV = {
   PLAN_CARD_MIN_H:          num('VITE_PLAN_CARD_MIN_H',          2),
   PLAN_ROW_HEIGHT:          num('VITE_PLAN_ROW_HEIGHT',          68),  // px per row unit
   PLAN_GRID_MARGIN:         num('VITE_PLAN_GRID_MARGIN',         12),  // px gap between cards
-  PLAN_LAYOUT_DEBOUNCE_MS:  num('VITE_PLAN_LAYOUT_DEBOUNCE_MS',  600), // ms before saving layout to DB
+  PLAN_LAYOUT_DEBOUNCE_MS:  num('VITE_PLAN_LAYOUT_DEBOUNCE_MS',  600),
   PLAN_LAYOUT_DB_TABLE:     str('VITE_PLAN_LAYOUT_DB_TABLE',     'upsc_plan_layouts'),
   PLAN_LAYOUT_LS_KEY:       str('VITE_PLAN_LAYOUT_LS_KEY',       'plan-grid-layouts-v2'),
+
+  // ── Source Grid (react-grid-layout, all-sides resize, DB-persisted) ─────────────
+  SOURCE_GRID_COLS:          num('VITE_SOURCE_GRID_COLS',          12),
+  SOURCE_CARD_DEFAULT_W:     num('VITE_SOURCE_CARD_DEFAULT_W',     3),
+  SOURCE_CARD_DEFAULT_H:     num('VITE_SOURCE_CARD_DEFAULT_H',     3),
+  SOURCE_CARD_MIN_W:         num('VITE_SOURCE_CARD_MIN_W',         1),
+  SOURCE_CARD_MIN_H:         num('VITE_SOURCE_CARD_MIN_H',         1),
+  SOURCE_ROW_HEIGHT:         num('VITE_SOURCE_ROW_HEIGHT',         60),
+  SOURCE_GRID_MARGIN:        num('VITE_SOURCE_GRID_MARGIN',        8),
+  SOURCE_LAYOUT_DEBOUNCE_MS: num('VITE_SOURCE_LAYOUT_DEBOUNCE_MS', 600),
+  SOURCE_LAYOUT_DB_TABLE:    str('VITE_SOURCE_LAYOUT_DB_TABLE',    'upsc_source_layouts'),
 
   // ── Pie Grid (react-grid-layout) ──────────────────────────────────────────
   PIE_GRID_COLS:           num('VITE_PIE_GRID_COLS',           5),
