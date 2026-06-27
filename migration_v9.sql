@@ -415,7 +415,6 @@ AS $$
 DECLARE
   caller_email TEXT;
   deleted_tables TEXT[] := '{}';
-  auth_deleted BOOLEAN := FALSE;
 BEGIN
   -- Verify caller is admin
   caller_email := coalesce(
@@ -453,14 +452,10 @@ BEGIN
   DELETE FROM upsc_user_sessions     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_sessions';
   DELETE FROM upsc_user_profiles     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_profiles';
 
-  -- Delete auth user (this cascades identities/sessions in most Supabase versions)
+  -- Delete auth user (cascades identities/sessions)
   DELETE FROM auth.users WHERE id = target_user_id;
-  GET DIAGNOSTICS auth_deleted = ROW_COUNT > 0;
-  IF auth_deleted THEN
-    deleted_tables := deleted_tables || 'auth_user';
-  END IF;
 
-  RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables), 'auth_deleted', auth_deleted);
+  RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables));
 END;
 $$;
 
@@ -505,15 +500,18 @@ $$;
 CREATE OR REPLACE FUNCTION admin_reset_password(target_user_id UUID, new_password TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   caller_email TEXT;
 BEGIN
   -- Verify caller is admin
-  caller_email := (auth.jwt() ->> 'email');
+  caller_email := coalesce(
+    current_setting('request.jwt.claims', true)::json->>'email',
+    (auth.jwt() ->> 'email')
+  );
   IF caller_email IS NULL OR caller_email != 'admin@upsc-nishant.me' THEN
-    RAISE EXCEPTION 'Access denied: admin only';
+    RAISE EXCEPTION 'Access denied: caller=%, expected admin@upsc-nishant.me', caller_email;
   END IF;
 
   -- Validate password length
@@ -521,14 +519,14 @@ BEGIN
     RAISE EXCEPTION 'Password must be at least 6 characters';
   END IF;
 
-  -- Update password using Supabase's internal function
+  -- Update password using pgcrypto
   UPDATE auth.users
   SET encrypted_password = crypt(new_password, gen_salt('bf')),
       updated_at = now()
   WHERE id = target_user_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'User not found';
+    RAISE EXCEPTION 'User % not found', target_user_id;
   END IF;
 
   RETURN jsonb_build_object('success', true, 'user_id', target_user_id);
