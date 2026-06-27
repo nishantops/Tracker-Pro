@@ -45,7 +45,9 @@ export type PYQSection =
   | 'mains_gs2'
   | 'mains_gs3'
   | 'mains_gs4'
-  | 'essay';
+  | 'essay'
+  | 'opt_p1'
+  | 'opt_p2';
 
 export const PYQ_SECTION_LABELS: Record<PYQSection, string> = {
   gs1: 'GS Paper I',
@@ -57,4 +59,6 @@ export const PYQ_SECTION_LABELS: Record<PYQSection, string> = {
   mains_gs3: 'Mains GS III',
   mains_gs4: 'Mains GS IV',
   essay: 'Mains Essay',
+  opt_p1: 'Optional Paper I',
+  opt_p2: 'Optional Paper II',
 };

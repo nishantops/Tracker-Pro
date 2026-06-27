@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { STAGES } from '../../data/syllabus';
 import { useTracker } from '../../hooks/useTracker';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../hooks/useProfile';
 import { supabase } from '../../lib/supabase';
 import { RTE } from '../common/RTE';
 import { TopicList } from './TopicList';
@@ -48,12 +49,18 @@ interface Props {
 
 export function SyllabusView({ stage }: Props) {
   const { progress, loading, toggleCheck, updateNote } = useTracker();
+  const { profile } = useProfile();
   const [activeSubTab, setActiveSubTab] = useState<string>(() => {
     const tabs = SUB_TAB_CONFIG[stage];
     return tabs?.[0]?.key ?? '';
   });
   // Inner tab for mains GS1-4 (syllabus vs trend)
   const [innerMode, setInnerMode] = useState<'syllabus' | 'trend'>('syllabus');
+
+  const isAnthroUser = useMemo(() => {
+    const opt = profile?.optional_subject ?? '';
+    return !opt || opt === 'none' || opt.toLowerCase().includes('anthro');
+  }, [profile]);
 
   const stageData = STAGES.find((s) => s.id === stage);
   if (!stageData) return null;
@@ -144,16 +151,18 @@ export function SyllabusView({ stage }: Props) {
           )}
         </div>
       ) : (
-        activeSection && (
+        stage === 'anthro' && !isAnthroUser && (activeSubTab === 'a1' || activeSubTab === 'a2') ? (
+          <CustomOptionalSyllabus paper={activeSubTab as 'a1' | 'a2'} progress={progress} onToggle={toggleCheck} onNote={updateNote} />
+        ) : activeSection ? (
           <TopicList
             key={activeSection.key}
             section={activeSection}
             progress={progress}
             onToggle={toggleCheck}
             onNote={updateNote}
-            stageLabel={stage === 'prelims' ? 'Prelims' : stage === 'anthro' ? 'Anthropology' : 'Mains'}
+            stageLabel={stage === 'prelims' ? 'Prelims' : stage === 'anthro' ? (profile?.optional_subject_custom || profile?.optional_subject || 'Optional') : 'Mains'}
           />
-        )
+        ) : null
       )}
     </div>
   );
@@ -426,4 +435,133 @@ function AssignmentsPanel() {
   );
 
   return fullscreen ? createPortal(panel, document.body) : panel;
+}
+
+// ── Custom Optional Syllabus Editor for non-Anthro users ──────────────────
+function CustomOptionalSyllabus({ paper, progress, onToggle, onNote }: {
+  paper: 'a1' | 'a2';
+  progress: Record<string, any>;
+  onToggle: (key: string) => void;
+  onNote: (key: string, note: string) => void;
+}) {
+  const { session } = useAuth();
+  const [topics, setTopics] = useState<string[]>([]);
+  const [newTopic, setNewTopic] = useState('');
+  const [saving, setSaving] = useState(false);
+  const storageKey = `custom_opt_syllabus_${paper}`;
+
+  // Load custom topics from profile_data
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('upsc_user_profiles')
+        .select('profile_data')
+        .eq('id', session.user.id)
+        .single();
+      const stored = data?.profile_data?.[storageKey];
+      if (Array.isArray(stored)) setTopics(stored);
+    })();
+  }, [session?.user?.id, storageKey]);
+
+  const saveTopics = useCallback(async (updated: string[]) => {
+    if (!session?.user?.id) return;
+    setSaving(true);
+    const { data: current } = await supabase
+      .from('upsc_user_profiles')
+      .select('profile_data')
+      .eq('id', session.user.id)
+      .single();
+    const profileData = current?.profile_data ?? {};
+    profileData[storageKey] = updated;
+    await supabase
+      .from('upsc_user_profiles')
+      .update({ profile_data: profileData })
+      .eq('id', session.user.id);
+    setSaving(false);
+  }, [session?.user?.id, storageKey]);
+
+  const addTopic = () => {
+    const t = newTopic.trim();
+    if (!t || topics.includes(t)) return;
+    const updated = [...topics, t];
+    setTopics(updated);
+    setNewTopic('');
+    saveTopics(updated);
+  };
+
+  const removeTopic = (idx: number) => {
+    const updated = topics.filter((_, i) => i !== idx);
+    setTopics(updated);
+    saveTopics(updated);
+  };
+
+  const paperLabel = paper === 'a1' ? 'Paper I' : 'Paper II';
+
+  return (
+    <div className="custom-syllabus-editor">
+      <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>
+        {paperLabel} — Custom Topics {saving && <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>saving...</span>}
+      </h3>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 1rem' }}>
+        Add your optional subject syllabus topics below. Track progress just like other subjects.
+      </p>
+
+      {/* Add topic input */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={newTopic}
+          onChange={(e) => setNewTopic(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && addTopic()}
+          placeholder="Add a topic..."
+          style={{
+            flex: 1, padding: '0.4rem 0.6rem', borderRadius: '6px',
+            border: '1px solid var(--border)', background: 'var(--surface)',
+            color: 'var(--text)', fontSize: '0.85rem'
+          }}
+        />
+        <button onClick={addTopic} disabled={!newTopic.trim()} style={{
+          padding: '0.4rem 0.8rem', borderRadius: '6px', border: 'none',
+          background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontSize: '0.85rem'
+        }}>Add</button>
+      </div>
+
+      {/* Topics list with checkboxes */}
+      {topics.length === 0 ? (
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+          No topics added yet. Add your optional syllabus topics above.
+        </p>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {topics.map((topic, idx) => {
+            const key = `custom_opt_${paper}_${idx}`;
+            const checked = !!progress[key]?.checked;
+            return (
+              <li key={key} style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.4rem 0', borderBottom: '1px solid var(--border)'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggle(key)}
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                <span style={{
+                  flex: 1, fontSize: '0.85rem',
+                  textDecoration: checked ? 'line-through' : 'none',
+                  opacity: checked ? 0.6 : 1
+                }}>{topic}</span>
+                <button onClick={() => removeTopic(idx)} title="Remove" style={{
+                  background: 'none', border: 'none', color: 'var(--text-muted)',
+                  cursor: 'pointer', fontSize: '1rem', padding: '0 0.3rem'
+                }}>×</button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 }

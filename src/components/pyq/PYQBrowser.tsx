@@ -294,13 +294,14 @@ export function PYQBrowser() {
     setExpandedSubtopics((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const topics = DATA_MAP[section];
+  const topics = isCustomOptSection ? [] : DATA_MAP[section];
   const isAnthroUser = useMemo(() => {
     const opt = profile?.optional_subject ?? '';
     return !opt || opt === 'none' || opt.toLowerCase().includes('anthro');
   }, [profile]);
-  const mainsSections = useMemo(() => isAnthroUser ? [...MAINS_BASE, ...ANTHRO_SECTIONS] : MAINS_BASE, [isAnthroUser]);
+  const mainsSections = useMemo(() => isAnthroUser ? [...MAINS_BASE, ...ANTHRO_SECTIONS] : [...MAINS_BASE, 'opt_p1' as PYQSection, 'opt_p2' as PYQSection], [isAnthroUser]);
   const subSections = pyqStage === 'prelims' ? PRELIMS_SECTIONS : mainsSections;
+  const isCustomOptSection = section === 'opt_p1' || section === 'opt_p2';
 
   const years = useMemo(() => {
     const ys = new Set<string>();
@@ -366,6 +367,9 @@ export function PYQBrowser() {
         ))}
       </div>
 
+      {isCustomOptSection ? (
+        <CustomOptionalPYQ paper={section === 'opt_p1' ? 'p1' : 'p2'} />
+      ) : (
       <div className="neo-card rounded-3xl p-6">
         <div className="flex flex-wrap justify-between items-center border-b border-violet-500/20 pb-3 mb-4 gap-2">
           <h2 className="heading-font text-xl font-black">PYQ: {PYQ_SECTION_LABELS[section]}</h2>
@@ -465,6 +469,148 @@ export function PYQBrowser() {
           })}
         </div>
       </div>
+      )}
+    </div>
+  );
+}
+
+// ── Custom Optional PYQ Entry for non-Anthro users ────────────────────────────
+interface CustomPYQQuestion { question: string; year: string; marks: string; }
+
+function CustomOptionalPYQ({ paper }: { paper: 'p1' | 'p2' }) {
+  const { session } = useAuth();
+  const [questions, setQuestions] = useState<CustomPYQQuestion[]>([]);
+  const [newQ, setNewQ] = useState('');
+  const [newYear, setNewYear] = useState('');
+  const [newMarks, setNewMarks] = useState('');
+  const [saving, setSaving] = useState(false);
+  const storageKey = `custom_opt_pyq_${paper}`;
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('upsc_user_profiles')
+        .select('profile_data')
+        .eq('id', session.user.id)
+        .single();
+      const stored = data?.profile_data?.[storageKey];
+      if (Array.isArray(stored)) setQuestions(stored);
+    })();
+  }, [session?.user?.id, storageKey]);
+
+  const saveQuestions = async (updated: CustomPYQQuestion[]) => {
+    if (!session?.user?.id) return;
+    setSaving(true);
+    const { data: current } = await supabase
+      .from('upsc_user_profiles')
+      .select('profile_data')
+      .eq('id', session.user.id)
+      .single();
+    const profileData = current?.profile_data ?? {};
+    profileData[storageKey] = updated;
+    await supabase
+      .from('upsc_user_profiles')
+      .update({ profile_data: profileData })
+      .eq('id', session.user.id);
+    setSaving(false);
+  };
+
+  const addQuestion = () => {
+    const q = newQ.trim();
+    if (!q) return;
+    const updated = [...questions, { question: q, year: newYear || '—', marks: newMarks || '—' }];
+    setQuestions(updated);
+    setNewQ(''); setNewYear(''); setNewMarks('');
+    saveQuestions(updated);
+  };
+
+  const removeQuestion = (idx: number) => {
+    const updated = questions.filter((_, i) => i !== idx);
+    setQuestions(updated);
+    saveQuestions(updated);
+  };
+
+  const paperLabel = paper === 'p1' ? 'Optional Paper I' : 'Optional Paper II';
+
+  return (
+    <div className="neo-card rounded-3xl p-6">
+      <div className="flex flex-wrap justify-between items-center border-b border-violet-500/20 pb-3 mb-4 gap-2">
+        <h2 className="heading-font text-xl font-black">PYQ: {paperLabel}</h2>
+        {saving && <span className="text-[10px] font-mono" style={{ color: 'var(--accent1)' }}>saving...</span>}
+      </div>
+
+      <p style={{ fontSize: '0.8rem', color: 'var(--t3)', margin: '0 0 1rem' }}>
+        Add your optional subject PYQ questions below. You can track which ones you've practiced.
+      </p>
+
+      {/* Add question form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem',
+        padding: '1rem', borderRadius: '12px', background: 'var(--surf)', border: '1px solid var(--bdr)' }}>
+        <textarea
+          value={newQ}
+          onChange={(e) => setNewQ(e.target.value)}
+          placeholder="Enter question text..."
+          rows={2}
+          style={{
+            width: '100%', padding: '0.5rem', borderRadius: '8px',
+            border: '1px solid var(--bdr)', background: 'var(--bg)',
+            color: 'var(--t1)', fontSize: '0.85rem', resize: 'vertical'
+          }}
+        />
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text" value={newYear} onChange={(e) => setNewYear(e.target.value)}
+            placeholder="Year" style={{
+              width: '80px', padding: '0.4rem', borderRadius: '6px',
+              border: '1px solid var(--bdr)', background: 'var(--bg)',
+              color: 'var(--t1)', fontSize: '0.8rem'
+            }}
+          />
+          <input
+            type="text" value={newMarks} onChange={(e) => setNewMarks(e.target.value)}
+            placeholder="Marks" style={{
+              width: '80px', padding: '0.4rem', borderRadius: '6px',
+              border: '1px solid var(--bdr)', background: 'var(--bg)',
+              color: 'var(--t1)', fontSize: '0.8rem'
+            }}
+          />
+          <button onClick={addQuestion} disabled={!newQ.trim()} style={{
+            padding: '0.4rem 1rem', borderRadius: '8px', border: 'none',
+            background: 'var(--accent1, #6366f1)', color: '#fff',
+            cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700
+          }}>Add</button>
+        </div>
+      </div>
+
+      {/* Questions list */}
+      {questions.length === 0 ? (
+        <p style={{ fontSize: '0.85rem', color: 'var(--t3)', fontStyle: 'italic' }}>
+          No questions added yet. Add your optional PYQ questions above.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {questions.map((q, idx) => (
+            <div key={idx} style={{
+              padding: '0.75rem 1rem', borderRadius: '12px',
+              background: 'var(--surf)', border: '1px solid var(--bdr)',
+              display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
+            }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--t1)' }}>{q.question}</p>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.3rem' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--t3)', fontFamily: 'monospace' }}>Year: {q.year}</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--t3)', fontFamily: 'monospace' }}>Marks: {q.marks}</span>
+                </div>
+              </div>
+              <button onClick={() => removeQuestion(idx)} title="Remove" style={{
+                background: 'none', border: 'none', color: 'var(--t3)',
+                cursor: 'pointer', fontSize: '1.1rem', padding: '0 0.3rem'
+              }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
