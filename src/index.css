@@ -2030,7 +2030,7 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   /* S\&W visible -> 2-column grid with sticky sidebar */
   #view-marathon:has(#sw-widget) {
     display: grid;
-    grid-template-columns: 1fr 18rem;
+    grid-template-columns: 1fr minmax(14rem, 22rem);
     column-gap: 1.5rem;
     row-gap: 2rem;
     align-items: start;
@@ -2067,11 +2067,12 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  resize: vertical;
+  resize: both;
   min-width: 14rem;
   min-height: 14rem;
   height: min(30rem, calc(100vh - 10rem));
   max-height: calc(100vh - 7rem);
+  max-width: 100%;
 }
 .sw-inner::before {
   content: '';
@@ -2162,12 +2163,13 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
   padding: 0.1rem 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(99,102,241,0.3) transparent;
 }
-.sw-chips-row::-webkit-scrollbar { width: 3px; }
+.sw-chips-row::-webkit-scrollbar { height: 3px; width: 3px; }
 .sw-chips-row::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 2px; }
 
 /* Resize handle */
@@ -2723,7 +2725,7 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
 }
 /* Ensure chips don't overflow their container on any viewport */
 .sw-chips-row {
-  overflow-x: hidden;
+  overflow-x: auto;
   flex-direction: column;
 }
 
