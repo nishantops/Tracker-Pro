@@ -405,6 +405,120 @@ SELECT cron.schedule(
 );
 
 -- ============================================================================
+-- STEP 8b: Admin — cascade delete user (removes from all tables + auth.users)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION admin_delete_user(target_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  caller_email TEXT;
+  deleted_tables TEXT[] := '{}';
+BEGIN
+  -- Verify caller is admin
+  caller_email := (auth.jwt() ->> 'email');
+  IF caller_email IS NULL OR caller_email != 'admin@upsc-nishant.me' THEN
+    RAISE EXCEPTION 'Access denied: admin only';
+  END IF;
+
+  -- Prevent self-deletion
+  IF target_user_id = auth.uid() THEN
+    RAISE EXCEPTION 'Cannot delete your own account';
+  END IF;
+
+  -- Delete from all application tables (order matters for FK)
+  DELETE FROM upsc_focus_daily       WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'focus_daily';
+  DELETE FROM upsc_focus_sessions    WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'focus_sessions';
+  DELETE FROM upsc_app_metrics       WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'app_metrics';
+  DELETE FROM upsc_messages          WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'messages';
+  DELETE FROM upsc_feedback          WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'feedback';
+  DELETE FROM upsc_user_settings     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_settings';
+  DELETE FROM upsc_pie_card_layouts  WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'pie_layouts';
+  DELETE FROM upsc_plan_layouts      WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'plan_layouts';
+  DELETE FROM upsc_source_layouts    WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'source_layouts';
+  DELETE FROM upsc_user_sources      WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_sources';
+  DELETE FROM upsc_plan_tables       WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'plan_tables';
+  DELETE FROM upsc_tracker_progress  WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'tracker_progress';
+  DELETE FROM upsc_custom_plans      WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'custom_plans';
+  DELETE FROM upsc_user_sessions     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_sessions';
+  DELETE FROM upsc_user_profiles     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_profiles';
+
+  -- Delete from auth.users (cascades auth.identities, etc.)
+  DELETE FROM auth.users WHERE id = target_user_id;
+
+  RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables));
+END;
+$$;
+
+-- ============================================================================
+-- STEP 8c: Admin — bulk delete users
+-- ============================================================================
+CREATE OR REPLACE FUNCTION admin_delete_users(target_user_ids UUID[])
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  uid UUID;
+  results JSONB := '[]'::jsonb;
+  res JSONB;
+BEGIN
+  -- Verify caller is admin
+  IF (auth.jwt() ->> 'email') != 'admin@upsc-nishant.me' THEN
+    RAISE EXCEPTION 'Access denied: admin only';
+  END IF;
+
+  FOREACH uid IN ARRAY target_user_ids LOOP
+    BEGIN
+      res := admin_delete_user(uid);
+      results := results || jsonb_build_object('user_id', uid, 'status', 'deleted');
+    EXCEPTION WHEN OTHERS THEN
+      results := results || jsonb_build_object('user_id', uid, 'status', 'error', 'message', SQLERRM);
+    END;
+  END LOOP;
+
+  RETURN jsonb_build_object('success', true, 'results', results);
+END;
+$$;
+
+-- ============================================================================
+-- STEP 8d: Admin — reset user password
+-- ============================================================================
+CREATE OR REPLACE FUNCTION admin_reset_password(target_user_id UUID, new_password TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+  caller_email TEXT;
+BEGIN
+  -- Verify caller is admin
+  caller_email := (auth.jwt() ->> 'email');
+  IF caller_email IS NULL OR caller_email != 'admin@upsc-nishant.me' THEN
+    RAISE EXCEPTION 'Access denied: admin only';
+  END IF;
+
+  -- Validate password length
+  IF length(new_password) < 6 THEN
+    RAISE EXCEPTION 'Password must be at least 6 characters';
+  END IF;
+
+  -- Update password using Supabase's internal function
+  UPDATE auth.users
+  SET encrypted_password = crypt(new_password, gen_salt('bf')),
+      updated_at = now()
+  WHERE id = target_user_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  RETURN jsonb_build_object('success', true, 'user_id', target_user_id);
+END;
+$$;
+
+-- ============================================================================
 -- STEP 9: Migrate existing focus sessions into daily totals
 -- ============================================================================
 INSERT INTO upsc_focus_daily (user_id, focus_date, total_seconds, updated_at)
