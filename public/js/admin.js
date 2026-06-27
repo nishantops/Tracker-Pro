@@ -1058,3 +1058,52 @@ async function adminResetPassword() {
         showAdminToast('Password reset failed: ' + e.message, 'error');
     }
 }
+
+// ── Admin Change Own Password ────────────────────────────────────────────
+function openAdminPwModal() {
+    var m = document.getElementById('admin-pw-modal');
+    m.style.display = 'flex';
+    document.getElementById('apw-current').value = '';
+    document.getElementById('apw-new').value = '';
+    document.getElementById('apw-confirm').value = '';
+    document.getElementById('apw-error').style.display = 'none';
+}
+
+function closeAdminPwModal() {
+    document.getElementById('admin-pw-modal').style.display = 'none';
+}
+
+async function adminChangeOwnPassword() {
+    var current = document.getElementById('apw-current').value;
+    var newPw   = document.getElementById('apw-new').value;
+    var confirm = document.getElementById('apw-confirm').value;
+    var errEl   = document.getElementById('apw-error');
+    var btn     = document.getElementById('apw-btn');
+
+    errEl.style.display = 'none';
+
+    if (!current) { errEl.textContent = 'Enter current password'; errEl.style.display = 'block'; return; }
+    if (newPw.length < 6) { errEl.textContent = 'New password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+    if (newPw !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+
+    btn.textContent = 'Updating...'; btn.disabled = true;
+
+    try {
+        // Verify current password by re-authenticating
+        var sess = await adminClient.auth.getSession();
+        var email = sess.data.session.user.email;
+        var signIn = await adminClient.auth.signInWithPassword({ email: email, password: current });
+        if (signIn.error) throw new Error('Current password is incorrect');
+
+        // Update to new password
+        var res = await adminClient.auth.updateUser({ password: newPw });
+        if (res.error) throw res.error;
+
+        showAdminToast('Admin password updated successfully!', 'success');
+        closeAdminPwModal();
+    } catch(e) {
+        errEl.textContent = e.message || 'Failed to update password';
+        errEl.style.display = 'block';
+    }
+    btn.textContent = 'Update'; btn.disabled = false;
+}

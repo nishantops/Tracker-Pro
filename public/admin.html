@@ -55,6 +55,7 @@
       <button class="asb-link" onclick="adminNav('metrics')" id="anav-metrics">📈 Metrics</button>
     </div>
     <button class="asb-logout" onclick="adminLogout()">⏻ Sign Out</button>
+    <button onclick="openAdminPwModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fbbf24;border-radius:0.5rem;padding:0.4rem 0.65rem;font-size:0.72rem;cursor:pointer;margin-top:0.4rem;width:100%;text-align:center;">🔑 Change Password</button>
     <button onclick="adminToggleTheme()" id="admin-theme-btn" title="Toggle light/dark" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#a5b4fc;border-radius:0.5rem;padding:0.4rem 0.65rem;font-size:0.72rem;cursor:pointer;margin-top:0.4rem;width:100%;text-align:center;">☀️ Light Mode</button>
   </nav>
 
@@ -226,6 +227,24 @@
   </div>
 </div>
 
-<script src="js/admin.js?v=3"></script>
+<!-- Admin Change Password Modal -->
+<div id="admin-pw-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--card,#1e1b4b);border:1px solid rgba(129,140,248,0.2);border-radius:1rem;padding:1.5rem;width:340px;max-width:90vw;">
+    <h3 style="margin:0 0 0.5rem;font-size:1rem;color:#a5b4fc;">🔑 Change Admin Password</h3>
+    <p style="font-size:0.75rem;color:#94a3b8;margin:0 0 1rem;">Enter your current password and new password.</p>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <input type="password" id="apw-current" placeholder="Current password" class="a-input" style="width:100%;">
+      <input type="password" id="apw-new" placeholder="New password (min 6)" class="a-input" style="width:100%;">
+      <input type="password" id="apw-confirm" placeholder="Confirm new password" class="a-input" style="width:100%;">
+    </div>
+    <div id="apw-error" style="display:none;margin-top:0.5rem;font-size:0.75rem;color:#f87171;"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+      <button onclick="closeAdminPwModal()" class="a-btn" style="flex:1;">Cancel</button>
+      <button onclick="adminChangeOwnPassword()" class="a-btn-warning" style="flex:1;" id="apw-btn">Update</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js?v=4"></script>
 </body>
 </html>
