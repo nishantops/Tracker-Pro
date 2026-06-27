@@ -415,11 +415,15 @@ AS $$
 DECLARE
   caller_email TEXT;
   deleted_tables TEXT[] := '{}';
+  auth_deleted BOOLEAN := FALSE;
 BEGIN
   -- Verify caller is admin
-  caller_email := (auth.jwt() ->> 'email');
+  caller_email := coalesce(
+    current_setting('request.jwt.claims', true)::json->>'email',
+    (auth.jwt() ->> 'email')
+  );
   IF caller_email IS NULL OR caller_email != 'admin@upsc-nishant.me' THEN
-    RAISE EXCEPTION 'Access denied: admin only';
+    RAISE EXCEPTION 'Access denied: caller=%, expected admin@upsc-nishant.me', caller_email;
   END IF;
 
   -- Prevent self-deletion
@@ -427,7 +431,12 @@ BEGIN
     RAISE EXCEPTION 'Cannot delete your own account';
   END IF;
 
-  -- Delete from all application tables (order matters for FK)
+  -- Verify target exists
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = target_user_id) THEN
+    RAISE EXCEPTION 'User % not found in auth.users', target_user_id;
+  END IF;
+
+  -- Delete from all application tables
   DELETE FROM upsc_focus_daily       WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'focus_daily';
   DELETE FROM upsc_focus_sessions    WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'focus_sessions';
   DELETE FROM upsc_app_metrics       WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'app_metrics';
@@ -444,25 +453,20 @@ BEGIN
   DELETE FROM upsc_user_sessions     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_sessions';
   DELETE FROM upsc_user_profiles     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_profiles';
 
-  -- Delete auth user and their identities
-  DELETE FROM auth.identities WHERE user_id = target_user_id;
-  DELETE FROM auth.sessions WHERE user_id = target_user_id;
-  DELETE FROM auth.refresh_tokens WHERE user_id::text = target_user_id::text;
-  DELETE FROM auth.mfa_factors WHERE user_id = target_user_id;
+  -- Delete auth user (this cascades identities/sessions in most Supabase versions)
   DELETE FROM auth.users WHERE id = target_user_id;
-  deleted_tables := deleted_tables || 'auth_user';
+  GET DIAGNOSTICS auth_deleted = ROW_COUNT > 0;
+  IF auth_deleted THEN
+    deleted_tables := deleted_tables || 'auth_user';
+  END IF;
 
-  RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables));
+  RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables), 'auth_deleted', auth_deleted);
 END;
 $$;
 
 -- Grant function owner (postgres) delete on auth tables
 GRANT USAGE ON SCHEMA auth TO postgres;
-GRANT DELETE ON auth.users TO postgres;
-GRANT DELETE ON auth.identities TO postgres;
-GRANT DELETE ON auth.sessions TO postgres;
-GRANT DELETE ON auth.refresh_tokens TO postgres;
-GRANT DELETE ON auth.mfa_factors TO postgres;
+GRANT ALL ON ALL TABLES IN SCHEMA auth TO postgres;
 
 -- ============================================================================
 -- STEP 8c: Admin — bulk delete users
