@@ -1013,14 +1013,17 @@ async function adminDeleteUser() {
 
     try {
         var res = await adminClient.rpc('admin_delete_user', { target_user_id: u.user_id });
-        if (res.error) throw res.error;
+        console.log('[admin] delete_user RPC result:', JSON.stringify(res));
+        if (res.error) throw new Error(res.error.message || JSON.stringify(res.error));
+        if (res.data && res.data.success === false) throw new Error(res.data.error || 'Delete failed');
         await adminAuditLog('delete_user', u.user_id, { name: name });
         showAdminToast('Account "' + name + '" permanently deleted', 'success');
         closeUserModal();
         _allUsersCache = _allUsersCache.filter(function(x) { return x.user_id !== u.user_id; });
-        loadUsersTable();
+        renderUsersTable(_allUsersCache, {}, {});
     } catch(e) {
-        showAdminToast('Delete failed: ' + e.message, 'error');
+        console.error('[admin] Delete failed:', e);
+        showAdminToast('Delete failed: ' + (e.message || e), 'error');
     }
 }
 

@@ -410,7 +410,7 @@ SELECT cron.schedule(
 CREATE OR REPLACE FUNCTION admin_delete_user(target_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   caller_email TEXT;
@@ -444,12 +444,16 @@ BEGIN
   DELETE FROM upsc_user_sessions     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_sessions';
   DELETE FROM upsc_user_profiles     WHERE user_id = target_user_id; deleted_tables := deleted_tables || 'user_profiles';
 
-  -- Delete from auth.users (cascades auth.identities, etc.)
+  -- Delete from auth.users using admin role
   DELETE FROM auth.users WHERE id = target_user_id;
 
   RETURN jsonb_build_object('success', true, 'deleted_from', to_jsonb(deleted_tables));
 END;
 $$;
+
+-- Grant function owner (postgres) delete on auth.users
+GRANT DELETE ON auth.users TO postgres;
+GRANT DELETE ON auth.identities TO postgres;
 
 -- ============================================================================
 -- STEP 8c: Admin — bulk delete users
