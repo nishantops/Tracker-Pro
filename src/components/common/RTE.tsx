@@ -99,7 +99,7 @@ export function RTE({ value = '', onChange, onBlur, full = false, minHeight, max
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    if (value !== lastHtml.current && document.activeElement !== editor) {
+    if (document.activeElement !== editor) {
       editor.innerHTML = value;
       lastHtml.current = value;
       // External value change resets history
