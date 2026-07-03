@@ -168,6 +168,24 @@ export function SyllabusView({ stage }: Props) {
   );
 }
 
+// ── Assignment localStorage write-ahead cache (survives page refresh) ─────
+const ASN_CACHE_KEY = (uid: string) => `upsc_asn_v1_${uid}`;
+type AsnCacheEntry = { total: number; attempted: number; userNote: string; feedback: string; completed: boolean };
+
+function readAsnCache(uid: string): Record<string, AsnCacheEntry> {
+  try { return JSON.parse(localStorage.getItem(ASN_CACHE_KEY(uid)) || '{}'); } catch { return {}; }
+}
+function writeAsnCache(uid: string, asn: Assignment) {
+  const cache = readAsnCache(uid);
+  cache[asn.id] = { total: asn.total, attempted: asn.attempted, userNote: asn.userNote, feedback: asn.feedback, completed: asn.completed };
+  localStorage.setItem(ASN_CACHE_KEY(uid), JSON.stringify(cache));
+}
+function clearAsnCache(uid: string, id: string) {
+  const cache = readAsnCache(uid);
+  delete cache[id];
+  localStorage.setItem(ASN_CACHE_KEY(uid), JSON.stringify(cache));
+}
+
 // ── Assignments Panel (matches old app's anthro assignments feature) ──────
 type Assignment = {
   id: string;
@@ -201,6 +219,39 @@ function AssignmentsPanel() {
     return () => document.removeEventListener('keydown', handler);
   }, [fullscreen]);
 
+  // Save assignment to DB — always surfaces errors in console
+  const saveAssignment = useCallback(async (asn: Assignment) => {
+    if (!user) return;
+    const noteData = JSON.stringify({ total: asn.total, attempted: asn.attempted, userNote: asn.userNote, feedback: asn.feedback });
+    setSavingIds((prev) => new Set(prev).add(asn.id));
+    const { error } = await supabase.from('upsc_tracker_progress').upsert({
+      id: asn.id, user_id: user.id, is_checked: asn.completed ?? (asn.attempted >= asn.total && asn.total > 0),
+      topic_note: noteData, updated_at: new Date().toISOString(),
+    }, { onConflict: 'id,user_id' });
+    setSavingIds((prev) => { const s = new Set(prev); s.delete(asn.id); return s; });
+    if (error) {
+      console.error('[AssignmentsPanel] saveAssignment failed:', error.message, error.details ?? '');
+    } else {
+      clearAsnCache(user.id, asn.id); // confirmed saved — remove from write-ahead cache
+    }
+  }, [user]);
+
+  // Debounced save — called OUTSIDE state updaters to avoid React anti-pattern
+  const debounceSave = useCallback((asn: Assignment) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveAssignment(asn), 800);
+  }, [saveAssignment]);
+
+  // Flush pending debounce immediately — called on RTE blur so page refresh can't lose data
+  const flushSave = useCallback((id: string) => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const asn = assignmentsRef.current.find((a) => a.id === id);
+    if (asn) saveAssignment(asn);
+  }, [saveAssignment]);
+
   // Load assignments from upsc_tracker_progress (IDs starting with custom_box-anthro-asn_)
   useEffect(() => {
     if (!user) return;
@@ -228,41 +279,38 @@ function AssignmentsPanel() {
             completed: row.is_checked,
           } as Assignment;
         });
-        assignmentsRef.current = loaded;
-        setAssignments(loaded);
+        // Merge with localStorage write-ahead cache — cache wins (it's more recent than DB)
+        const cache = readAsnCache(user.id);
+        const merged = loaded.map((asn) => {
+          const cached = cache[asn.id];
+          if (!cached) return asn;
+          return { ...asn, ...cached }; // cached fields override DB fields
+        });
+        assignmentsRef.current = merged;
+        setAssignments(merged);
+        // Flush any cached-but-unsaved entries to DB
+        Object.keys(cache).forEach((id) => {
+          const asn = merged.find((a) => a.id === id);
+          if (asn) saveAssignment(asn);
+        });
+      } else {
+        // No DB rows — check cache for unsaved data (e.g. save never completed before refresh)
+        const cache = readAsnCache(user.id);
+        if (Object.keys(cache).length > 0) {
+          const fromCache: Assignment[] = Object.entries(cache).map(([id, cached]) => {
+            const encoded = id.replace('custom_box-anthro-asn_', '');
+            let title = encoded;
+            try { title = decodeURIComponent(escape(atob(encoded))); } catch { /* ignore */ }
+            return { id, title, ...cached };
+          });
+          assignmentsRef.current = fromCache;
+          setAssignments(fromCache);
+          fromCache.forEach((asn) => saveAssignment(asn));
+        }
       }
     };
     load();
-  }, [user]);
-
-  // Save assignment to DB — always surfaces errors in console
-  const saveAssignment = useCallback(async (asn: Assignment) => {
-    if (!user) return;
-    const noteData = JSON.stringify({ total: asn.total, attempted: asn.attempted, userNote: asn.userNote, feedback: asn.feedback });
-    setSavingIds((prev) => new Set(prev).add(asn.id));
-    const { error } = await supabase.from('upsc_tracker_progress').upsert({
-      id: asn.id, user_id: user.id, is_checked: asn.completed ?? (asn.attempted >= asn.total && asn.total > 0),
-      topic_note: noteData, updated_at: new Date().toISOString(),
-    }, { onConflict: 'id,user_id' });
-    setSavingIds((prev) => { const s = new Set(prev); s.delete(asn.id); return s; });
-    if (error) console.error('[AssignmentsPanel] saveAssignment failed:', error.message, error.details ?? '');
-  }, [user]);
-
-  // Debounced save — called OUTSIDE state updaters to avoid React anti-pattern
-  const debounceSave = useCallback((asn: Assignment) => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveAssignment(asn), 800);
-  }, [saveAssignment]);
-
-  // Flush pending debounce immediately — called on RTE blur so refresh can't lose data
-  const flushSave = useCallback((id: string) => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
-    const asn = assignmentsRef.current.find((a) => a.id === id);
-    if (asn) saveAssignment(asn);
-  }, [saveAssignment]);
+  }, [user, saveAssignment]);
 
   const addAssignment = () => {
     if (!formTitle.trim() || !formTotal.trim()) return;
@@ -318,6 +366,7 @@ function AssignmentsPanel() {
     const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
     assignmentsRef.current = next;
     setAssignments(next);
+    if (user) writeAsnCache(user.id, updated);
     debounceSave(updated);
   };
 
@@ -328,6 +377,7 @@ function AssignmentsPanel() {
     const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
     assignmentsRef.current = next;
     setAssignments(next);
+    if (user) writeAsnCache(user.id, updated);
     debounceSave(updated);
   };
 
@@ -338,6 +388,7 @@ function AssignmentsPanel() {
     const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
     assignmentsRef.current = next;
     setAssignments(next);
+    if (user) writeAsnCache(user.id, updated); // synchronous — survives immediate refresh
     debounceSave(updated);
   };
 
