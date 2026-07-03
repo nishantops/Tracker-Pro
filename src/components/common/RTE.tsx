@@ -40,6 +40,7 @@ const HIGHLIGHT_COLOR = '#fef08a'; // yellow-100
 interface RTEProps {
   value?: string;
   onChange?: (html: string) => void;
+  onBlur?: () => void;
   full?: boolean;
   minHeight?: string;
   maxHeight?: string;
@@ -48,7 +49,7 @@ interface RTEProps {
   className?: string;
 }
 
-export function RTE({ value = '', onChange, full = false, minHeight, maxHeight, placeholder = '', readOnly = false, className = '' }: RTEProps) {
+export function RTE({ value = '', onChange, onBlur, full = false, minHeight, maxHeight, placeholder = '', readOnly = false, className = '' }: RTEProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [toolbarVisible, setToolbarVisible] = useState(full); // full always visible; compact = on focus
   const [customColor, setCustomColor] = useState('#ffffff');
@@ -347,6 +348,7 @@ export function RTE({ value = '', onChange, full = false, minHeight, maxHeight, 
             }, 200);
           }
           handleInput();
+          onBlur?.();
           void e; // suppress unused warning
         }}
         suppressContentEditableWarning

@@ -169,22 +169,29 @@ export function SyllabusView({ stage }: Props) {
 }
 
 // ── Assignments Panel (matches old app's anthro assignments feature) ──────
+type Assignment = {
+  id: string;
+  title: string;
+  total: number;
+  attempted: number;
+  userNote: string;
+  feedback: string;
+  completed: boolean;
+};
+
 function AssignmentsPanel() {
   const { user } = useAuth();
   const [fullscreen, setFullscreen] = useState(false);
-  const [assignments, setAssignments] = useState<Array<{
-    id: string;
-    title: string;
-    total: number;
-    attempted: number;
-    userNote: string;
-    feedback: string;
-    completed: boolean;
-  }>>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const assignmentsRef = useRef<Assignment[]>([]);
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formTotal, setFormTotal] = useState('');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep ref in sync with state so update functions can read latest without stale closures
+  useEffect(() => { assignmentsRef.current = assignments; }, [assignments]);
 
   // Escape key exits fullscreen
   useEffect(() => {
@@ -219,35 +226,49 @@ function AssignmentsPanel() {
             userNote: parsed.userNote || '',
             feedback: parsed.feedback || '',
             completed: row.is_checked,
-          };
+          } as Assignment;
         });
+        assignmentsRef.current = loaded;
         setAssignments(loaded);
       }
     };
     load();
   }, [user]);
 
-  // Save assignment to DB
-  const saveAssignment = useCallback(async (asn: { id: string; title: string; total: number; attempted: number; userNote: string; feedback: string; completed?: boolean }) => {
+  // Save assignment to DB — always surfaces errors in console
+  const saveAssignment = useCallback(async (asn: Assignment) => {
     if (!user) return;
     const noteData = JSON.stringify({ total: asn.total, attempted: asn.attempted, userNote: asn.userNote, feedback: asn.feedback });
-    await supabase.from('upsc_tracker_progress').upsert({
+    setSavingIds((prev) => new Set(prev).add(asn.id));
+    const { error } = await supabase.from('upsc_tracker_progress').upsert({
       id: asn.id, user_id: user.id, is_checked: asn.completed ?? (asn.attempted >= asn.total && asn.total > 0),
       topic_note: noteData, updated_at: new Date().toISOString(),
     }, { onConflict: 'id,user_id' });
+    setSavingIds((prev) => { const s = new Set(prev); s.delete(asn.id); return s; });
+    if (error) console.error('[AssignmentsPanel] saveAssignment failed:', error.message, error.details ?? '');
   }, [user]);
 
-  // Debounced save for rapid edits
-  const debounceSave = useCallback((asn: typeof assignments[0]) => {
+  // Debounced save — called OUTSIDE state updaters to avoid React anti-pattern
+  const debounceSave = useCallback((asn: Assignment) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => saveAssignment(asn), 800);
+  }, [saveAssignment]);
+
+  // Flush pending debounce immediately — called on RTE blur so refresh can't lose data
+  const flushSave = useCallback((id: string) => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const asn = assignmentsRef.current.find((a) => a.id === id);
+    if (asn) saveAssignment(asn);
   }, [saveAssignment]);
 
   const addAssignment = () => {
     if (!formTitle.trim() || !formTotal.trim()) return;
     const total = Math.max(1, parseInt(formTotal) || 1);
     const encoded = btoa(unescape(encodeURIComponent(formTitle.trim())));
-    const newAsn = {
+    const newAsn: Assignment = {
       id: `custom_box-anthro-asn_${encoded}`,
       title: formTitle.trim(),
       total,
@@ -256,7 +277,9 @@ function AssignmentsPanel() {
       feedback: '',
       completed: false,
     };
-    setAssignments((prev) => [...prev, newAsn]);
+    const next = [...assignmentsRef.current, newAsn];
+    assignmentsRef.current = next;
+    setAssignments(next);
     saveAssignment(newAsn);
     setFormTitle('');
     setFormTotal('');
@@ -265,52 +288,57 @@ function AssignmentsPanel() {
 
   const deleteAssignment = async (id: string) => {
     if (!user) return;
-    setAssignments((prev) => prev.filter((a) => a.id !== id));
-    await supabase.from('upsc_tracker_progress').delete().eq('id', id).eq('user_id', user.id);
+    const next = assignmentsRef.current.filter((a) => a.id !== id);
+    assignmentsRef.current = next;
+    setAssignments(next);
+    const { error } = await supabase.from('upsc_tracker_progress').delete().eq('id', id).eq('user_id', user.id);
+    if (error) console.error('[AssignmentsPanel] deleteAssignment failed:', error.message);
   };
 
   const toggleComplete = (id: string) => {
-    setAssignments((prev) => {
-      const updated = prev.map((a) => (a.id === id ? { ...a, completed: !a.completed } : a));
-      const asn = updated.find((a) => a.id === id);
-      if (asn) {
-        // Update is_checked in DB
-        supabase.from('upsc_tracker_progress').update({
-          is_checked: asn.completed,
-          updated_at: new Date().toISOString(),
-        }).eq('id', id).eq('user_id', user!.id).then();
-      }
-      return updated;
+    const current = assignmentsRef.current.find((a) => a.id === id);
+    if (!current) return;
+    const updated = { ...current, completed: !current.completed };
+    const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
+    assignmentsRef.current = next;
+    setAssignments(next);
+    supabase.from('upsc_tracker_progress').update({
+      is_checked: updated.completed,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id).eq('user_id', user!.id).then(({ error }) => {
+      if (error) console.error('[AssignmentsPanel] toggleComplete failed:', error.message);
     });
   };
 
   const updateAttempted = (id: string, val: number) => {
-    setAssignments((prev) => {
-      const asn = prev.find((a) => a.id === id);
-      const bounded = Math.min(Math.max(0, val), asn?.total ?? val);
-      const updated = prev.map((a) => (a.id === id ? { ...a, attempted: bounded } : a));
-      const found = updated.find((a) => a.id === id);
-      if (found) debounceSave(found);
-      return updated;
-    });
+    const current = assignmentsRef.current.find((a) => a.id === id);
+    if (!current) return;
+    const bounded = Math.min(Math.max(0, val), current.total);
+    const updated = { ...current, attempted: bounded };
+    const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
+    assignmentsRef.current = next;
+    setAssignments(next);
+    debounceSave(updated);
   };
 
   const updateUserNote = (id: string, val: string) => {
-    setAssignments((prev) => {
-      const updated = prev.map((a) => (a.id === id ? { ...a, userNote: val } : a));
-      const asn = updated.find((a) => a.id === id);
-      if (asn) debounceSave(asn);
-      return updated;
-    });
+    const current = assignmentsRef.current.find((a) => a.id === id);
+    if (!current) return;
+    const updated = { ...current, userNote: val };
+    const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
+    assignmentsRef.current = next;
+    setAssignments(next);
+    debounceSave(updated);
   };
 
   const updateFeedback = (id: string, val: string) => {
-    setAssignments((prev) => {
-      const updated = prev.map((a) => (a.id === id ? { ...a, feedback: val } : a));
-      const asn = updated.find((a) => a.id === id);
-      if (asn) debounceSave(asn);
-      return updated;
-    });
+    const current = assignmentsRef.current.find((a) => a.id === id);
+    if (!current) return;
+    const updated = { ...current, feedback: val };
+    const next = assignmentsRef.current.map((a) => (a.id === id ? updated : a));
+    assignmentsRef.current = next;
+    setAssignments(next);
+    debounceSave(updated);
   };
 
   const panel = (
@@ -389,6 +417,9 @@ function AssignmentsPanel() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
+                    {savingIds.has(asn.id) && (
+                      <span className="text-[9px] font-mono text-amber-400 animate-pulse">saving…</span>
+                    )}
                     <button onClick={() => deleteAssignment(asn.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition cursor-pointer" title="Delete">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
@@ -412,6 +443,7 @@ function AssignmentsPanel() {
                 <RTE
                   value={asn.userNote}
                   onChange={(html) => updateUserNote(asn.id, html)}
+                  onBlur={() => flushSave(asn.id)}
                   placeholder="Add a note..."
                   className="mb-2"
                   maxHeight="140px"
@@ -421,6 +453,7 @@ function AssignmentsPanel() {
                   full
                   value={asn.feedback}
                   onChange={(html) => updateFeedback(asn.id, html)}
+                  onBlur={() => flushSave(asn.id)}
                   placeholder="Feedback / self-review for this assignment..."
                   minHeight="90px"
                   maxHeight="200px"
