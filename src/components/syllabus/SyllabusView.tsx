@@ -223,15 +223,17 @@ function AssignmentsPanel() {
   const saveAssignment = useCallback(async (asn: Assignment) => {
     if (!user) return;
     const noteData = JSON.stringify({ total: asn.total, attempted: asn.attempted, userNote: asn.userNote, feedback: asn.feedback });
+    console.log('[ASN-SAVE] id:', asn.id, '| feedback.len:', asn.feedback.length, '| feedback:', asn.feedback.substring(0, 80));
     setSavingIds((prev) => new Set(prev).add(asn.id));
-    const { error } = await supabase.from('upsc_tracker_progress').upsert({
+    const { data: saved, error } = await supabase.from('upsc_tracker_progress').upsert({
       id: asn.id, user_id: user.id, is_checked: asn.completed ?? (asn.attempted >= asn.total && asn.total > 0),
       topic_note: noteData, updated_at: new Date().toISOString(),
-    }, { onConflict: 'id,user_id' });
+    }, { onConflict: 'id,user_id' }).select('id, topic_note');
     setSavingIds((prev) => { const s = new Set(prev); s.delete(asn.id); return s; });
     if (error) {
-      console.error('[AssignmentsPanel] saveAssignment failed:', error.message, error.details ?? '');
+      console.error('[ASN-SAVE] FAILED:', error.message, error.details ?? '', error.hint ?? '');
     } else {
+      console.log('[ASN-SAVE] OK — DB returned topic_note:', JSON.stringify(saved?.[0]?.topic_note)?.substring(0, 120));
       clearAsnCache(user.id, asn.id); // confirmed saved — remove from write-ahead cache
     }
   }, [user]);
@@ -281,6 +283,8 @@ function AssignmentsPanel() {
         });
         // Merge with localStorage write-ahead cache — cache wins (it's more recent than DB)
         const cache = readAsnCache(user.id);
+        console.log('[ASN-LOAD] DB rows:', loaded.length, '| cache keys:', Object.keys(cache));
+        loaded.forEach(a => console.log('[ASN-LOAD] DB row:', a.id, '| feedback.len:', a.feedback.length, '| feedback:', a.feedback.substring(0, 80)));
         const merged = loaded.map((asn) => {
           const cached = cache[asn.id];
           if (!cached) return asn;
