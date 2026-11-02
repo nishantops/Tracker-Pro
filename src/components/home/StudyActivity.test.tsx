@@ -30,7 +30,7 @@ vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: h.user }) 
 vi.mock('../../lib/cloudPrefs', () => ({ loadCloudPref: h.load, saveCloudPref: h.save }));
 
 import { StudyActivity } from './StudyActivity';
-import { istToday } from '../../lib/studyStats';
+import { istToday, isWeekend } from '../../lib/studyStats';
 
 const ymdAgo = (n: number) => new Date(new Date(`${istToday()}T00:00:00Z`).getTime() - n * 86_400_000).toISOString().slice(0, 10);
 
@@ -83,23 +83,65 @@ describe('StudyActivity', () => {
   it('the goal can be changed, is saved locally and to the account, and clamped to 0.5–16h', async () => {
     render(<StudyActivity />);
     fireEvent.click(screen.getByText('Goal: 4h/day ✎'));
-    const input = screen.getByLabelText('Daily goal in hours');
-    fireEvent.change(input, { target: { value: '6' } });
+    fireEvent.change(screen.getByLabelText('Weekday goal in hours'), { target: { value: '6' } });
+    fireEvent.change(screen.getByLabelText('Weekend goal in hours'), { target: { value: '6' } });
     fireEvent.click(screen.getByText('Save'));
     expect(screen.getByText('Goal: 6h/day ✎')).toBeInTheDocument();
     expect(localStorage.getItem('upsc_daily_goal_u1')).toBe('6');
     expect(h.save).toHaveBeenLastCalledWith('u1', 'daily_goal', { hours: 6 });
     fireEvent.click(screen.getByText('Goal: 6h/day ✎'));
-    fireEvent.change(screen.getByLabelText('Daily goal in hours'), { target: { value: '99' } });
-    fireEvent.keyDown(screen.getByLabelText('Daily goal in hours'), { key: 'Enter' });
-    expect(screen.getByText('Goal: 16h/day ✎')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Weekday goal in hours'), { target: { value: '99' } });
+    fireEvent.keyDown(screen.getByLabelText('Weekday goal in hours'), { key: 'Enter' });
+    expect(screen.getByText('Goal: 16h weekdays · 6h weekends ✎')).toBeInTheDocument();
   });
 
   it('Escape cancels editing without changing the goal', () => {
     render(<StudyActivity />);
     fireEvent.click(screen.getByText('Goal: 4h/day ✎'));
-    fireEvent.keyDown(screen.getByLabelText('Daily goal in hours'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByLabelText('Weekday goal in hours'), { key: 'Escape' });
     expect(screen.getByText('Goal: 4h/day ✎')).toBeInTheDocument();
+  });
+
+  describe('weekday / weekend goals', () => {
+    const setSplit = (wd: string, we: string) => {
+      fireEvent.click(screen.getByRole('button', { name: /^Goal:/ }));
+      fireEvent.change(screen.getByLabelText('Weekday goal in hours'), { target: { value: wd } });
+      fireEvent.change(screen.getByLabelText('Weekend goal in hours'), { target: { value: we } });
+      fireEvent.click(screen.getByText('Save'));
+    };
+
+    it('saves separate hours locally and to the account', () => {
+      render(<StudyActivity />);
+      setSplit('3', '6');
+      expect(screen.getByText('Goal: 3h weekdays · 6h weekends ✎')).toBeInTheDocument();
+      expect(JSON.parse(localStorage.getItem('upsc_daily_goal_u1')!)).toEqual({ weekday: 3, weekend: 6 });
+      expect(h.save).toHaveBeenLastCalledWith('u1', 'daily_goal', { weekday: 3, weekend: 6 });
+    });
+
+    it('the ring uses today\'s goal and heatmap levels use each day\'s own goal', async () => {
+      const days = Array.from({ length: 14 }, (_, i) => ymdAgo(i + 1));
+      const wkend = days.find((d) => isWeekend(d))!;
+      const wkday = days.find((d) => !isWeekend(d))!;
+      h.rows = [{ focus_date: wkend, total_seconds: 3 * 3600 }, { focus_date: wkday, total_seconds: 3 * 3600 }];
+      render(<StudyActivity />);
+      setSplit('3', '6');
+      await waitFor(() => expect(document.querySelector(`[title^="${wkday} "]`)).toHaveClass('lv4')); // 3h of 3h
+      expect(document.querySelector(`[title^="${wkend} "]`)).toHaveClass('lv3');                       // 3h of 6h
+      expect(screen.getByText(`of ${isWeekend(istToday()) ? 6 : 3}h`)).toBeInTheDocument();
+    });
+
+    it('reads a split goal from the account and from older single-number storage', async () => {
+      h.load.mockResolvedValue({ ok: true, found: true, value: { weekday: 2.5, weekend: 5 } });
+      render(<StudyActivity />);
+      expect(await screen.findByText('Goal: 2.5h weekdays · 5h weekends ✎')).toBeInTheDocument();
+      expect(JSON.parse(localStorage.getItem('upsc_daily_goal_u1')!)).toEqual({ weekday: 2.5, weekend: 5 });
+    });
+
+    it('ignores corrupt stored goals', () => {
+      localStorage.setItem('upsc_daily_goal_u1', '{nope');
+      render(<StudyActivity />);
+      expect(screen.getByText('Goal: 4h/day ✎')).toBeInTheDocument();
+    });
   });
 
   it('uses the goal saved on another device', async () => {

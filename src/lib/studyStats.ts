@@ -14,8 +14,13 @@ export function levelFor(secs: number, goalSecs: number): Level {
   return r < 0.25 ? 1 : r < 0.5 ? 2 : r < 1 ? 3 : 4;
 }
 
+export const isWeekend = (ymd: string) => { const d = new Date(`${ymd}T00:00:00Z`).getUTCDay(); return d === 0 || d === 6; };
+
+export interface DailyGoal { weekday: number; weekend: number }
+export const goalHoursFor = (g: DailyGoal, ymd: string) => (isWeekend(ymd) ? g.weekend : g.weekday);
+
 // weeks × 7 grid (Mon..Sun rows). Cells before the first day / after today are null.
-export function buildHeatmap(secsByDate: Map<string, number>, goalSecs: number, today: string, weeks = 12): (Cell | null)[][] {
+export function buildHeatmap(secsByDate: Map<string, number>, goalSecs: number | ((ymd: string) => number), today: string, weeks = 12): (Cell | null)[][] {
   const totalDays = weeks * 7;
   const first = addDays(today, -(totalDays - 1));
   const lead = weekdayIdx(first);
@@ -23,7 +28,7 @@ export function buildHeatmap(secsByDate: Map<string, number>, goalSecs: number, 
   for (let i = 0; i < totalDays; i++) {
     const date = addDays(first, i);
     const secs = secsByDate.get(date) ?? 0;
-    flat.push({ date, secs, level: levelFor(secs, goalSecs) });
+    flat.push({ date, secs, level: levelFor(secs, typeof goalSecs === 'function' ? goalSecs(date) : goalSecs) });
   }
   while (flat.length % 7 !== 0) flat.push(null);
   const cols: (Cell | null)[][] = [];

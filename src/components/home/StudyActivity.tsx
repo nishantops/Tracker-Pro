@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { loadCloudPref, saveCloudPref } from '../../lib/cloudPrefs';
 import {
-  buildHeatmap, currentStreak, DAY_LABELS, fmtHM, istToday, lastNDaysTotal,
+  buildHeatmap, currentStreak, DAY_LABELS, fmtHM, goalHoursFor, istToday, lastNDaysTotal, type DailyGoal,
 } from '../../lib/studyStats';
 
 const DEFAULT_GOAL_H = 4;
@@ -11,20 +11,44 @@ const WEEKS = 12;
 const R = 40;
 const CIRC = 2 * Math.PI * R;
 const goalKey = (uid: string) => `upsc_daily_goal_${uid}`;
+const DEFAULT_GOAL: DailyGoal = { weekday: DEFAULT_GOAL_H, weekend: DEFAULT_GOAL_H };
 
-function readGoal(uid: string | undefined): number {
-  if (!uid) return DEFAULT_GOAL_H;
-  const n = parseFloat(localStorage.getItem(goalKey(uid)) ?? '');
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_GOAL_H;
+const valid = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0;
+const clampH = (n: number) => Math.min(16, Math.max(0.5, n));
+
+// Accepts the old single-number form ({hours} / "6") as well as {weekday, weekend}
+function parseGoal(v: unknown): DailyGoal | null {
+  if (typeof v === 'number' && valid(v)) return { weekday: v, weekend: v };
+  if (!v || typeof v !== 'object') return null;
+  const o = v as { hours?: unknown; weekday?: unknown; weekend?: unknown };
+  if (valid(o.weekday) && valid(o.weekend)) return { weekday: o.weekday, weekend: o.weekend };
+  if (valid(o.hours)) return { weekday: o.hours, weekend: o.hours };
+  return null;
 }
+
+// Equal goals keep the legacy single-number shape so older builds still read it
+const serialize = (g: DailyGoal) => (g.weekday === g.weekend ? { hours: g.weekday } : { weekday: g.weekday, weekend: g.weekend });
+
+function readGoal(uid: string | undefined): DailyGoal {
+  if (!uid) return DEFAULT_GOAL;
+  const raw = localStorage.getItem(goalKey(uid));
+  if (!raw) return DEFAULT_GOAL;
+  try { return parseGoal(JSON.parse(raw)) ?? DEFAULT_GOAL; } catch { return DEFAULT_GOAL; }
+}
+
+const writeGoal = (uid: string, g: DailyGoal) => {
+  const s = serialize(g);
+  try { localStorage.setItem(goalKey(uid), 'hours' in s ? String(s.hours) : JSON.stringify(s)); } catch { /* ignore */ }
+};
 
 // Daily goal ring + 12-week study heatmap, built from the focus timer's daily totals.
 export function StudyActivity() {
   const { user } = useAuth();
   const [secsByDate, setSecsByDate] = useState<Map<string, number>>(new Map());
-  const [goalH, setGoalH] = useState(() => readGoal(user?.id));
+  const [goal, setGoal] = useState<DailyGoal>(() => readGoal(user?.id));
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
+  const [draftWd, setDraftWd] = useState('');
+  const [draftWe, setDraftWe] = useState('');
   const [adding, setAdding] = useState(false);
   const [addDate, setAddDate] = useState('');
   const [addH, setAddH] = useState('');
@@ -76,33 +100,41 @@ export function StudyActivity() {
   // Goal follows the account
   useEffect(() => {
     if (!user) return;
-    setGoalH(readGoal(user.id));
+    setGoal(readGoal(user.id));
     let cancelled = false;
-    loadCloudPref<{ hours: number }>(user.id, 'daily_goal').then((r) => {
+    loadCloudPref<unknown>(user.id, 'daily_goal').then((r) => {
       if (cancelled || !r.ok) return;
-      if (r.found && r.value && Number.isFinite(r.value.hours) && r.value.hours > 0) {
-        setGoalH(r.value.hours);
-        try { localStorage.setItem(goalKey(user.id), String(r.value.hours)); } catch { /* ignore */ }
+      const remote = r.found ? parseGoal(r.value) : null;
+      if (remote) {
+        setGoal(remote);
+        writeGoal(user.id, remote);
       } else if (!r.found && localStorage.getItem(goalKey(user.id))) {
-        saveCloudPref(user.id, 'daily_goal', { hours: readGoal(user.id) });
+        saveCloudPref(user.id, 'daily_goal', serialize(readGoal(user.id)));
       }
     });
     return () => { cancelled = true; };
   }, [user]);
 
   const saveGoal = () => {
-    const n = Math.min(16, Math.max(0.5, parseFloat(draft)));
+    const wd = parseFloat(draftWd);
+    const we = parseFloat(draftWe);
     setEditing(false);
-    if (!Number.isFinite(n) || !user) return;
-    setGoalH(n);
-    try { localStorage.setItem(goalKey(user.id), String(n)); } catch { /* ignore */ }
-    saveCloudPref(user.id, 'daily_goal', { hours: n });
+    if (!Number.isFinite(wd) || !Number.isFinite(we) || !user) return;
+    const next = { weekday: clampH(wd), weekend: clampH(we) };
+    setGoal(next);
+    writeGoal(user.id, next);
+    saveCloudPref(user.id, 'daily_goal', serialize(next));
   };
 
+  const goalH = goalHoursFor(goal, today);
   const goalSecs = goalH * 3600;
   const todaySecs = secsByDate.get(today) ?? 0;
   const pct = Math.min(1, goalSecs > 0 ? todaySecs / goalSecs : 0);
-  const heat = useMemo(() => buildHeatmap(secsByDate, goalSecs, today, WEEKS), [secsByDate, goalSecs, today]);
+  const heat = useMemo(
+    () => buildHeatmap(secsByDate, (d) => goalHoursFor(goal, d) * 3600, today, WEEKS),
+    [secsByDate, goal, today],
+  );
+  const goalLabel = goal.weekday === goal.weekend ? `${goal.weekday}h/day` : `${goal.weekday}h weekdays · ${goal.weekend}h weekends`;
   const streak = currentStreak(secsByDate, today);
   const week = lastNDaysTotal(secsByDate, today, 7);
   const activeDays = Array.from(secsByDate.entries()).filter(([d, s]) => s > 0 && d <= today).length;
@@ -112,17 +144,21 @@ export function StudyActivity() {
       <div className="study-head">
         <h3 className="study-title">Daily Goal &amp; Study Activity</h3>
         {editing ? (
-          <span className="study-goal-edit">
-            <input
-              type="number" min={0.5} max={16} step={0.5} autoFocus value={draft} aria-label="Daily goal in hours"
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') saveGoal(); if (e.key === 'Escape') setEditing(false); }}
-            />
+          <span className="study-goal-edit" onKeyDown={(e) => { if (e.key === 'Enter') saveGoal(); if (e.key === 'Escape') setEditing(false); }}>
+            <label>Weekdays
+              <input type="number" min={0.5} max={16} step={0.5} autoFocus value={draftWd} aria-label="Weekday goal in hours" onChange={(e) => setDraftWd(e.target.value)} />
+            </label>
+            <label>Weekends
+              <input type="number" min={0.5} max={16} step={0.5} value={draftWe} aria-label="Weekend goal in hours" onChange={(e) => setDraftWe(e.target.value)} />
+            </label>
             <button type="button" onClick={saveGoal}>Save</button>
           </span>
         ) : (
-          <button type="button" className="study-goal-btn" onClick={() => { setDraft(String(goalH)); setEditing(true); }} title="Change daily goal">
-            Goal: {goalH}h/day ✎
+          <button
+            type="button" className="study-goal-btn" title="Change daily goal (separate weekday and weekend hours)"
+            onClick={() => { setDraftWd(String(goal.weekday)); setDraftWe(String(goal.weekend)); setEditing(true); }}
+          >
+            Goal: {goalLabel} ✎
           </button>
         )}
       </div>

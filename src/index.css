@@ -4924,3 +4924,7 @@ html::after {
 .study-add-form input[type="number"] { width: 3.6rem; }
 .study-add-form button { font-family: var(--mono); font-size: 0.66rem; font-weight: 700; color: var(--t2); background: var(--surf); border: 1px solid var(--bdr); border-radius: 0.6rem; padding: 0.3rem 0.7rem; cursor: pointer; }
 .study-add-err { font-size: 0.64rem; color: #f87171; font-family: var(--mono); }
+
+.study-goal-edit { flex-wrap: wrap; }
+.study-goal-edit label { display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--mono); font-size: 0.6rem; color: var(--t3); text-transform: uppercase; letter-spacing: 0.06em; }
+.study-goal-edit input { width: 3.8rem; }
