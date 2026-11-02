@@ -5,9 +5,9 @@ import { supabase } from '../../lib/supabase';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useToast } from '../common/Toast';
 import { useFloatingPanel, type Handle } from '../../hooks/useFloatingPanel';
+import { useLayoutLocked } from '../../lib/layoutLock';
 
 const HANDLES: Handle[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
-const readLocked = () => localStorage.getItem('pie-grid-locked') !== '0';
 
 interface SWItem {
   id: string;
@@ -28,14 +28,8 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
   const [managerOpen, setManagerOpen] = useState(false);
   const [managerDefaultType, setManagerDefaultType] = useState<'strength' | 'weakness'>('strength');
 
-  // Move/resize is unlocked together with the Sectional Pie matrix (same lock)
-  const [locked, setLocked] = useState(readLocked);
-  useEffect(() => {
-    const on = () => setLocked(readLocked());
-    window.addEventListener('pie-lock-change', on);
-    window.addEventListener('storage', on);
-    return () => { window.removeEventListener('pie-lock-change', on); window.removeEventListener('storage', on); };
-  }, []);
+  // Move/resize is unlocked together with the Sectional Pie matrix (same lock, always locked on load)
+  const [locked] = useLayoutLocked();
   const panel = useFloatingPanel(user ? `upsc_sw_geom_${user.id}` : null, locked);
 
   // Open manager when externally triggered (from settings menu)
@@ -159,6 +153,8 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
 
   return (
     <>
+    <div id="sw-slot" className="sw-slot">
+    {panel.floating && <div className="sw-slot-hole" aria-hidden="true">Panel moved — use ⇲ Dock on it to bring it back</div>}
     <div
       id="sw-widget"
       ref={panel.ref}
@@ -222,6 +218,7 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
       {panel.canDrag && HANDLES.map((d) => (
         <div key={d} className={`sw-rh sw-rh-${d}`} onPointerDown={(e) => panel.startGesture(e, d)} />
       ))}
+    </div>
     </div>
     {managerOpen && createPortal(
       <SWManager

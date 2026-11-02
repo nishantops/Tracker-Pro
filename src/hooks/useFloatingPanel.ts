@@ -9,6 +9,10 @@ export const WIDE_QUERY = '(min-width: 960px)';
 
 const isWide = () => (typeof window.matchMedia === 'function' ? window.matchMedia(WIDE_QUERY).matches : true);
 
+// The panel's positioning container: nearest positioned ancestor (the Home view), else the parent.
+const boundsOf = (el: HTMLElement | null): HTMLElement | null =>
+  (el?.offsetParent as HTMLElement | null) ?? el?.parentElement ?? null;
+
 function read(key: string | null): Geom | null {
   if (!key) return null;
   try {
@@ -45,7 +49,7 @@ export function useFloatingPanel(storageKey: string | null, locked: boolean) {
   const startGesture = useCallback((e: React.PointerEvent, mode: Handle) => {
     if (locked || !wide || e.button > 0) return;
     const el = ref.current;
-    const parent = el?.parentElement;
+    const parent = boundsOf(el);
     if (!el || !parent) return;
     e.preventDefault();
     e.stopPropagation();
@@ -95,7 +99,7 @@ export function useFloatingPanel(storageKey: string | null, locked: boolean) {
   // Keep the panel inside the page if the window is narrowed after it was placed.
   const [pw, setPw] = useState(0);
   useEffect(() => {
-    const parent = ref.current?.parentElement;
+    const parent = boundsOf(ref.current);
     if (!floating || !parent || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => setPw(parent.getBoundingClientRect().width));
     ro.observe(parent);

@@ -14,6 +14,7 @@ vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: stableUser
 vi.mock('../common/Toast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
 import { SWWidget } from './SWWidget';
+import { setLayoutLocked } from '../../lib/layoutLock';
 
 const GEOM_KEY = 'upsc_sw_geom_u1';
 const widget = () => document.getElementById('sw-widget') as HTMLElement;
@@ -23,6 +24,7 @@ let rectSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   localStorage.clear();
+  setLayoutLocked(true);
   rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const r = this.id === 'sw-widget'
       ? { left: 700, top: 100, width: 300, height: 200 }
@@ -32,9 +34,24 @@ beforeEach(() => {
 });
 afterEach(() => { rectSpy.mockRestore(); vi.unstubAllGlobals(); });
 
-const unlock = () => { localStorage.setItem('pie-grid-locked', '0'); act(() => { window.dispatchEvent(new Event('pie-lock-change')); }); };
+const unlock = () => { act(() => { setLayoutLocked(false); }); };
 
 describe('SWWidget — locked (default)', () => {
+  it('keeps a stable slot in the grid and the panel inside it', () => {
+    render(<SWWidget />);
+    const slot = document.getElementById('sw-slot')!;
+    expect(slot).toContainElement(widget());
+    expect(slot.querySelector('.sw-slot-hole')).toBeNull();
+  });
+
+  it('leaves a placeholder in the slot when floated, so the other panels never move', () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 120, y: 300, w: 400, h: 260 }));
+    render(<SWWidget />);
+    const slot = document.getElementById('sw-slot')!;
+    expect(slot.querySelector('.sw-slot-hole')).toBeInTheDocument();
+    expect(slot).toContainElement(widget());
+  });
+
   it('is docked, has no resize handles and cannot be dragged', () => {
     render(<SWWidget />);
     expect(widget()).not.toHaveClass('sw-floating');
@@ -52,8 +69,7 @@ describe('SWWidget — unlocked together with the pie matrix', () => {
     unlock();
     expect(document.querySelectorAll('.sw-rh')).toHaveLength(8);
     expect(widget()).toHaveClass('sw-unlocked');
-    localStorage.setItem('pie-grid-locked', '1');
-    act(() => { window.dispatchEvent(new Event('pie-lock-change')); });
+    act(() => { setLayoutLocked(true); });
     expect(document.querySelectorAll('.sw-rh')).toHaveLength(0);
   });
 
@@ -139,10 +155,10 @@ describe('SWWidget — unlocked together with the pie matrix', () => {
     fireEvent.pointerDown(header(), { clientX: 710, clientY: 110 });
     fireEvent.pointerMove(window, { clientX: 410, clientY: 360 });
     fireEvent.pointerUp(window);
-    fireEvent.click(screen.getByText(/Dock/));
+    fireEvent.click(screen.getByTitle('Return to the default position'));
     expect(widget()).not.toHaveClass('sw-floating');
     expect(localStorage.getItem(GEOM_KEY)).toBeNull();
-    expect(screen.queryByText(/Dock/)).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Return to the default position')).not.toBeInTheDocument();
   });
 
   it('restores a saved floating position after reload, even while locked', () => {

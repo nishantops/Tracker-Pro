@@ -7,6 +7,9 @@ import { useTracker } from '../../hooks/useTracker';
 import { useProfile } from '../../hooks/useProfile';
 import { STAGES, CA_SECTION, SECTION_COLORS } from '../../data/syllabus';
 import { usePieLayouts } from '../../hooks/usePieLayouts';
+import { useBoxResize } from '../../hooks/useBoxResize';
+import { useLayoutLocked, setLayoutLocked } from '../../lib/layoutLock';
+import { useAuth } from '../../context/AuthContext';
 import { ENV } from '../../lib/env';
 
 interface Props { onAddCustomTopic?: () => void; }
@@ -48,28 +51,40 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
 
   const keys = useMemo(() => pieOrder.map(p => p.key), [pieOrder]);
   const { layout, onLayoutChange, reset } = usePieLayouts(keys);
+  const { user } = useAuth();
 
-  // Lock state (persisted in localStorage)
-  const [locked, setLocked] = useState(() => localStorage.getItem('pie-grid-locked') !== '0');
-  const toggleLock = () => setLocked(prev => {
-    const next = !prev;
-    localStorage.setItem('pie-grid-locked', next ? '1' : '0');
-    return next;
-  });
-  useEffect(() => { window.dispatchEvent(new Event('pie-lock-change')); }, [locked]);
+  // Lock is shared with the S&W panel and is ALWAYS locked on load / when leaving Home
+  const [locked] = useLayoutLocked();
+  const toggleLock = () => setLayoutLocked(!locked);
+  useEffect(() => () => setLayoutLocked(true), []);
 
-  // ── Measure container width for RGL ───────────────────────────────────────
+  // Free-ratio width/height of the whole panel (saved per user on this device)
+  const box = useBoxResize(user ? `upsc_pie_size_${user.id}` : null, locked);
+  const resetAll = () => { reset(); box.clear(); };
+
+  // ── Measure container for RGL ─────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
+  const [gridH, setGridH] = useState(0);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const measure = () => { const w = el.getBoundingClientRect().width; if (w > 0) setWidth(w); };
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0) setWidth(r.width);
+      setGridH(r.height);
+    };
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     measure();
     return () => ro.disconnect();
   }, []);
+
+  // When the panel has a custom height the card rows stretch to fill it (aspect adjusts automatically)
+  const rowCount = Math.max(1, ...layout.map((l) => l.y + l.h));
+  const rowHeight = box.size.h && gridH > 0
+    ? Math.max(40, Math.floor((gridH - (rowCount - 1) * MARGIN[1]) / rowCount))
+    : ROW_HEIGHT;
 
   // ── Compute entries ───────────────────────────────────────────────────────
   const entries: PieEntry[] = useMemo(() => {
@@ -95,7 +110,11 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="neo-card rounded-3xl p-6">
+    <div
+      ref={box.ref}
+      className={`neo-card rounded-3xl p-6${box.size.h ? ' pie-sized' : ''}${!locked ? ' pie-unlocked' : ''}`}
+      style={{ width: box.size.w ? `${box.size.w}px` : undefined, maxWidth: '100%', height: box.size.h ? `${box.size.h}px` : undefined }}
+    >
       <div className="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
         <h3 className="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">
           SECTIONAL PIE COMPLETION MATRIX
@@ -110,7 +129,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
                 : 'bg-slate-500/10 border-slate-500/30 text-slate-500 hover:bg-slate-500/20'
             }`}
           >{locked ? '🔒' : '🔓'}</button>
-          <button className="pie-reset-btn" onClick={reset} title="Reset card layout">⟳ RESET</button>
+          <button className="pie-reset-btn" onClick={resetAll} title="Reset card layout">⟳ RESET</button>
           <button
             onClick={onAddCustomTopic}
             className="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-violet-500/20 font-mono btn-vibrant"
@@ -120,10 +139,10 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
         </div>
       </div>
 
-      <div ref={containerRef}>
+      <div ref={containerRef} className={box.size.h ? 'pie-grid-fill' : undefined}>
         <GridLayout
           layout={layout as unknown as Layout}
-          gridConfig={{ cols: COLS, rowHeight: ROW_HEIGHT, margin: MARGIN, containerPadding: [0, 0] }}
+          gridConfig={{ cols: COLS, rowHeight, margin: MARGIN, containerPadding: [0, 0] }}
           dragConfig={{ enabled: !locked }}
           resizeConfig={{ enabled: !locked, handles: ['se', 'e', 's'] }}
           compactor={verticalCompactor}
@@ -152,6 +171,13 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
           })}
         </GridLayout>
       </div>
+      {!locked && (
+        <>
+          <div className="pie-rh pie-rh-e" title="Drag to resize width" onPointerDown={(e) => box.startResize(e, 'e')} />
+          <div className="pie-rh pie-rh-s" title="Drag to resize height" onPointerDown={(e) => box.startResize(e, 's')} />
+          <div className="pie-rh pie-rh-se" title="Drag to resize" onPointerDown={(e) => box.startResize(e, 'se')} />
+        </>
+      )}
     </div>
   );
 }
