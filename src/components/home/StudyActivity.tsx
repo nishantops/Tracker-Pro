@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { loadCloudPref, saveCloudPref } from '../../lib/cloudPrefs';
@@ -25,27 +25,53 @@ export function StudyActivity() {
   const [goalH, setGoalH] = useState(() => readGoal(user?.id));
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [addDate, setAddDate] = useState('');
+  const [addH, setAddH] = useState('');
+  const [addM, setAddM] = useState('');
+  const [addErr, setAddErr] = useState('');
   const today = istToday();
 
   // Focus totals (re-read when a session is saved and every few minutes)
+  const load = useCallback(async () => {
+    if (!user) return;
+    const since = new Date(Date.now() - (WEEKS * 7 + 2) * 86_400_000).toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from('upsc_focus_daily')
+      .select('focus_date, total_seconds')
+      .eq('user_id', user.id)
+      .gte('focus_date', since);
+    if (!data) return;
+    setSecsByDate(new Map(data.map((d) => [d.focus_date as string, (d.total_seconds as number) ?? 0])));
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    const load = async () => {
-      const since = new Date(Date.now() - (WEEKS * 7 + 2) * 86_400_000).toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from('upsc_focus_daily')
-        .select('focus_date, total_seconds')
-        .eq('user_id', user.id)
-        .gte('focus_date', since);
-      if (cancelled || !data) return;
-      setSecsByDate(new Map(data.map((d) => [d.focus_date as string, (d.total_seconds as number) ?? 0])));
-    };
     load();
     const id = setInterval(load, 5 * 60_000);
     window.addEventListener('upsc-focus-saved', load);
-    return () => { cancelled = true; clearInterval(id); window.removeEventListener('upsc-focus-saved', load); };
-  }, [user]);
+    return () => { clearInterval(id); window.removeEventListener('upsc-focus-saved', load); };
+  }, [user, load]);
+
+  // Manual entry: adds to that day's total, the same table the focus timer writes to
+  const addManual = async () => {
+    if (!user) return;
+    const secs = Math.round((Math.max(0, parseFloat(addH) || 0) * 60 + Math.max(0, parseFloat(addM) || 0)) * 60);
+    if (secs <= 0 || secs > 24 * 3600) { setAddErr('Enter a time between 1 minute and 24 hours.'); return; }
+    if (!addDate || addDate > today) { setAddErr('Pick today or an earlier date.'); return; }
+    setAddErr('');
+    const { data: existing, error: readErr } = await supabase
+      .from('upsc_focus_daily').select('total_seconds').eq('user_id', user.id).eq('focus_date', addDate).maybeSingle();
+    if (readErr) { setAddErr('Could not save. Try again.'); return; }
+    const { error } = existing
+      ? await supabase.from('upsc_focus_daily')
+        .update({ total_seconds: (existing.total_seconds as number) + secs, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id).eq('focus_date', addDate)
+      : await supabase.from('upsc_focus_daily').insert({ user_id: user.id, focus_date: addDate, total_seconds: secs });
+    if (error) { setAddErr('Could not save. Try again.'); return; }
+    setAdding(false); setAddH(''); setAddM('');
+    window.dispatchEvent(new Event('upsc-focus-saved'));
+  };
 
   // Goal follows the account
   useEffect(() => {
@@ -127,6 +153,21 @@ export function StudyActivity() {
           <div><b>{fmtHM(week)}</b><span>last 7 days</span></div>
           <div><b>{activeDays}</b><span>active days</span></div>
         </div>
+      </div>
+
+      <div className="study-add">
+        {adding ? (
+          <div className="study-add-form">
+            <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
+            <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
+            <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
+            <button type="button" onClick={addManual}>Add</button>
+            <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
+            {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
+          </div>
+        ) : (
+          <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
+        )}
       </div>
 
       <div className="study-heat-wrap">
