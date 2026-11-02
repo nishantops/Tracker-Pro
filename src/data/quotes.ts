@@ -67,7 +67,7 @@ const ROWS: Row[] = [
   ['shiva', 'नमामीशमीशान निर्वाणरूपं विभुं व्यापकं ब्रह्मवेदस्वरूपम्।', 'Rudrashtakam', 'I bow to the Lord of all, formless liberation, all-pervading.'],
   ['shiva', 'तन्मे मनः शिवसङ्कल्पमस्तु।', 'Shiva Sankalpa Suktam, Yajurveda', 'May my mind be filled with auspicious resolve.'],
   ['shiva', 'डमड्डमड्डमड्डमन्निनादवड्डमर्वयं चकार चण्डताण्डवं तनोतु नः शिवः शिवम्॥', 'Shiva Tandava Stotram', 'The damaru sounds, and Shiva\u2019s fierce dance brings us good fortune.'],
-  ['shiva', 'नागेन्द्रहाराय त्रिलोचनाय भस्माङ्गरागाय महेश्वराय। तस्मै नकाराय नमः शिवाय॥', 'Shiva Panchakshara Stotra', 'Salutations to the three-eyed Lord Maheshwara, adorned with ash.'],
+  ['shiva', 'नागेन्द्रहाराय त्रिलोचनाय भस्माङ्गरागाय महेश्वराय। नित्याय शुद्धाय दिगम्बराय तस्मै नकाराय नमः शिवाय॥', 'Shiva Panchakshara Stotra', 'Salutations to the three-eyed Lord Maheshwara, adorned with ash, eternal and pure.'],
   ['shiva', 'सत्यं शिवं सुन्दरम्।', 'Sanskrit', 'Truth, goodness, beauty.'],
   ['shiva', 'हर हर महादेव।', 'Battle cry', 'Glory to Mahadev, the Great Lord.'],
   ['shiva', 'Shiva drank the poison so the world could live. Swallow your fear the same way, and walk on.'],
@@ -150,7 +150,7 @@ const ROWS: Row[] = [
   ['mahabharata', 'The Pandavas spent thirteen years in exile before an eighteen-day war. Long preparation, short battle.'],
   ['mahabharata', 'Krishna did not lift a weapon, yet the war was won through him. Strategy outweighs strength.'],
   ['mahabharata', 'Arjuna\u2019s greatest battle was the moment he lowered his bow. His greatest victory was picking it up again.'],
-  ['mahabharata', 'Drona taught that those who prepare in the dark are ready in the light.'],
+  ['mahabharata', 'Those who prepare in the dark are ready in the light. Every great archer learned that first.'],
   ['mahabharata', 'Draupadi\u2019s patience did not mean she forgot. Let your silence be the same: waiting, preparing, remembering.'],
   ['mahabharata', 'Kurukshetra was not won on the day of the war. It was won in every night they refused to give up.'],
 
