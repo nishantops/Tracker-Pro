@@ -14,7 +14,7 @@ const goalKey = (uid: string) => `upsc_daily_goal_${uid}`;
 const DEFAULT_GOAL: DailyGoal = { weekday: DEFAULT_GOAL_H, weekend: DEFAULT_GOAL_H };
 
 const valid = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0;
-const clampH = (n: number) => Math.min(16, Math.max(0.5, n));
+const clampH = (n: number) => Math.min(24, Math.max(0.5, n));
 
 // Accepts the old single-number form ({hours} / "6") as well as {weekday, weekend}
 function parseGoal(v: unknown): DailyGoal | null {
@@ -146,10 +146,10 @@ export function StudyActivity() {
         {editing ? (
           <span className="study-goal-edit" onKeyDown={(e) => { if (e.key === 'Enter') saveGoal(); if (e.key === 'Escape') setEditing(false); }}>
             <label>Weekdays
-              <input type="number" min={0.5} max={16} step={0.5} autoFocus value={draftWd} aria-label="Weekday goal in hours" onChange={(e) => setDraftWd(e.target.value)} />
+              <input type="number" min={0.5} max={24} step={0.5} autoFocus value={draftWd} aria-label="Weekday goal in hours" onChange={(e) => setDraftWd(e.target.value)} />
             </label>
             <label>Weekends
-              <input type="number" min={0.5} max={16} step={0.5} value={draftWe} aria-label="Weekend goal in hours" onChange={(e) => setDraftWe(e.target.value)} />
+              <input type="number" min={0.5} max={24} step={0.5} value={draftWe} aria-label="Weekend goal in hours" onChange={(e) => setDraftWe(e.target.value)} />
             </label>
             <button type="button" onClick={saveGoal}>Save</button>
           </span>
@@ -166,7 +166,7 @@ export function StudyActivity() {
       <div className="study-body">
         <div className="study-ring" role="img" aria-label={`Today ${fmtHM(todaySecs)} of ${goalH} hours`}>
           <svg viewBox="0 0 100 100" width="104" height="104">
-            <circle cx="50" cy="50" r={R} fill="none" stroke="var(--surf)" strokeWidth="9" />
+            <circle cx="50" cy="50" r={R} fill="none" stroke="var(--bdr-h)" strokeWidth="9" />
             <circle
               cx="50" cy="50" r={R} fill="none" stroke="url(#studyRingGrad)" strokeWidth="9" strokeLinecap="round"
               strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - pct)} transform="rotate(-90 50 50)"

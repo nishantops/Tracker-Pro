@@ -80,7 +80,7 @@ describe('StudyActivity', () => {
     expect(await screen.findByRole('img', { name: 'Today 1h 0m of 4 hours' })).toBeInTheDocument();
   });
 
-  it('the goal can be changed, is saved locally and to the account, and clamped to 0.5–16h', async () => {
+  it('the goal can be changed, is saved locally and to the account, and clamped to 0.5–24h', async () => {
     render(<StudyActivity />);
     fireEvent.click(screen.getByText('Goal: 4h/day ✎'));
     fireEvent.change(screen.getByLabelText('Weekday goal in hours'), { target: { value: '6' } });
@@ -92,7 +92,15 @@ describe('StudyActivity', () => {
     fireEvent.click(screen.getByText('Goal: 6h/day ✎'));
     fireEvent.change(screen.getByLabelText('Weekday goal in hours'), { target: { value: '99' } });
     fireEvent.keyDown(screen.getByLabelText('Weekday goal in hours'), { key: 'Enter' });
-    expect(screen.getByText('Goal: 16h weekdays · 6h weekends ✎')).toBeInTheDocument();
+    expect(screen.getByText('Goal: 24h weekdays · 6h weekends ✎')).toBeInTheDocument();
+  });
+
+  it('allows a 20h weekend goal without clamping', () => {
+    render(<StudyActivity />);
+    fireEvent.click(screen.getByText('Goal: 4h/day ✎'));
+    fireEvent.change(screen.getByLabelText('Weekend goal in hours'), { target: { value: '20' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(screen.getByText('Goal: 4h weekdays · 20h weekends ✎')).toBeInTheDocument();
   });
 
   it('Escape cancels editing without changing the goal', () => {
