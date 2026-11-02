@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -31,6 +31,23 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
   // Move/resize is unlocked together with the Sectional Pie matrix (same lock, always locked on load)
   const [locked] = useLayoutLocked();
   const panel = useFloatingPanel(user ? `upsc_sw_geom_${user.id}` : null, locked);
+
+  // The grid slot reserves room for the panel so the Pie panel below is pushed down instead of being covered.
+  // The three top cards are untouched. Only applies while the panel sits in the top row region.
+  const slotRef = useRef<HTMLDivElement>(null);
+  const [rowH, setRowH] = useState(Infinity);
+  useEffect(() => {
+    const slot = slotRef.current;
+    const first = slot?.parentElement?.firstElementChild as HTMLElement | null | undefined;
+    if (!panel.floating || !slot || !first || first === slot) { setRowH(Infinity); return; }
+    const update = () => setRowH(first.getBoundingClientRect().height);
+    update();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(update);
+    ro.observe(first);
+    return () => ro.disconnect();
+  }, [panel.floating]);
+  const reserve = panel.floating && panel.geom && panel.geom.y < rowH ? Math.ceil(panel.geom.y + panel.geom.h) : 0;
 
   // Open manager when externally triggered (from settings menu)
   useEffect(() => {
@@ -153,7 +170,12 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
 
   return (
     <>
-    <div id="sw-slot" className="sw-slot">
+    <div
+      id="sw-slot"
+      ref={slotRef}
+      className={`sw-slot${panel.floating ? ' sw-slot-floating' : ''}`}
+      style={reserve > 0 ? { minHeight: reserve } : undefined}
+    >
     {panel.floating && <div className="sw-slot-hole" aria-hidden="true">Panel moved — use ⇲ Dock on it to bring it back</div>}
     <div
       id="sw-widget"

@@ -63,6 +63,50 @@ describe('SWWidget — locked (default)', () => {
   });
 });
 
+describe('SWWidget — pushes the pie panel down instead of overlapping it', () => {
+  const slot = () => document.getElementById('sw-slot') as HTMLElement;
+
+  it('reserves room equal to the panel bottom (top + height) in its grid slot', () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 0, y: 50, w: 300, h: 420 }));
+    render(<SWWidget />);
+    expect(slot().style.minHeight).toBe('470px');
+    expect(slot()).toHaveClass('sw-slot-floating');
+  });
+
+  it('grows the reserved room as the panel is resized taller', () => {
+    render(<SWWidget />);
+    act(() => { setLayoutLocked(false); });
+    fireEvent.pointerDown(document.querySelector('.sw-rh-s')!, { clientX: 800, clientY: 300 });
+    fireEvent.pointerMove(window, { clientX: 800, clientY: 500 });
+    fireEvent.pointerUp(window);
+    expect(slot().style.minHeight).toBe('500px');
+  });
+
+  it('does not reserve anything for a docked panel', () => {
+    render(<SWWidget />);
+    expect(slot().style.minHeight).toBe('');
+    expect(slot()).not.toHaveClass('sw-slot-floating');
+  });
+
+  it('ignores a panel that was moved below the top row (user placed it over the pie area on purpose)', () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 0, y: 950, w: 300, h: 200 }));
+    render(<><div id="top-cards" /><SWWidget /></>);
+    expect(slot().style.minHeight).toBe('');
+  });
+
+  it('reserves room when the panel sits inside the top row region', () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 0, y: 100, w: 300, h: 200 }));
+    render(<><div id="top-cards" /><SWWidget /></>);
+    expect(slot().style.minHeight).toBe('300px');
+  });
+
+  it('the browser-native corner resize is gone (it let the panel overlap the pie panel)', () => {
+    render(<SWWidget />);
+    // custom handles are the only resize mechanism
+    expect(document.querySelectorAll('.sw-rh')).toHaveLength(0);
+  });
+});
+
 describe('SWWidget — unlocked together with the pie matrix', () => {
   it('shows 8 resize handles and a drag affordance when unlocked, and hides them again on lock', () => {
     render(<SWWidget />);

@@ -32,6 +32,7 @@ interface NotifSettings {
   customTime: string;
   browserPush: boolean;
   snoozeDuration: number;
+  repeatMinutes: number;
 }
 
 const DEFAULT_SETTINGS: NotifSettings = {
@@ -58,6 +59,7 @@ const DEFAULT_SETTINGS: NotifSettings = {
   customTime: '14:00',
   browserPush: false,
   snoozeDuration: 24,
+  repeatMinutes: 30,
 };
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -201,6 +203,17 @@ export function NotificationSettingsModal({ open, onClose }: Props) {
             )}
 
             {/* Push */}
+            <div className="ns-row">
+              <div className="ns-label">Repeat Until Attended<div className="ns-sub">Pop the alert up again at the bottom of Home</div></div>
+              <select value={settings.repeatMinutes} onChange={(e) => set('repeatMinutes', +e.target.value)} className="ns-input">
+                <option value={0}>Don&apos;t repeat</option>
+                <option value={10}>Every 10 min</option>
+                <option value={15}>Every 15 min</option>
+                <option value={30}>Every 30 min</option>
+                <option value={60}>Every hour</option>
+              </select>
+            </div>
+
             <div className="ns-section-head">🔔 Push</div>
             <div className="ns-row">
               <div className="ns-label">Browser Push Notifications<div className="ns-sub">OS-level alerts (requires permission)</div></div>

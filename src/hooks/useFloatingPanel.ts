@@ -114,5 +114,5 @@ export function useFloatingPanel(storageKey: string | null, locked: boolean) {
       })()
     : undefined;
 
-  return { ref, floating, style, startGesture, dock, canDrag: !locked && wide };
+  return { ref, geom, floating, style, startGesture, dock, canDrag: !locked && wide };
 }

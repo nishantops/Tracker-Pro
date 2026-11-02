@@ -10,6 +10,8 @@ import { PieMatrix } from './syllabus/PieMatrix';
 import { SWWidget } from './sw/SWWidget';
 import { NavMenu, type AppPage } from './nav/NavMenu';
 import { MotivationalQuote } from './common/MotivationalQuote';
+import { NotificationToasts } from './modals/NotificationToasts';
+import { useNotifAlerts } from '../hooks/useNotifAlerts';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
 const PlansGrid     = lazy(() => import('./plans/PlansGrid').then((m) => ({ default: m.PlansGrid })));
@@ -36,7 +38,8 @@ export function Layout() {
   const { user, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const { profile, initials, features } = useProfile();
-  const { syncStatus } = useTracker();
+  const { syncStatus, progress } = useTracker();
+  const notif = useNotifAlerts(user, progress);
   const { trackTabSwitch } = useMetrics();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -271,7 +274,7 @@ export function Layout() {
                 }}
               >
                 🔔
-                {unreadMsgCount > 0 && (
+                {unreadMsgCount + notif.alerts.length > 0 && (
                   <span style={{
                     position: 'absolute',
                     top: '-4px',
@@ -289,7 +292,7 @@ export function Layout() {
                     lineHeight: 1,
                     pointerEvents: 'none',
                   }}>
-                    {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
+                    {unreadMsgCount + notif.alerts.length > 9 ? '9+' : unreadMsgCount + notif.alerts.length}
                   </span>
                 )}
               </button>
@@ -298,6 +301,10 @@ export function Layout() {
                   open={notifPanelOpen}
                   onClose={() => setNotifPanelOpen(false)}
                   onOpenSettings={() => setNotifSettingsOpen(true)}
+                  alerts={notif.alerts}
+                  onDismiss={notif.dismiss}
+                  onDismissAll={notif.dismissAll}
+                  onRefresh={notif.refresh}
                 />
               </Suspense>
             </div>
@@ -395,8 +402,9 @@ export function Layout() {
       </main>
 
       {/* Profile modal */}
+      {showHome && <NotificationToasts alerts={notif.alerts} repeatMinutes={notif.repeatMinutes} onDone={(id) => notif.dismiss(id)} />}
       <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
-      <Suspense fallback={null}><NotificationSettingsModal open={notifSettingsOpen} onClose={() => setNotifSettingsOpen(false)} /></Suspense>
+      <Suspense fallback={null}><NotificationSettingsModal open={notifSettingsOpen} onClose={() => { setNotifSettingsOpen(false); notif.refresh(); }} /></Suspense>
       <Suspense fallback={null}><AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} onMarkRead={() => setUnreadMsgCount(0)} /></Suspense>
       <Suspense fallback={null}><ClearProgressModal open={clearProgressOpen} onClose={() => setClearProgressOpen(false)} /></Suspense>
       <Suspense fallback={null}><CustomTopicModal open={customTopicOpen} onClose={() => setCustomTopicOpen(false)} /></Suspense>

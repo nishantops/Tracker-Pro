@@ -6,6 +6,12 @@ const h = vi.hoisted(() => ({
   profile: { display_name: 'Nishant Kumar', optional_subject: 'none', attempt: 3 } as Record<string, unknown>,
   signOut: vi.fn(),
   toggleTheme: vi.fn(),
+  alerts: [] as { id: string; type: string; message: string }[],
+  dismiss: vi.fn(),
+}));
+
+vi.mock('../hooks/useNotifAlerts', () => ({
+  useNotifAlerts: () => ({ alerts: h.alerts, repeatMinutes: 30, refresh: vi.fn(), dismiss: h.dismiss, dismissAll: vi.fn() }),
 }));
 
 vi.mock('../lib/supabase', () => {
@@ -57,6 +63,8 @@ beforeEach(() => {
   h.profile = { display_name: 'Nishant Kumar', optional_subject: 'none', attempt: 3 };
   h.signOut.mockClear();
   h.toggleTheme.mockClear();
+  h.alerts = [];
+  h.dismiss.mockClear();
   window.history.replaceState(null, '');
 });
 
@@ -279,5 +287,32 @@ describe('Layout — account settings (same actions as the old Settings dropdown
     await screen.findByText('MASTER-VIEW');
     openMenu(); pick('Strengths & Weaknesses');
     await waitFor(() => expect(screen.getByText('SWWIDGET-OPEN')).toBeInTheDocument());
+  });
+});
+
+describe('Layout — reminders as push alerts', () => {
+  it('shows due alerts at the bottom of Home and Done attends them', () => {
+    h.alerts = [{ id: 'daily_reminder', type: 'info', message: '🌅 Good morning! Time to study.' }];
+    render(<Layout />);
+    expect(screen.getByText('🌅 Good morning! Time to study.')).toBeInTheDocument();
+    expect(document.querySelector('.notif-toasts')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('✓ Done'));
+    expect(h.dismiss).toHaveBeenCalledWith('daily_reminder');
+  });
+
+  it('shows nothing when there are no alerts', () => {
+    render(<Layout />);
+    expect(document.querySelector('.notif-toasts')).toBeNull();
+  });
+
+  it('push alerts are only on Home; the bell badge counts them everywhere', async () => {
+    h.alerts = [{ id: 'a', type: 'info', message: 'ALERT-A' }, { id: 'b', type: 'plan', message: 'ALERT-B' }];
+    render(<Layout />);
+    expect(screen.getByText('ALERT-A')).toBeInTheDocument();
+    expect(document.getElementById('notif-bell')).toHaveTextContent('2');
+    openMenu(); pick('1. Syllabus');
+    await screen.findByText('SYLLABUS-VIEW:prelims');
+    expect(screen.queryByText('ALERT-A')).not.toBeInTheDocument();
+    expect(document.getElementById('notif-bell')).toHaveTextContent('2');
   });
 });
