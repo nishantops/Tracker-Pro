@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { ENV } from '../lib/env';
@@ -101,6 +101,7 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadedOnceRef = useRef<string | null>(null);
 
   const isSuperuser = useCallback(
     (email?: string | null) => {
@@ -127,19 +128,22 @@ export function useProfile() {
   // ── Fetch profile from DB ──────────────────────────────────────────────────
   const fetchProfile = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
 
     // Try localStorage first for instant render
     const cacheKey = `upsc_profile_${user.id}`;
+    let hadCache = false;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached) as Profile;
         setProfile(parsed);
+        hadCache = true;
       }
     } catch {
       /* ignore */
     }
+    // Revalidate silently when we already have a profile; a spinner would unmount the whole app.
+    if (!hadCache && loadedOnceRef.current !== user.id) setLoading(true);
 
     // Always verify against DB
     try {
@@ -159,6 +163,7 @@ export function useProfile() {
     } catch {
       /* keep cached profile if DB unreachable */
     } finally {
+      loadedOnceRef.current = user.id;
       setLoading(false);
     }
   }, [user]);

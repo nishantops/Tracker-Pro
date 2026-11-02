@@ -157,6 +157,39 @@ body::after {
 }
 [data-theme="light"] body::after { opacity: 0; }
 
+/* Rotating motivational quote behind the UI */
+.motivation-backdrop {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem; text-align: center; overflow: hidden;
+}
+.motivation-quote { max-width: 62rem; animation: motivationFade 14s ease-in-out both; }
+.motivation-text {
+  font-family: var(--heading, 'Space Grotesk', sans-serif);
+  font-size: clamp(1.25rem, 3.6vw, 3rem); font-weight: 700; line-height: 1.25;
+  font-style: italic; color: var(--t1); letter-spacing: -0.01em;
+}
+.motivation-by {
+  margin-top: 0.9rem; font-family: var(--mono);
+  font-size: clamp(0.7rem, 1.4vw, 0.95rem); color: var(--t2); text-transform: uppercase; letter-spacing: 0.12em;
+}
+@keyframes motivationFade {
+  0%   { opacity: 0;    transform: translateY(12px); }
+  10%  { opacity: 0.16; transform: translateY(0); }
+  90%  { opacity: 0.16; transform: translateY(0); }
+  100% { opacity: 0;    transform: translateY(-8px); }
+}
+[data-theme="light"] .motivation-quote { animation-name: motivationFadeLight; }
+@keyframes motivationFadeLight {
+  0%   { opacity: 0;    transform: translateY(12px); }
+  10%  { opacity: 0.12; transform: translateY(0); }
+  90%  { opacity: 0.12; transform: translateY(0); }
+  100% { opacity: 0;    transform: translateY(-8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motivation-quote { animation: none; opacity: 0.14; }
+}
+
 @keyframes nebula {
   0%   { transform: scale(1)    translateX(0px);   }
   33%  { transform: scale(1.06) translateX(6px);   }

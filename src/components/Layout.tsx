@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, Suspense, lazy } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { ENV } from '../lib/env';
 import { useAuth } from '../context/AuthContext';
@@ -79,6 +79,25 @@ export function Layout() {
   const setPlanner = (planner: PlannerTab) => { setNav((n) => ({ ...n, planner })); trackTabSwitch(planner); };
   const setStage = (stage: StageTab) => { setNav((n) => ({ ...n, stage })); trackTabSwitch(stage); };
 
+  // Browser Back/Forward steps through tabs instead of leaving (and reloading) the app
+  const navHistoryRef = useRef<string>('');
+  useEffect(() => {
+    const key = JSON.stringify(nav);
+    if (navHistoryRef.current === key) return;
+    if (navHistoryRef.current === '') window.history.replaceState({ upscNav: nav }, '');
+    else window.history.pushState({ upscNav: nav }, '');
+    navHistoryRef.current = key;
+  }, [nav]);
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const prev = e.state?.upscNav as NavState | undefined;
+      if (!prev) return;
+      navHistoryRef.current = JSON.stringify(prev);
+      setNav(prev);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   // Date widget
   useEffect(() => {
     const update = () => {

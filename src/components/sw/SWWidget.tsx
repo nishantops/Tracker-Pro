@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { useToast } from '../common/Toast';
 
 interface SWItem {
   id: string;
@@ -18,6 +19,7 @@ interface SWData {
 
 export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boolean; onExternalClose?: () => void } = {}) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [data, setData] = useState<SWData>({ strengths: [], weaknesses: [], show_sw: true });
   const [managerOpen, setManagerOpen] = useState(false);
   const [managerDefaultType, setManagerDefaultType] = useState<'strength' | 'weakness'>('strength');
@@ -30,22 +32,49 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
     }
   }, [externalOpen, onExternalClose]);
 
-  // Load from Supabase profile_data JSONB
+  // Load: local cache first (instant), then upsc_user_sw, falling back to legacy profile_data
   useEffect(() => {
     if (!user) return;
+    const cacheKey = `upsc_sw_${user.id}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const c = JSON.parse(cached) as Partial<SWData>;
+        setData({ strengths: c.strengths ?? [], weaknesses: c.weaknesses ?? [], show_sw: c.show_sw !== false });
+      }
+    } catch { /* ignore */ }
+
     const load = async () => {
-      const { data: row } = await supabase
-        .from('upsc_user_profiles')
-        .select('profile_data')
+      let next: SWData | null = null;
+      const { data: sw, error: swErr } = await supabase
+        .from('upsc_user_sw')
+        .select('strengths, weaknesses, show_sw')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (row?.profile_data) {
-        const pd = row.profile_data as Record<string, unknown>;
-        setData({
-          strengths: (pd.strengths as SWItem[]) ?? [],
-          weaknesses: (pd.weaknesses as SWItem[]) ?? [],
-          show_sw: pd.show_sw !== false,
-        });
+      if (!swErr && sw) {
+        next = {
+          strengths: (sw.strengths as SWItem[]) ?? [],
+          weaknesses: (sw.weaknesses as SWItem[]) ?? [],
+          show_sw: sw.show_sw !== false,
+        };
+      } else {
+        const { data: row } = await supabase
+          .from('upsc_user_profiles')
+          .select('profile_data')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        const pd = row?.profile_data as Record<string, unknown> | undefined;
+        if (pd && (pd.strengths !== undefined || pd.weaknesses !== undefined)) {
+          next = {
+            strengths: (pd.strengths as SWItem[]) ?? [],
+            weaknesses: (pd.weaknesses as SWItem[]) ?? [],
+            show_sw: pd.show_sw !== false,
+          };
+        }
+      }
+      if (next) {
+        setData(next);
+        try { localStorage.setItem(cacheKey, JSON.stringify(next)); } catch { /* ignore */ }
       }
     };
     load();
@@ -54,7 +83,14 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
   const save = useCallback(async (updated: SWData) => {
     setData(updated);
     if (!user) return;
-    // Read existing profile_data, merge
+    try { localStorage.setItem(`upsc_sw_${user.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
+
+    const { error } = await supabase.from('upsc_user_sw').upsert(
+      { user_id: user.id, strengths: updated.strengths, weaknesses: updated.weaknesses, show_sw: updated.show_sw },
+      { onConflict: 'user_id' },
+    );
+
+    // Mirror into legacy profile_data so the old app keeps seeing the same data
     const { data: row } = await supabase
       .from('upsc_user_profiles')
       .select('profile_data')
@@ -62,8 +98,16 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
       .maybeSingle();
     const existing = (row?.profile_data as Record<string, unknown>) ?? {};
     const merged = { ...existing, strengths: updated.strengths, weaknesses: updated.weaknesses, show_sw: updated.show_sw };
-    await supabase.from('upsc_user_profiles').update({ profile_data: merged }).eq('user_id', user.id);
-  }, [user]);
+    const { error: legacyErr } = await supabase.from('upsc_user_profiles').update({ profile_data: merged }).eq('user_id', user.id);
+
+    if (error && legacyErr) {
+      console.error('[SW] save failed:', error.message, '|', legacyErr.message);
+      showToast('Could not save strengths & weaknesses to the cloud. Saved on this device only.', 'error');
+    } else if (error) {
+      console.error('[SW] upsc_user_sw save failed (legacy copy saved):', error.message);
+    }
+  }, [user, showToast]);
+
 
   const toggleVisibility = (checked: boolean) => {
     const updated = { ...data, show_sw: checked };

@@ -201,23 +201,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session) {
         await handleAuthUser(session.user);
       }
-      setState((s) => ({
-        ...s,
-        user: session?.user ?? null,
-        session,
-        loading: false,
-      }));
+      setState((s) => {
+        const next = session?.user ?? null;
+        const user = next && s.user && next.id === s.user.id ? s.user : next;
+        return { ...s, user, session, loading: false };
+      });
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState((s) => ({
-        ...s,
-        user: session?.user ?? null,
-        session,
-        loading: false,
-      }));
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setState((s) => {
+        const next = session?.user ?? null;
+        // Token refresh / tab-refocus events re-emit the same user; keep the old reference so effects keyed on `user` don't refetch and remount the UI.
+        const user = next && s.user && next.id === s.user.id && event !== 'USER_UPDATED' ? s.user : next;
+        return { ...s, user, session, loading: false };
+      });
     });
 
     return () => subscription.unsubscribe();
