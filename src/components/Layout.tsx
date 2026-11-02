@@ -9,6 +9,7 @@ import { Countdown } from './Countdown';
 import { PieMatrix } from './syllabus/PieMatrix';
 import { SWWidget } from './sw/SWWidget';
 import { NavMenu, type AppPage } from './nav/NavMenu';
+import { MotivationalQuote } from './common/MotivationalQuote';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
 const PlansGrid     = lazy(() => import('./plans/PlansGrid').then((m) => ({ default: m.PlansGrid })));
@@ -289,6 +290,10 @@ export function Layout() {
 
         </div>
       </header>
+
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 pt-4">
+        <MotivationalQuote />
+      </div>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
       <main className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-8 flex-1 space-y-8">
