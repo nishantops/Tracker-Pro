@@ -1,14 +1,14 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   define: {
     // react-draggable v4 uses process.env.NODE_ENV internally; Vite doesn't
     // polyfill `process`, so we must define it to prevent "process is not defined"
     // errors that abort drag/resize handlers at runtime.
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'development'),
+    'process.env.NODE_ENV': JSON.stringify(mode),
   },
   build: {
     rollupOptions: {
@@ -49,4 +49,4 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
   },
-});
+}));

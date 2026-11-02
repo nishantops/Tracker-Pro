@@ -163,7 +163,7 @@ describe('APP_KNOWLEDGE system prompt', () => {
   });
 
   it('empty live context when getLiveContext not provided', () => {
-    const getLiveContext = undefined;
+    const getLiveContext = undefined as (() => string) | undefined;
     const liveCtx = getLiveContext ? `\n\nLIVE DATA:\n${getLiveContext()}` : '';
     expect(liveCtx).toBe('');
   });

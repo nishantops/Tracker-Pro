@@ -4596,3 +4596,38 @@ img, video, svg, iframe, embed, table { max-width: 100%; }
   .header-settings-text { letter-spacing: 0.06em !important; }
 }
 
+/* ── Visual polish: cursor glow, card entrance, progress sheen ─────────── */
+.neo-card::before {
+  background:
+    radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(167,139,250,calc(var(--mg, 0) * 0.20)), transparent 62%),
+    linear-gradient(135deg, rgba(167,139,250,0.08) 0%, transparent 55%);
+}
+.neo-card:hover { --mg: 1; }
+[data-theme="light"] .neo-card::before {
+  background:
+    radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(109,40,217,calc(var(--mg, 0) * 0.10)), transparent 62%),
+    linear-gradient(135deg, rgba(167,139,250,0.08) 0%, transparent 55%);
+}
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.neo-card:not(.animate-in) { animation: cardRise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+
+.plan-card { transition: border-color 0.18s, box-shadow 0.25s, transform 0.25s; }
+.plan-card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0,0,0,0.28), 0 0 28px -6px var(--gv); }
+
+.plan-card-pbar-fill { position: relative; overflow: hidden; }
+.plan-card-pbar-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: translateX(-100%);
+  animation: pbarSheen 2.8s ease-in-out infinite;
+}
+@keyframes pbarSheen { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .neo-card:not(.animate-in), .plan-card-pbar-fill::after { animation: none; }
+}
+

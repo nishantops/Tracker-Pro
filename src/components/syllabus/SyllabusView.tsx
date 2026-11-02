@@ -526,7 +526,7 @@ function AssignmentsPanel() {
 }
 
 // ── Custom Optional Syllabus Editor for non-Anthro users ──────────────────
-function CustomOptionalSyllabus({ paper, progress, onToggle, onNote }: {
+function CustomOptionalSyllabus({ paper, progress, onToggle }: {
   paper: 'a1' | 'a2';
   progress: Record<string, any>;
   onToggle: (key: string) => void;

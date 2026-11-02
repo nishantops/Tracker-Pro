@@ -9,11 +9,11 @@ import type { PYQSection } from './pyq-types';
 describe('PYQ_SECTION_LABELS', () => {
   const allSections: PYQSection[] = [
     'gs1', 'csat', 'anthro_p1', 'anthro_p2',
-    'mains_gs1', 'mains_gs2', 'mains_gs3', 'mains_gs4', 'essay'
+    'mains_gs1', 'mains_gs2', 'mains_gs3', 'mains_gs4', 'essay', 'opt_p1', 'opt_p2'
   ];
 
-  it('has entries for all 9 sections', () => {
-    expect(Object.keys(PYQ_SECTION_LABELS)).toHaveLength(9);
+  it('has entries for all 11 sections', () => {
+    expect(Object.keys(PYQ_SECTION_LABELS)).toHaveLength(11);
   });
 
   it('has all required section keys', () => {

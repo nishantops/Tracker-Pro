@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, type FormEvent } from 'react';
-import { GridLayout, verticalCompactor } from 'react-grid-layout';
+import { GridLayout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import {
@@ -115,7 +115,7 @@ export function SourcesView() {
             dragConfig={{ enabled: !locked }}
             resizeConfig={{ enabled: !locked, handles: ALL_HANDLES }}
             width={containerWidth}
-            onLayoutChange={(rgl) => { if (!locked) saveLayout(rgl); }}
+            onLayoutChange={(rgl) => { if (!locked) saveLayout([...rgl]); }}
           >
             {sortedSources.map((s) => {
               const color = TOPIC_COLORS[s.topic] ?? '#64748b';

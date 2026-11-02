@@ -30,6 +30,7 @@ const DATA_MAP: Record<PYQSection, TopicLike[]> = {
   mains_gs1: pyqMainsGS1Data as any, mains_gs2: pyqMainsGS2Data as any,
   mains_gs3: pyqMainsGS3Data as any, mains_gs4: pyqMainsGS4Data as any,
   essay: pyqEssayData as any,
+  opt_p1: [], opt_p2: [], // custom optional papers render CustomOptionalPYQ instead
 };
 
 type StageTab = 'prelims' | 'mains';
