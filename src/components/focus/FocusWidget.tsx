@@ -14,7 +14,17 @@ export function FocusWidget() {
   const [distractionCount, setDistractionCount] = useState(0);
   const [clock, setClock] = useState(() => new Date());
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const stoppingRef = useRef(false);
+  const [fsLost, setFsLost] = useState(false);
   useScrollLock(active || panelOpen);
+
+  // Must run inside a user gesture; also captures Esc (Chromium: hold Esc to leave) so a stray press doesn't exit.
+  const enterFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      (navigator as any).keyboard?.lock?.(['Escape'])?.catch?.(() => {});
+    } catch { /* denied or unsupported */ }
+  };
 
   // Live clock for focus overlay
   useEffect(() => {
@@ -28,20 +38,33 @@ export function FocusWidget() {
     if (!active) {
       // Cleanup on stop
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      (navigator as any).keyboard?.unlock?.();
+      setFsLost(false);
       if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
       setDistractionCount(0);
       return;
     }
 
     // Request fullscreen
+    stoppingRef.current = false;
     const requestFullscreen = async () => {
       try {
         if (!document.fullscreenElement) {
           await document.documentElement.requestFullscreen();
         }
-      } catch { /* user denied or not supported */ }
+        (navigator as any).keyboard?.lock?.(['Escape'])?.catch?.(() => {});
+      } catch { setFsLost(true); }
     };
     requestFullscreen();
+
+    // Fullscreen left without the user pressing STOP (browser/OS/Esc) — flag it so one click restores it
+    const onFsChange = () => {
+      if (document.fullscreenElement) { setFsLost(false); return; }
+      if (stoppingRef.current) return;
+      setFsLost(true);
+      setDistractionCount((c) => c + 1);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
 
     // Request wake lock (prevent screen sleep)
     const requestWakeLock = async () => {
@@ -72,6 +95,7 @@ export function FocusWidget() {
     window.addEventListener('beforeunload', onBeforeUnload);
 
     return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('beforeunload', onBeforeUnload);
       if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
@@ -79,12 +103,15 @@ export function FocusWidget() {
   }, [active]);
 
   const handleStart = async () => {
+    // Request fullscreen first, while the click's user activation is still valid
+    enterFullscreen();
     await start();
     showToast('Focus mode started!', 'info');
     setPanelOpen(false);
   };
 
   const handleStop = async () => {
+    stoppingRef.current = true;
     // Exit fullscreen before stopping
     if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
     const dur = await stop();
@@ -148,8 +175,21 @@ export function FocusWidget() {
           onWheel={(e) => e.preventDefault()}
           onTouchMove={(e) => e.preventDefault()}
           onScroll={(e) => e.preventDefault()}
+          onPointerDown={(e) => {
+            if (fsLost && !(e.target as HTMLElement).closest('.focus-lock-actions')) enterFullscreen();
+          }}
         >
           <div className="focus-lock-content">
+            {fsLost && (
+              <button
+                type="button"
+                className="focus-lock-resume"
+                style={{ marginBottom: '1rem' }}
+                onClick={enterFullscreen}
+              >
+                ⛶ Fullscreen exited — click to return
+              </button>
+            )}
             <div className="focus-lock-clock">
               <span className="focus-lock-time">
                 {clock.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
