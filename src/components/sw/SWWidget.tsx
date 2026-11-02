@@ -4,6 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useToast } from '../common/Toast';
+import { useFloatingPanel, type Handle } from '../../hooks/useFloatingPanel';
+
+const HANDLES: Handle[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+const readLocked = () => localStorage.getItem('pie-grid-locked') !== '0';
 
 interface SWItem {
   id: string;
@@ -23,6 +27,16 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
   const [data, setData] = useState<SWData>({ strengths: [], weaknesses: [], show_sw: true });
   const [managerOpen, setManagerOpen] = useState(false);
   const [managerDefaultType, setManagerDefaultType] = useState<'strength' | 'weakness'>('strength');
+
+  // Move/resize is unlocked together with the Sectional Pie matrix (same lock)
+  const [locked, setLocked] = useState(readLocked);
+  useEffect(() => {
+    const on = () => setLocked(readLocked());
+    window.addEventListener('pie-lock-change', on);
+    window.addEventListener('storage', on);
+    return () => { window.removeEventListener('pie-lock-change', on); window.removeEventListener('storage', on); };
+  }, []);
+  const panel = useFloatingPanel(user ? `upsc_sw_geom_${user.id}` : null, locked);
 
   // Open manager when externally triggered (from settings menu)
   useEffect(() => {
@@ -145,9 +159,20 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
 
   return (
     <>
-    <div id="sw-widget" className="sw-widget">
+    <div
+      id="sw-widget"
+      ref={panel.ref}
+      className={`sw-widget${panel.floating ? ' sw-floating' : ''}${panel.canDrag ? ' sw-unlocked' : ''}`}
+      style={panel.style}
+    >
       <div className="sw-inner">
-        <div className="sw-widget-header">
+        <div
+          className="sw-widget-header"
+          onPointerDown={(e) => {
+            if (!(e.target as HTMLElement).closest('button, label, input')) panel.startGesture(e, 'move');
+          }}
+          title={panel.canDrag ? 'Drag to move' : undefined}
+        >
           <span className="sw-pulse-dot" />
           <span className="sw-widget-title">MY UPSC PROFILE</span>
           <label className="sw-visibility-toggle" title="Show/hide on homepage" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
@@ -158,6 +183,11 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
           <button className="sw-manage-btn" onClick={() => openManager()} style={{ marginLeft: 'auto' }}>
             ✎ Manage
           </button>
+          {panel.floating && panel.canDrag && (
+            <button className="sw-manage-btn" onClick={panel.dock} title="Return to the default position">
+              ⇲ Dock
+            </button>
+          )}
         </div>
         <div className="sw-rails">
           <div className="sw-rail">
@@ -189,7 +219,9 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
           </div>
         </div>
       </div>
-
+      {panel.canDrag && HANDLES.map((d) => (
+        <div key={d} className={`sw-rh sw-rh-${d}`} onPointerDown={(e) => panel.startGesture(e, d)} />
+      ))}
     </div>
     {managerOpen && createPortal(
       <SWManager

@@ -56,6 +56,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
     localStorage.setItem('pie-grid-locked', next ? '1' : '0');
     return next;
   });
+  useEffect(() => { window.dispatchEvent(new Event('pie-lock-change')); }, [locked]);
 
   // ── Measure container width for RGL ───────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
