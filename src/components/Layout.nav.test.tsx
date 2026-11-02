@@ -42,7 +42,7 @@ vi.mock('./testseries/TestSeriesView', () => ({ TestSeriesView: () => <div>TESTS
 vi.mock('./ca/CATrackerView', () => ({ CATrackerView: () => <div>CA-VIEW</div> }));
 vi.mock('./modals/NotificationSettingsModal', () => ({ NotificationSettingsModal: ({ open }: { open: boolean }) => (open ? <div>NOTIF-SETTINGS</div> : null) }));
 vi.mock('./modals/AboutModal', () => ({ AboutModal: ({ open }: { open: boolean }) => (open ? <div>ABOUT-MODAL</div> : null) }));
-vi.mock('./modals/ClearProgressModal', () => ({ ClearProgressModal: () => null }));
+vi.mock('./modals/ClearProgressModal', () => ({ ClearProgressModal: ({ open }: { open: boolean }) => (open ? <div>CLEAR-PROGRESS-MODAL</div> : null) }));
 vi.mock('./modals/NotificationPanel', () => ({ NotificationPanel: () => null }));
 vi.mock('./modals/CustomTopicModal', () => ({ CustomTopicModal: () => null }));
 
@@ -101,10 +101,14 @@ describe('Layout — header (same words as main)', () => {
     expect(header.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('header is sticky so it stays pinned while scrolling', () => {
+  it('header and quote banner are pinned together so they stay frozen while scrolling', () => {
     render(<Layout />);
-    expect(document.querySelector('header')!.className).toMatch(/\bsticky\b/);
-    expect(document.querySelector('header')!.className).toMatch(/top-0/);
+    const pinned = document.querySelector('.app-top-pinned') as HTMLElement;
+    expect(pinned.className).toMatch(/\bsticky\b/);
+    expect(pinned.className).toMatch(/top-0/);
+    expect(pinned).toContainElement(document.querySelector('header'));
+    expect(pinned).toContainElement(document.querySelector('.motivation-banner'));
+    expect(document.querySelector('main')!.closest('.app-top-pinned')).toBeNull();
   });
 });
 
@@ -116,10 +120,10 @@ describe('Layout — menu wording and gating', () => {
     for (const w of [
       'Home', '1. Syllabus', '2. CA Tracker', '3. PYQ', '4. Test-Series',
       'Master Plan', 'My Plans', 'Sources & Links',
-      'Update Profile', 'Strengths & Weaknesses', 'Notification Settings', 'About & Contact Admin', 'Sign Out',
+      'Update Profile', 'Strengths & Weaknesses', 'Notification Settings', 'About & Contact Admin', 'Reset Syllabus Progress', 'Sign Out',
       'Marathon Tracker', 'Strategy Planner', 'Account Settings',
     ]) expect(text).toContain(w);
-    expect(menu().querySelectorAll('button').length).toBe(13);
+    expect(menu().querySelectorAll('button').length).toBe(14);
   });
 
   it('hides PYQ when the pyq feature is off', () => {
@@ -258,6 +262,14 @@ describe('Layout — account settings (same actions as the old Settings dropdown
     fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }));
     expect(h.signOut).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Sign out?')).not.toBeInTheDocument();
+  });
+
+  it('Reset Syllabus Progress (moved from the absorption card) opens the confirmation from any page', async () => {
+    render(<Layout />);
+    openMenu(); pick('Master Plan');
+    await screen.findByText('MASTER-VIEW');
+    openMenu(); pick('Reset Syllabus Progress');
+    expect(await screen.findByText('CLEAR-PROGRESS-MODAL')).toBeInTheDocument();
   });
 
   it('Strengths & Weaknesses works from any page: goes Home and opens the manager', async () => {

@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { ENV } from '../lib/env';
 import { useTracker } from '../hooks/useTracker';
 
-interface Props {
-  onClearProgress?: () => void;
-}
-
-export function Countdown({ onClearProgress }: Props) {
+export function Countdown() {
   const [prelims, setPrelims] = useState('--- Days');
   const [mains, setMains] = useState('--- Days');
   const { getGlobalMetrics } = useTracker();
@@ -78,14 +74,6 @@ export function Countdown({ onClearProgress }: Props) {
               <span className="text-[10px] font-black px-2.5 py-0.5 rounded-md font-mono" style={{ background: 'var(--surf)', color: 'var(--t3)', border: '1px solid var(--bdr)' }}>
                 {percText} MATRIX
               </span>
-              <button
-                id="clear-progress-btn"
-                onClick={onClearProgress}
-                title="Reset all syllabus progress"
-                style={{ background: 'none', border: 'none', color: 'var(--t3)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}
-              >
-                ↻
-              </button>
             </div>
           </div>
           <div className="heading-font text-5xl font-black gradient-text-animated tracking-tight my-1">

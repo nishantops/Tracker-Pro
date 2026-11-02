@@ -165,7 +165,8 @@ export function Layout() {
         </div>
       )}
       {/* ── HEADER ──────────────────────────────────────────────── */}
-      <header className="backdrop-blur-md sticky top-0 z-40 px-3 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-2 xl:py-2.5 2xl:py-3">
+      <div className="app-top-pinned sticky top-0 z-40">
+      <header className="backdrop-blur-md px-3 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-2 xl:py-2.5 2xl:py-3">
         <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 xl:gap-3">
 
           {/* Left: Avatar + Name + Sync — always fully visible */}
@@ -181,6 +182,7 @@ export function Layout() {
                 { icon: '💡', label: 'Strengths & Weaknesses', onClick: () => { setShowHome(true); setSWManagerOpen(true); } },
                 { icon: '🔔', label: 'Notification Settings', onClick: () => setNotifSettingsOpen(true) },
                 { icon: 'ℹ️', label: 'About & Contact Admin', onClick: () => setAboutOpen(true) },
+                { icon: '↻', label: 'Reset Syllabus Progress', onClick: () => setClearProgressOpen(true), danger: true },
                 { icon: '⏻', label: 'Sign Out', onClick: () => setShowLogoutConfirm(true), danger: true },
               ]}
             />
@@ -291,8 +293,11 @@ export function Layout() {
         </div>
       </header>
 
-      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 pt-4">
-        <MotivationalQuote />
+      <div className="app-top-quote w-full px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 pt-3 pb-3">
+        <div className="w-full max-w-[1920px] mx-auto">
+          <MotivationalQuote />
+        </div>
+      </div>
       </div>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
@@ -300,7 +305,7 @@ export function Layout() {
         {/* ── HOME DASHBOARD ─────────────────────────────────── */}
         {showHome && (
           <div id="view-marathon" className="root-pane-view space-y-8">
-            <Countdown onClearProgress={() => setClearProgressOpen(true)} />
+            <Countdown />
             <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
             <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />
           </div>

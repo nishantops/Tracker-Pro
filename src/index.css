@@ -165,19 +165,21 @@ body::after {
   box-shadow: var(--shd-c);
 }
 .motivation-banner-icon { font-size: 1.3rem; line-height: 1; flex-shrink: 0; }
-.motivation-quote { min-width: 0; animation: motivationFade 12s ease-in-out both; }
+.motivation-quote { min-width: 0; animation: motivationFade 60s ease-in-out both; }
 .motivation-text {
   font-size: clamp(0.8rem, 1.2vw, 1.05rem); font-weight: 700; line-height: 1.35;
   font-style: italic; color: var(--t1);
 }
+.motivation-sacred { font-style: normal; font-size: clamp(0.9rem, 1.35vw, 1.2rem); line-height: 1.5; color: var(--accent-l); }
+.motivation-meaning { margin-top: 0.15rem; font-size: clamp(0.68rem, 0.9vw, 0.82rem); color: var(--t2); }
 .motivation-by {
   margin-top: 0.15rem; font-family: var(--mono); font-size: clamp(0.6rem, 0.8vw, 0.72rem);
   color: var(--t3); text-transform: uppercase; letter-spacing: 0.1em;
 }
 @keyframes motivationFade {
   0%   { opacity: 0; transform: translateY(6px); }
-  6%   { opacity: 1; transform: translateY(0); }
-  94%  { opacity: 1; transform: translateY(0); }
+  2%   { opacity: 1; transform: translateY(0); }
+  98%  { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-4px); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2080,7 +2082,7 @@ button:not([disabled]):active { transform: scale(0.95) !important; }
     grid-column: 2 !important;
     grid-row: 1 / span 20;
     position: sticky;
-    top: 5.5rem;
+    top: 10.5rem;
     margin: 0 !important;
   }
 }
@@ -4642,6 +4644,8 @@ img, video, svg, iframe, embed, table { max-width: 100%; }
 
 /* Keep the header pinned: overflow-x:hidden on body turns it into a scroll container and breaks sticky */
 body { overflow-x: clip; }
+/* Header + quote banner stay frozen together; opaque strip so scrolling content never shows through */
+.app-top-quote { background: var(--bg); border-bottom: 1px solid var(--bdr); }
 .nav-menu-panel {
   position: fixed; z-index: 9000; width: min(17rem, calc(100vw - 1rem));
   max-height: calc(100vh - 6rem); overflow-y: auto; padding: 0.5rem;
