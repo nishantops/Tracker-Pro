@@ -20,8 +20,9 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('@supabase')) return 'vendor-supabase';
-            if (id.includes('react'))     return 'vendor-react'; // react, react-dom, react-grid-layout, react-draggable, react-resizable
-            return 'vendor-misc';
+            // Everything else shares one chunk (react, react-grid-layout, draggable, resizable and their helpers);
+            // a separate "misc" chunk created a circular import with the react chunk.
+            return 'vendor-react';
           }
           // Keep PYQ data in its own chunk (already lazy-loaded)
           if (id.includes('pyq-data') || id.includes('PYQ/') || id.includes('pyq_data')) return 'data-pyq';
