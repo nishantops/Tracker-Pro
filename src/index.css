@@ -5195,3 +5195,21 @@ html::after {
 .focus-next-pinned > button:first-child { flex: 1; min-width: 0; }
 .focus-next-unpin { width: auto !important; flex: 0 0 auto; padding: 0 0.7rem; text-align: center !important; }
 .focus-next-how { margin-top: 0.8rem; font-size: 0.6rem; line-height: 1.5; color: var(--t4); font-family: var(--mono); }
+/* Goal + trend side by side, compact */
+.study-top { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.study-top .study-body { flex: 0 0 auto; margin-bottom: 0; gap: 1rem; }
+.study-top .study-stats { flex-direction: column; gap: 0.5rem; flex-wrap: nowrap; }
+.study-top .study-trend { flex: 1 1 220px; max-width: 340px; }
+.study-trend-svg { max-height: 120px; }
+.study-heat-wrap { --cell: clamp(12px, calc((100cqw - 40px - 36px) / 13), 22px); }
+@container (max-width: 480px) {
+  .study-top .study-stats { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
+  .study-top .study-trend { max-width: none; flex-basis: 100%; }
+}
+.focus-next-item { flex: 1; min-width: 0; background: var(--surf); border: 1px solid var(--bdr); border-radius: 0.75rem; padding: 0.55rem 0.75rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.focus-next-custom .focus-next-unpin { padding: 0 0.6rem; }
+.focus-next-restore { margin-top: 0.5rem; background: none; border: none; cursor: pointer; font-family: var(--mono); font-size: 0.62rem; color: var(--t3); text-decoration: underline; padding: 0; }
+.focus-next-list .focus-next-pinned > .focus-next-unpin { width: auto; align-self: center; display: inline-flex; flex-direction: row; align-items: center; padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+.study-trend-axis { font-size: 10px; }
+.study-top .study-trend { max-width: 400px; }
+.focus-next-list + .focus-next-note { margin-top: 0.8rem; }

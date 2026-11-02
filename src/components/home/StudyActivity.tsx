@@ -180,6 +180,7 @@ export function StudyActivity() {
         )}
       </div>
 
+      <div className="study-top">
       <div className="study-body">
         <div className="study-ring" role="img" aria-label={`Today ${fmtHM(todaySecs)} of ${goalH} hours`}>
           <svg viewBox="0 0 100 100" width="104" height="104">
@@ -208,40 +209,6 @@ export function StudyActivity() {
         </div>
       </div>
 
-      <div className="study-add">
-        {adding ? (
-          <div className="study-add-form">
-            <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
-            <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
-            <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
-            <button type="button" onClick={addManual}>Add</button>
-            <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
-            {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
-          </div>
-        ) : (
-          <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
-        )}
-      </div>
-
-      <div className="study-viz">
-      <div className="study-heat-block">
-      <div className="study-heat-wrap">
-        <div className="study-heat-days" aria-hidden="true">{DAY_LABELS.map((d, i) => <span key={d}>{i % 2 === 0 ? d : ''}</span>)}</div>
-        <div className="study-heat" role="img" aria-label="Study activity, last 12 weeks">
-          {heat.map((col, ci) => (
-            <div key={ci} className="study-heat-col">
-              {col.map((c, ri) => c ? (
-                <span key={ri} className={`study-cell lv${c.level}`} title={`${c.date} — ${c.secs > 0 ? fmtHM(c.secs) : 'no study'}`} />
-              ) : <span key={ri} className="study-cell empty" />)}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="study-legend" aria-hidden="true">
-        Less <span className="study-cell lv0" /><span className="study-cell lv1" /><span className="study-cell lv2" /><span className="study-cell lv3" /><span className="study-cell lv4" /> More
-      </div>
-      </div>
-
       <div className="study-trend">
         <div className="study-trend-head">
           <span className="study-trend-title">Trend</span>
@@ -260,6 +227,39 @@ export function StudyActivity() {
           </span>
           <span className="study-trend-key"><i /> goal</span>
         </div>
+      </div>
+      </div>
+
+      <div className="study-add">
+        {adding ? (
+          <div className="study-add-form">
+            <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
+            <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
+            <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
+            <button type="button" onClick={addManual}>Add</button>
+            <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
+            {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
+          </div>
+        ) : (
+          <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
+        )}
+      </div>
+
+      <div className="study-heat-block">
+      <div className="study-heat-wrap">
+        <div className="study-heat-days" aria-hidden="true">{DAY_LABELS.map((d, i) => <span key={d}>{i % 2 === 0 ? d : ''}</span>)}</div>
+        <div className="study-heat" role="img" aria-label="Study activity, last 12 weeks">
+          {heat.map((col, ci) => (
+            <div key={ci} className="study-heat-col">
+              {col.map((c, ri) => c ? (
+                <span key={ri} className={`study-cell lv${c.level}`} title={`${c.date} — ${c.secs > 0 ? fmtHM(c.secs) : 'no study'}`} />
+              ) : <span key={ri} className="study-cell empty" />)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="study-legend" aria-hidden="true">
+        Less <span className="study-cell lv0" /><span className="study-cell lv1" /><span className="study-cell lv2" /><span className="study-cell lv3" /><span className="study-cell lv4" /> More
       </div>
       </div>
     </div>
