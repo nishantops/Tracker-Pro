@@ -12,3 +12,6 @@ dist/
 
 # Old app archive — not part of new build
 old/
+
+# Playwright MCP artifacts
+.playwright-mcp/

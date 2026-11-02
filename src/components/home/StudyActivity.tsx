@@ -3,8 +3,16 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { loadCloudPref, saveCloudPref } from '../../lib/cloudPrefs';
 import {
-  buildHeatmap, currentStreak, DAY_LABELS, fmtHM, goalHoursFor, istToday, lastNDaysTotal, type DailyGoal,
+  addDays, buildHeatmap, buildTrend, currentStreak, DAY_LABELS, fmtHM, goalHoursFor, istToday, lastNDaysTotal,
+  TREND_HISTORY_DAYS, trendDelta, type DailyGoal, type TrendMode,
 } from '../../lib/studyStats';
+import { TrendChart } from './TrendChart';
+
+const MODES: { id: TrendMode; label: string; unit: string; now: string; before: string }[] = [
+  { id: 'days', label: 'Days', unit: 'day', now: 'Today', before: 'yesterday' },
+  { id: 'weeks', label: 'Weeks', unit: 'week', now: 'This week so far', before: 'last week' },
+  { id: 'months', label: 'Months', unit: 'month', now: 'This month so far', before: 'last month' },
+];
 
 const DEFAULT_GOAL_H = 4;
 const WEEKS = 12;
@@ -54,12 +62,13 @@ export function StudyActivity() {
   const [addH, setAddH] = useState('');
   const [addM, setAddM] = useState('');
   const [addErr, setAddErr] = useState('');
+  const [mode, setMode] = useState<TrendMode>('weeks');
   const today = istToday();
 
   // Focus totals (re-read when a session is saved and every few minutes)
   const load = useCallback(async () => {
     if (!user) return;
-    const since = new Date(Date.now() - (WEEKS * 7 + 2) * 86_400_000).toISOString().slice(0, 10);
+    const since = new Date(Date.now() - TREND_HISTORY_DAYS * 86_400_000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from('upsc_focus_daily')
       .select('focus_date, total_seconds')
@@ -137,7 +146,15 @@ export function StudyActivity() {
   const goalLabel = goal.weekday === goal.weekend ? `${goal.weekday}h/day` : `${goal.weekday}h weekdays · ${goal.weekend}h weekends`;
   const streak = currentStreak(secsByDate, today);
   const week = lastNDaysTotal(secsByDate, today, 7);
-  const activeDays = Array.from(secsByDate.entries()).filter(([d, s]) => s > 0 && d <= today).length;
+  const heatStart = addDays(today, -(WEEKS * 7 - 1));
+  const activeDays = Array.from(secsByDate.entries()).filter(([d, s]) => s > 0 && d <= today && d >= heatStart).length;
+
+  const trend = useMemo(
+    () => buildTrend(secsByDate, mode, today, (d) => goalHoursFor(goal, d) * 3600),
+    [secsByDate, mode, goal, today],
+  );
+  const delta = trendDelta(trend);
+  const modeInfo = MODES.find((m) => m.id === mode)!;
 
   return (
     <div className="neo-card rounded-3xl p-5 study-activity">
@@ -206,6 +223,8 @@ export function StudyActivity() {
         )}
       </div>
 
+      <div className="study-viz">
+      <div className="study-heat-block">
       <div className="study-heat-wrap">
         <div className="study-heat-days" aria-hidden="true">{DAY_LABELS.map((d, i) => <span key={d}>{i % 2 === 0 ? d : ''}</span>)}</div>
         <div className="study-heat" role="img" aria-label="Study activity, last 12 weeks">
@@ -220,6 +239,28 @@ export function StudyActivity() {
       </div>
       <div className="study-legend" aria-hidden="true">
         Less <span className="study-cell lv0" /><span className="study-cell lv1" /><span className="study-cell lv2" /><span className="study-cell lv3" /><span className="study-cell lv4" /> More
+      </div>
+      </div>
+
+      <div className="study-trend">
+        <div className="study-trend-head">
+          <span className="study-trend-title">Trend</span>
+          <div className="study-trend-modes" role="group" aria-label="Trend period">
+            {MODES.map((m) => (
+              <button key={m.id} type="button" aria-pressed={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>
+            ))}
+          </div>
+        </div>
+        <TrendChart points={trend} unit={modeInfo.unit} />
+        <div className="study-trend-sum">
+          <span>{modeInfo.now}: <b>{fmtHM(delta.current)}</b></span>
+          <span>
+            {modeInfo.before}: <b>{fmtHM(delta.previous)}</b>
+            {delta.pct !== null && <em className={delta.pct >= 0 ? 'up' : 'down'}> {delta.pct >= 0 ? '▲' : '▼'} {Math.abs(delta.pct)}%</em>}
+          </span>
+          <span className="study-trend-key"><i /> goal</span>
+        </div>
+      </div>
       </div>
     </div>
   );

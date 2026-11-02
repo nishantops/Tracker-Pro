@@ -60,9 +60,9 @@ describe('StudyActivity', () => {
       { focus_date: ymdAgo(2), total_seconds: 1800 },
     ];
     render(<StudyActivity />);
-    expect(await screen.findByText('2h 0m')).toBeInTheDocument();       // today inside the ring
+    expect(await screen.findByRole('img', { name: 'Today 2h 0m of 4 hours' })).toBeInTheDocument(); // today inside the ring
     expect(screen.getByText('🔥 3')).toBeInTheDocument();                // streak
-    expect(screen.getByText('3h 30m')).toBeInTheDocument();             // last 7 days
+    expect(document.querySelector('.study-stats')!.textContent).toContain('3h 30m'); // last 7 days
     expect(document.querySelectorAll('.study-heat .study-cell.lv4, .study-heat .study-cell.lv3, .study-heat .study-cell.lv2, .study-heat .study-cell.lv1').length).toBe(3);
   });
 
@@ -170,6 +170,39 @@ describe('StudyActivity', () => {
     h.rows = [{ focus_date: ymdAgo(1), total_seconds: 5400 }];
     render(<StudyActivity />);
     await waitFor(() => expect(document.querySelector(`[title="${ymdAgo(1)} — 1h 30m"]`)).toBeInTheDocument());
+  });
+
+  describe('trend chart', () => {
+    it('defaults to weeks and can switch to days and months', async () => {
+      render(<StudyActivity />);
+      await screen.findByText('of 4h');
+      expect(screen.getByRole('button', { name: 'Weeks' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('img', { name: 'Study time per week' })).toBeInTheDocument();
+      expect(screen.getByText(/This week so far/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Months' }));
+      expect(screen.getByRole('img', { name: 'Study time per month' })).toBeInTheDocument();
+      expect(screen.getByText(/This month so far/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Days' }));
+      expect(screen.getByRole('img', { name: 'Study time per day' })).toBeInTheDocument();
+      expect(screen.getByText(/Today:/)).toBeInTheDocument();
+    });
+
+    it('plots the stored totals with a point per period', async () => {
+      h.rows = [{ focus_date: istToday(), total_seconds: 2 * 3600 }];
+      render(<StudyActivity />);
+      await screen.findByRole('img', { name: 'Today 2h 0m of 4 hours' });
+      fireEvent.click(screen.getByRole('button', { name: 'Days' }));
+      expect(document.querySelectorAll('.study-trend-dot')).toHaveLength(14);
+      expect(document.querySelector('.study-trend-dot.now title')!.textContent).toContain('2h 0m');
+    });
+
+    it('shows the change against the previous period', async () => {
+      h.rows = [{ focus_date: istToday(), total_seconds: 3 * 3600 }, { focus_date: ymdAgo(1), total_seconds: 2 * 3600 }];
+      render(<StudyActivity />);
+      await screen.findByRole('img', { name: /^Today 3h 0m/ });
+      fireEvent.click(screen.getByRole('button', { name: 'Days' }));
+      expect(document.querySelector('.study-trend-sum em.up')!.textContent).toContain('50%');
+    });
   });
 
   describe('manual study time', () => {

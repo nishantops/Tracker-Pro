@@ -4,7 +4,7 @@ export interface Cell { date: string; secs: number; level: Level }
 // "Today" in IST, matching how focus time is stored (upsc_focus_daily.focus_date)
 export const istToday = (now = new Date()) => new Date(now.getTime() + 5.5 * 3_600_000).toISOString().slice(0, 10);
 
-const addDays = (ymd: string, n: number) => new Date(new Date(`${ymd}T00:00:00Z`).getTime() + n * 86_400_000).toISOString().slice(0, 10);
+export const addDays = (ymd: string, n: number) => new Date(new Date(`${ymd}T00:00:00Z`).getTime() + n * 86_400_000).toISOString().slice(0, 10);
 // Monday = 0 … Sunday = 6
 const weekdayIdx = (ymd: string) => (new Date(`${ymd}T00:00:00Z`).getUTCDay() + 6) % 7;
 
@@ -57,3 +57,52 @@ export const fmtHM = (secs: number) => {
 };
 
 export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// ── Trend (days / weeks / months) ────────────────────────────────────────
+export type TrendMode = 'days' | 'weeks' | 'months';
+export interface TrendPoint { label: string; title: string; secs: number; goalSecs: number }
+
+export const TREND_LENGTH: Record<TrendMode, number> = { days: 14, weeks: 12, months: 12 };
+// Days of history needed to draw every mode
+export const TREND_HISTORY_DAYS = 372;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function sumRange(secsByDate: Map<string, number>, goalFor: (ymd: string) => number, from: string, to: string) {
+  let secs = 0, goalSecs = 0;
+  for (let d = from; d <= to; d = addDays(d, 1)) { secs += secsByDate.get(d) ?? 0; goalSecs += goalFor(d); }
+  return { secs, goalSecs };
+}
+
+// Oldest first. The last point is the current (still running) day / week / month; days after today count for nothing.
+export function buildTrend(secsByDate: Map<string, number>, mode: TrendMode, today: string, goalFor: (ymd: string) => number): TrendPoint[] {
+  const n = TREND_LENGTH[mode];
+  const out: TrendPoint[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    if (mode === 'days') {
+      const d = addDays(today, -i);
+      out.push({ label: d.slice(8), title: d, secs: secsByDate.get(d) ?? 0, goalSecs: goalFor(d) });
+    } else if (mode === 'weeks') {
+      const start = addDays(addDays(today, -weekdayIdx(today)), -7 * i);
+      const end = addDays(start, 6) > today ? today : addDays(start, 6);
+      const label = `${parseInt(start.slice(8), 10)} ${MONTHS[parseInt(start.slice(5, 7), 10) - 1]}`;
+      out.push({ label, title: `Week of ${start}`, ...sumRange(secsByDate, goalFor, start, end) });
+    } else {
+      const y = parseInt(today.slice(0, 4), 10);
+      const m0 = parseInt(today.slice(5, 7), 10) - 1 - i;
+      const yy = y + Math.floor(m0 / 12);
+      const mm = ((m0 % 12) + 12) % 12;
+      const first = `${yy}-${String(mm + 1).padStart(2, '0')}-01`;
+      const last = addDays(`${mm === 11 ? yy + 1 : yy}-${String(((mm + 1) % 12) + 1).padStart(2, '0')}-01`, -1);
+      out.push({ label: MONTHS[mm]!, title: `${MONTHS[mm]} ${yy}`, ...sumRange(secsByDate, goalFor, first, last > today ? today : last) });
+    }
+  }
+  return out;
+}
+
+// Latest period vs the one before it (null when there is nothing to compare against)
+export function trendDelta(points: TrendPoint[]): { current: number; previous: number; pct: number | null } {
+  const current = points[points.length - 1]?.secs ?? 0;
+  const previous = points[points.length - 2]?.secs ?? 0;
+  return { current, previous, pct: previous > 0 ? Math.round(((current - previous) / previous) * 100) : null };
+}
