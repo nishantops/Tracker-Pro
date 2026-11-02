@@ -4642,8 +4642,6 @@ img, video, svg, iframe, embed, table { max-width: 100%; }
 .nav-menu-btn.open .nav-menu-burger i:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 .nav-menu-icon { font-size: 1rem; line-height: 1; }
 
-/* Keep the header pinned: overflow-x:hidden on body turns it into a scroll container and breaks sticky */
-body { overflow-x: clip; }
 /* Header + quote banner stay frozen together; opaque strip so scrolling content never shows through */
 .app-top-quote { background: var(--bg); border-bottom: 1px solid var(--bdr); }
 .nav-menu-panel {

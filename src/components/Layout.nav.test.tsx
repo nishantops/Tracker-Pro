@@ -101,14 +101,15 @@ describe('Layout — header (same words as main)', () => {
     expect(header.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('header and quote banner are pinned together so they stay frozen while scrolling', () => {
+  it('header and quote banner are pinned together (fixed at the top) so they stay frozen while scrolling', () => {
     render(<Layout />);
     const pinned = document.querySelector('.app-top-pinned') as HTMLElement;
-    expect(pinned.className).toMatch(/\bsticky\b/);
+    expect(pinned.className).toMatch(/\bfixed\b/);
     expect(pinned.className).toMatch(/top-0/);
     expect(pinned).toContainElement(document.querySelector('header'));
     expect(pinned).toContainElement(document.querySelector('.motivation-banner'));
     expect(document.querySelector('main')!.closest('.app-top-pinned')).toBeNull();
+    expect(pinned.previousElementSibling).toHaveAttribute('aria-hidden', 'true');
   });
 });
 

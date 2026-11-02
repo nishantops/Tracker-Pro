@@ -143,6 +143,23 @@ export function Layout() {
     return () => document.removeEventListener('keydown', handler);
   }, [notifPanelOpen, profileModalOpen, notifSettingsOpen, aboutOpen, clearProgressOpen, customTopicOpen, swManagerOpen]);
 
+  // Header + quote are position:fixed (sticky breaks under the page's overflow rules); the spacer keeps content below them.
+  const pinnedRef = useRef<HTMLDivElement>(null);
+  const [pinnedH, setPinnedH] = useState(0);
+  useEffect(() => {
+    const el = pinnedRef.current;
+    if (!el) return;
+    const update = () => setPinnedH(el.offsetHeight);
+    update();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const optLabel =
     profile?.optional_subject && profile.optional_subject !== 'none'
       ? (profile.optional_subject_custom || profile.optional_subject)
@@ -165,7 +182,8 @@ export function Layout() {
         </div>
       )}
       {/* ── HEADER ──────────────────────────────────────────────── */}
-      <div className="app-top-pinned sticky top-0 z-40">
+      <div style={{ height: pinnedH, flexShrink: 0 }} aria-hidden="true" />
+      <div ref={pinnedRef} className="app-top-pinned fixed top-0 inset-x-0 z-40">
       <header className="backdrop-blur-md px-3 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-2 xl:py-2.5 2xl:py-3">
         <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 xl:gap-3">
 
