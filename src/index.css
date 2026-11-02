@@ -4901,3 +4901,19 @@ html::after {
   border-color: rgba(129,140,248,0.6); box-shadow: 0 6px 18px rgba(99,102,241,0.35);
 }
 
+
+/* Phone + touch polish */
+@media (max-width: 479px) {
+  .study-body { gap: 1rem; }
+  .study-ring { width: 88px; height: 88px; }
+  .study-stats { gap: 0.9rem; }
+  .study-cell { min-width: 6px; border-radius: 2px; }
+  .focus-next-list button { padding: 0.55rem 0.65rem; }
+  .notif-toast { padding: 0.6rem 0.7rem; gap: 0.5rem; }
+  .notif-toast-msg { font-size: 0.74rem; }
+}
+.notif-toasts { bottom: max(1rem, env(safe-area-inset-bottom)); }
+.nav-menu-item { min-height: 44px; }
+@media (hover: none) {
+  .nav-menu-item:hover, .focus-next-list button:hover, .nav-menu-btn:hover { transform: none; }
+}
