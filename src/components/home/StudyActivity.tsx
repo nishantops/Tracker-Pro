@@ -180,87 +180,89 @@ export function StudyActivity() {
         )}
       </div>
 
-      <div className="study-top">
-      <div className="study-body">
-        <div className="study-ring" role="img" aria-label={`Today ${fmtHM(todaySecs)} of ${goalH} hours`}>
-          <svg viewBox="0 0 100 100" width="104" height="104">
-            <circle cx="50" cy="50" r={R} fill="none" stroke="var(--bdr-h)" strokeWidth="9" />
-            <circle
-              cx="50" cy="50" r={R} fill="none" stroke="url(#studyRingGrad)" strokeWidth="9" strokeLinecap="round"
-              strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - pct)} transform="rotate(-90 50 50)"
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-            />
-            <defs>
-              <linearGradient id="studyRingGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#ff9933" /><stop offset="100%" stopColor="#8b5cf6" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div className="study-ring-text">
-            <strong>{fmtHM(todaySecs)}</strong>
-            <span>{pct >= 1 ? 'Goal met ✓' : `of ${goalH}h`}</span>
-          </div>
-        </div>
-
-        <div className="study-stats">
-          <div><b>{streak > 0 ? `🔥 ${streak}` : '—'}</b><span>day streak</span></div>
-          <div><b>{fmtHM(week)}</b><span>last 7 days</span></div>
-          <div><b>{activeDays}</b><span>active days</span></div>
-        </div>
-      </div>
-
-      <div className="study-trend">
-        <div className="study-trend-head">
-          <span className="study-trend-title">Trend</span>
-          <div className="study-trend-modes" role="group" aria-label="Trend period">
-            {MODES.map((m) => (
-              <button key={m.id} type="button" aria-pressed={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>
-            ))}
-          </div>
-        </div>
-        <TrendChart points={trend} unit={modeInfo.unit} />
-        <div className="study-trend-sum">
-          <span>{modeInfo.now}: <b>{fmtHM(delta.current)}</b></span>
-          <span>
-            {modeInfo.before}: <b>{fmtHM(delta.previous)}</b>
-            {delta.pct !== null && <em className={delta.pct >= 0 ? 'up' : 'down'}> {delta.pct >= 0 ? '▲' : '▼'} {Math.abs(delta.pct)}%</em>}
-          </span>
-          <span className="study-trend-key"><i /> goal</span>
-        </div>
-      </div>
-      </div>
-
-      <div className="study-add">
-        {adding ? (
-          <div className="study-add-form">
-            <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
-            <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
-            <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
-            <button type="button" onClick={addManual}>Add</button>
-            <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
-            {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
-          </div>
-        ) : (
-          <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
-        )}
-      </div>
-
-      <div className="study-heat-block">
-      <div className="study-heat-wrap">
-        <div className="study-heat-days" aria-hidden="true">{DAY_LABELS.map((d, i) => <span key={d}>{i % 2 === 0 ? d : ''}</span>)}</div>
-        <div className="study-heat" role="img" aria-label="Study activity, last 12 weeks">
-          {heat.map((col, ci) => (
-            <div key={ci} className="study-heat-col">
-              {col.map((c, ri) => c ? (
-                <span key={ri} className={`study-cell lv${c.level}`} title={`${c.date} — ${c.secs > 0 ? fmtHM(c.secs) : 'no study'}`} />
-              ) : <span key={ri} className="study-cell empty" />)}
+      <div className="study-main">
+        <div className="study-left">
+          <div className="study-body">
+            <div className="study-ring" role="img" aria-label={`Today ${fmtHM(todaySecs)} of ${goalH} hours`}>
+              <svg viewBox="0 0 100 100" width="104" height="104">
+                <circle cx="50" cy="50" r={R} fill="none" stroke="var(--bdr-h)" strokeWidth="9" />
+                <circle
+                  cx="50" cy="50" r={R} fill="none" stroke="url(#studyRingGrad)" strokeWidth="9" strokeLinecap="round"
+                  strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - pct)} transform="rotate(-90 50 50)"
+                  style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                />
+                <defs>
+                  <linearGradient id="studyRingGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#ff9933" /><stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="study-ring-text">
+                <strong>{fmtHM(todaySecs)}</strong>
+                <span>{pct >= 1 ? 'Goal met ✓' : `of ${goalH}h`}</span>
+              </div>
             </div>
-          ))}
+
+            <div className="study-stats">
+              <div><b>{streak > 0 ? `🔥 ${streak}` : '—'}</b><span>day streak</span></div>
+              <div><b>{fmtHM(week)}</b><span>last 7 days</span></div>
+              <div><b>{activeDays}</b><span>active days</span></div>
+            </div>
+
+            <div className="study-add">
+              {adding ? (
+                <div className="study-add-form">
+                  <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
+                  <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
+                  <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
+                  <button type="button" onClick={addManual}>Add</button>
+                  <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
+                  {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
+                </div>
+              ) : (
+                <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
+              )}
+            </div>
+          </div>
+
+          <div className="study-heat-block">
+            <div className="study-heat-wrap">
+              <div className="study-heat-days" aria-hidden="true">{DAY_LABELS.map((d, i) => <span key={d}>{i % 2 === 0 ? d : ''}</span>)}</div>
+              <div className="study-heat" role="img" aria-label="Study activity, last 12 weeks">
+                {heat.map((col, ci) => (
+                  <div key={ci} className="study-heat-col">
+                    {col.map((c, ri) => c ? (
+                      <span key={ri} className={`study-cell lv${c.level}`} title={`${c.date} — ${c.secs > 0 ? fmtHM(c.secs) : 'no study'}`} />
+                    ) : <span key={ri} className="study-cell empty" />)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="study-legend" aria-hidden="true">
+              Less <span className="study-cell lv0" /><span className="study-cell lv1" /><span className="study-cell lv2" /><span className="study-cell lv3" /><span className="study-cell lv4" /> More
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="study-legend" aria-hidden="true">
-        Less <span className="study-cell lv0" /><span className="study-cell lv1" /><span className="study-cell lv2" /><span className="study-cell lv3" /><span className="study-cell lv4" /> More
-      </div>
+
+        <div className="study-trend">
+          <div className="study-trend-head">
+            <span className="study-trend-title">Trend</span>
+            <div className="study-trend-modes" role="group" aria-label="Trend period">
+              {MODES.map((m) => (
+                <button key={m.id} type="button" aria-pressed={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>
+              ))}
+            </div>
+          </div>
+          <TrendChart points={trend} unit={modeInfo.unit} />
+          <div className="study-trend-sum">
+            <span>{modeInfo.now}: <b>{fmtHM(delta.current)}</b></span>
+            <span>
+              {modeInfo.before}: <b>{fmtHM(delta.previous)}</b>
+              {delta.pct !== null && <em className={delta.pct >= 0 ? 'up' : 'down'}> {delta.pct >= 0 ? '▲' : '▼'} {Math.abs(delta.pct)}%</em>}
+            </span>
+            <span className="study-trend-key"><i /> goal</span>
+          </div>
+        </div>
       </div>
     </div>
   );

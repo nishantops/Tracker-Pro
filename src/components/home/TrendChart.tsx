@@ -1,6 +1,6 @@
 import { fmtHM, type TrendPoint } from '../../lib/studyStats';
 
-const W = 340, H = 128, PL = 36, PR = 18, PT = 10, PB = 22;
+const W = 340, H = 210, PL = 36, PR = 18, PT = 10, PB = 22;
 
 // Smallest round ceiling (in hours) that fits the data, so the axis reads 1h/2h/5h/10h… not odd numbers
 function niceMaxHours(maxSecs: number) {
