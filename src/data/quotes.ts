@@ -167,7 +167,6 @@ const ROWS: Row[] = [
   ['fight', 'Warriors are not made on the day of battle. They are made in the hours nobody watches.'],
   ['fight', 'If the road were easy, everyone would be in the service. Be glad it is not.'],
   ['fight', 'You have survived every bad day so far. A hundred percent record. Keep going.'],
-  ['fight', 'Defeat is a stop on the road, not the destination. Refuel and move.'],
   ['fight', 'Not today. Not now. Not after coming this far. Never give up.'],
 
   // ── Work in silence ───────────────────────────────────────────────────
@@ -179,7 +178,6 @@ const ROWS: Row[] = [
   ['silence', 'Let them think you are doing nothing. Then give them your name in the final list.'],
   ['silence', 'Do not post your plan. Show your result.'],
   ['silence', 'The sharpest sword is made in a quiet forge.'],
-  ['silence', 'Speak less. Revise more.'],
   ['silence', 'Silence is not weakness. It is a student preparing in secret.'],
   ['silence', 'While others talk about the exam, you are quietly becoming the answer.'],
   ['silence', 'Success is built in a room nobody sees.'],
@@ -203,18 +201,14 @@ const ROWS: Row[] = [
   // ── Monotonic hard work ───────────────────────────────────────────────
   ['hardwork', 'Same chair. Same hour. Same book. That is the whole secret.'],
   ['hardwork', 'Boring consistency builds extraordinary results.'],
-  ['hardwork', 'Repeat. Repeat. Repeat. Then repeat again until it is yours.'],
   ['hardwork', 'It is not talent that clears the exam. It is the hundredth revision.'],
   ['hardwork', 'No shortcuts. No hacks. Just the next hour, done properly.'],
-  ['hardwork', 'Ordinary days, done extraordinarily well, make a rank.'],
   ['hardwork', 'You do not rise to your goals. You fall to your routine. Build a better routine.'],
-  ['hardwork', 'Do it again. And again. Then once more, and it will be easy.'],
   ['hardwork', 'The topper and you read the same page. Only the number of times differs.'],
   ['hardwork', 'There is no motivation in month fourteen. Only discipline. Keep showing up.'],
   ['hardwork', 'Study when you do not feel like it. That is where ranks are made.'],
   ['hardwork', 'One chapter a day is a library in a year.'],
   ['hardwork', 'Do not wait for a big breakthrough. Stack small wins until they become one.'],
-  ['hardwork', 'Hard work is not a day; it is a lifestyle for one year.'],
 
   // ── Abstract / chills ─────────────────────────────────────────────────
   ['abstract', 'Time does not return. Swim in it with purpose or drown in it with regret.'],
@@ -251,34 +245,87 @@ const ROWS: Row[] = [
   ['general', 'Manpower without unity is not a strength unless it is harmonised and united properly.', 'Sardar Vallabhbhai Patel'],
   ['general', 'It always seems impossible until it is done.', 'Nelson Mandela'],
   ['general', 'It does not matter how slowly you go as long as you do not stop.', 'Confucius'],
-  ['general', 'Consistency beats intensity.'],
   ['general', 'One more revision. One more answer. One step closer.'],
   ['general', 'Discipline today, the uniform tomorrow.'],
   ['general', 'You do not need to be perfect. You need to be present, every single day.'],
-  ['general', 'Small hours, daily, build the rank that big hours never will.'],
-  ['general', 'Read it. Write it. Revise it. Repeat.'],
   ['general', 'The syllabus is finite. Your persistence is not.'],
-  ['general', 'Every topic you close is a mark you will not lose.'],
   ['general', 'Tired is temporary. Rank is permanent.'],
-  ['general', 'Trust the process. Show up. Do the work.'],
-  ['general', 'Answer writing is a skill. Skills are built by practice, not by waiting.'],
   ['general', 'Your competition is the version of you that gave up yesterday.'],
   ['general', 'Do not count the days. Make the days count.'],
   ['general', 'A rank is just a lot of ordinary days done well.'],
   ['general', 'Motivation gets you started. Habit keeps you going.'],
   ['general', 'Hard days are the ones that build the officer in you.'],
-  ['general', 'Revise before you rest. Rest before you doubt.'],
-  ['general', 'Every PYQ you solve today is a surprise you will not face in the exam hall.'],
-  ['general', 'Focus on the next topic, not the whole mountain.'],
-  ['general', 'Progress, not perfection.'],
-  ['general', 'Make your notes short, your revisions many, and your faith strong.'],
   ['general', 'Today\u2019s discomfort is tomorrow\u2019s confidence.'],
-  ['general', 'The exam rewards those who stay calm and keep showing up.'],
   ['general', 'Study like the seat is waiting for you, because it is.'],
-  ['general', 'Failure is feedback. Read it, learn from it, and go again.'],
   ['general', 'Be so consistent that doubt gets bored and leaves.'],
-  ['general', 'Sleep, eat, move, study. Repeat. The basics win.'],
-  ['general', 'Your future service is built in your present study hours.'],
+  // ── Perseverance and determination ────────────────────────────────────
+  ['fight', 'Success is the sum of small efforts, repeated day in and day out.', 'Robert Collier'],
+  ['fight', 'Push yourself, because no one else is going to do it for you.'],
+  ['fight', 'Don’t watch the clock; do what it does. Keep going.', 'Sam Levenson'],
+  ['fight', 'A dream doesn’t become reality through magic; it takes sweat, determination, and hard work.', 'Colin Powell'],
+
+  // ── Hard work and consistency ─────────────────────────────────────────
+  ['hardwork', 'There are no shortcuts to any place worth going.', 'Beverly Sills'],
+  ['hardwork', 'Discipline is the bridge between goals and accomplishments.', 'Jim Rohn'],
+  ['hardwork', 'Do something today that your future self will thank you for.'],
+  ['hardwork', 'The harder you work for something, the better you’ll feel when you achieve it.'],
+  ['silence', 'Work hard in silence. Let your success be your noise.', 'Frank Ocean'],
+
+  // ── Famous personalities ──────────────────────────────────────────────
+  ['general', 'Success is not final, failure is not fatal: it is the courage to continue that counts.', 'Winston Churchill'],
+  ['general', 'You don’t have to be great to start, but you have to start to be great.', 'Zig Ziglar'],
+  ['general', 'Start where you are. Use what you have. Do what you can.', 'Arthur Ashe'],
+  ['future', 'The future belongs to those who believe in the beauty of their dreams.', 'Eleanor Roosevelt'],
+
+  // ── Goals and vision ──────────────────────────────────────────────────
+  ['future', 'Set high goals and don’t stop until you get there.', 'Bo Jackson'],
+  ['future', 'A goal without a plan is just a wish.', 'Antoine de Saint-Exupéry'],
+  ['future', 'Dream big. Start small. Act now.', 'Robin Sharma'],
+  ['future', 'Do not lower your goals to meet your fears. Raise your belief to meet your goals.'],
+  ['future', 'Keep your eye on the goal, not the obstacles.'],
+
+  // ── Growth and learning ───────────────────────────────────────────────
+  ['general', 'Learn from yesterday, live for today, hope for tomorrow.', 'Albert Einstein'],
+  ['general', 'The expert in anything was once a beginner.', 'Helen Hayes'],
+  ['general', 'Mistakes are proof that you are trying.'],
+  ['general', 'Don’t be afraid to give up the good to go for the great.', 'John D. Rockefeller'],
+  ['general', 'Knowledge will give you power, but character gives you respect.', 'Bruce Lee'],
+
+  // ── Courage and confidence ────────────────────────────────────────────
+  ['fight', 'Believe you can and you’re halfway there.', 'Theodore Roosevelt'],
+  ['fight', 'Fear kills more dreams than failure ever will.'],
+  ['fight', 'You are braver than you believe, stronger than you seem, and smarter than you think.', 'A. A. Milne'],
+  ['fight', 'Doubt kills more dreams than failure ever will.', 'Suzy Kassem'],
+  ['fight', 'Confidence comes not from always being right, but from not fearing to be wrong.'],
+
+  // ── Time and patience ─────────────────────────────────────────────────
+  ['hardwork', 'Patience is not the ability to wait, but the ability to keep a good attitude while waiting.'],
+  ['hardwork', 'Great things take time.'],
+  ['hardwork', 'The key to everything is patience. You get the chicken by hatching the egg, not by smashing it.', 'Arnold Glasgow'],
+  ['hardwork', 'Success doesn’t come overnight. Keep going.'],
+  ['hardwork', 'Your time is coming. Just do the work and the results will follow.'],
+  ['general', 'UPSC preparation takes years of consistent effort. Stay patient and trust the process.'],
+
+  // ── IAS toppers and civil servants ────────────────────────────────────
+  ['general', 'UPSC is not just an exam; it’s a journey that transforms you.'],
+  ['general', 'Don’t fear failure. Each attempt teaches you something invaluable.'],
+  ['general', 'If you stay focused and disciplined, nothing can stop you.'],
+  ['general', 'Success in UPSC is 80% consistency and 20% strategy.'],
+  ['general', 'The real test is not how fast you reach your goal, but how strong you stay when the journey gets tough.'],
+
+  // ── Hope and positivity ───────────────────────────────────────────────
+  ['general', 'Keep your face always toward the sunshine and shadows will fall behind you.', 'Walt Whitman'],
+  ['general', 'When you feel like giving up, remember why you started.'],
+  ['fight', 'You may have to fight a battle more than once to win it.', 'Margaret Thatcher'],
+  ['general', 'Difficult roads often lead to beautiful destinations.'],
+  ['general', 'Every day may not be good, but there’s something good in every day.'],
+
+  // ── Success and achievement ───────────────────────────────────────────
+  ['hardwork', 'Success doesn’t come from what you do occasionally, it comes from what you do consistently.'],
+  ['fight', 'Winners are not those who never fail, but those who never quit.'],
+  ['general', 'Don’t aim for success if you want it; just do what you love and believe in.', 'David Frost'],
+  ['general', 'The secret of getting ahead is getting started.', 'Mark Twain'],
+  ['hardwork', 'Your success will be the result of your patience, hard work, and belief.'],
 ];
 
 export const QUOTES: Quote[] = ROWS.map(([tag, text, by, meaning]) => ({ tag, text, by, meaning }));
