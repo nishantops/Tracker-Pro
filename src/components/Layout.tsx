@@ -10,6 +10,7 @@ import { Countdown } from './Countdown';
 import { PieMatrix } from './syllabus/PieMatrix';
 import { SWWidget } from './sw/SWWidget';
 import { NavMenu, type AppPage } from './nav/NavMenu';
+import { HomeGreeting } from './home/HomeGreeting';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
 const PlansGrid     = lazy(() => import('./plans/PlansGrid').then((m) => ({ default: m.PlansGrid })));
@@ -383,6 +384,7 @@ export function Layout() {
         {/* ── HOME DASHBOARD ─────────────────────────────────── */}
         {showHome && (
           <div id="view-home" className="root-pane-view space-y-8">
+            <HomeGreeting name={displayName} />
             <Countdown onClearProgress={() => setClearProgressOpen(true)} />
             <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
             <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />
