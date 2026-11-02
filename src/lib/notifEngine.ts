@@ -21,6 +21,7 @@ export interface NotifPrefs {
   lowAbsorption: boolean; absorptionPct: number;
   streak: boolean; streakDays: number;
   revision: boolean;
+  browserPush: boolean;
   daily: boolean; dailyTime: string;
   evening: boolean; eveningTime: string;
   customReminder: boolean; customText: string; customTime: string;
@@ -38,6 +39,7 @@ export const DEFAULT_PREFS: NotifPrefs = {
   lowAbsorption: false, absorptionPct: 15,
   streak: false, streakDays: 1,
   revision: false,
+  browserPush: false,
   daily: false, dailyTime: '09:00',
   evening: false, eveningTime: '21:00',
   customReminder: false, customText: '', customTime: '14:00',

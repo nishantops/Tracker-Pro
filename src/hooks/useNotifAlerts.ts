@@ -5,6 +5,7 @@ import {
   type Alert, type NotifData,
 } from '../lib/notifEngine';
 import { markRevised } from '../lib/revision';
+import { alertsToPush, pushAlerts } from '../lib/browserPush';
 
 type ProgressLike = Map<string, { id: string; is_checked: boolean }> | undefined;
 
@@ -24,8 +25,13 @@ export function useNotifAlerts(user: User | null, progress: ProgressLike) {
   const recompute = useCallback(() => {
     const cached = dataRef.current;
     if (!cached) return;
-    setAlerts(buildAlerts(cached.data, progressRef.current));
+    const next = buildAlerts(cached.data, progressRef.current);
+    setAlerts(next);
     setRepeatMinutes(cached.data.prefs.repeatMinutes);
+    // OS-level push only while the tab is in the background (the on-page toasts cover the foreground)
+    if (cached.data.prefs.browserPush && document.visibilityState === 'hidden') {
+      void pushAlerts(alertsToPush(next, cached.data.prefs.repeatMinutes));
+    }
   }, []);
 
   const refresh = useCallback(async (force = false) => {

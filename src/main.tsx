@@ -6,7 +6,10 @@ import { ToastProvider } from './components/common/Toast';
 import { PointerGlow } from './components/common/PointerGlow';
 import App from './App';
 import { isSupabaseConfigured } from './lib/supabase';
+import { registerServiceWorker } from './lib/browserPush';
 import './index.css';
+
+registerServiceWorker();
 
 createRoot(document.getElementById('root')!).render(
   !isSupabaseConfigured ? (

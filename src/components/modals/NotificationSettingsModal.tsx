@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { requestPushPermission } from '../../lib/browserPush';
 
 interface Props {
   open: boolean;
@@ -77,6 +78,7 @@ export function NotificationSettingsModal({ open, onClose }: Props) {
   useScrollLock(open);
   const { user } = useAuth();
   const [settings, setSettings] = useState<NotifSettings>(DEFAULT_SETTINGS);
+  const [pushNote, setPushNote] = useState('');
 
   useEffect(() => {
     if (!user || !open) return;
@@ -224,8 +226,19 @@ export function NotificationSettingsModal({ open, onClose }: Props) {
 
             <div className="ns-section-head">🔔 Push</div>
             <div className="ns-row">
-              <div className="ns-label">Browser Push Notifications<div className="ns-sub">OS-level alerts (requires permission)</div></div>
-              <Toggle checked={settings.browserPush} onChange={(v) => set('browserPush', v)} />
+              <div className="ns-label">Browser Push Notifications<div className="ns-sub">{pushNote || 'OS-level alerts while this tab is in the background (requires permission)'}</div></div>
+              <Toggle checked={settings.browserPush} onChange={async (v) => {
+                setPushNote('');
+                if (v) {
+                  const perm = await requestPushPermission();
+                  if (perm !== 'granted') {
+                    setPushNote(perm === 'unsupported' ? 'This browser does not support notifications.' : 'Permission was not granted — allow notifications for this site in the browser settings.');
+                    set('browserPush', false);
+                    return;
+                  }
+                }
+                set('browserPush', v);
+              }} />
             </div>
 
             {/* Snooze */}
