@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   profile: { display_name: 'Nishant Kumar', optional_subject: 'none', attempt: 3 } as Record<string, unknown>,
   signOut: vi.fn(),
   toggleTheme: vi.fn(),
+  user: { id: 'u1', email: 'a@b.c' },
   alerts: [] as { id: string; type: string; message: string }[],
   dismiss: vi.fn(),
 }));
@@ -23,7 +24,7 @@ vi.mock('../lib/supabase', () => {
   return { supabase: { from: () => q, auth: { getSession: async () => ({ data: { session: null } }) } }, isSupabaseConfigured: true };
 });
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u1', email: 'a@b.c' }, signOut: h.signOut }),
+  useAuth: () => ({ user: h.user, signOut: h.signOut }),
 }));
 vi.mock('../context/ThemeContext', () => ({ useTheme: () => ({ theme: 'dark', toggle: h.toggleTheme }) }));
 vi.mock('../hooks/useProfile', () => ({
@@ -287,6 +288,25 @@ describe('Layout — account settings (same actions as the old Settings dropdown
     await screen.findByText('MASTER-VIEW');
     openMenu(); pick('Strengths & Weaknesses');
     await waitFor(() => expect(screen.getByText('SWWIDGET-OPEN')).toBeInTheDocument());
+  });
+});
+
+describe('Layout — Home insight cards', () => {
+  it('shows the daily goal/heatmap card and the work-on-this-next card on Home only', async () => {
+    render(<Layout />);
+    expect(screen.getByText('Daily Goal & Study Activity')).toBeInTheDocument();
+    expect(screen.getByText('🎯 Work on this next')).toBeInTheDocument();
+    expect(document.getElementById('view-marathon')).toContainElement(document.querySelector('.home-insights') as HTMLElement);
+    openMenu(); pick('1. Syllabus');
+    await screen.findByText('SYLLABUS-VIEW:prelims');
+    expect(screen.queryByText('Daily Goal & Study Activity')).not.toBeInTheDocument();
+  });
+
+  it('a suggested topic opens the Syllabus page', async () => {
+    render(<Layout />);
+    const first = document.querySelector('.focus-next-list button') as HTMLElement;
+    fireEvent.click(first);
+    expect(await screen.findByText('SYLLABUS-VIEW:prelims')).toBeInTheDocument();
   });
 });
 

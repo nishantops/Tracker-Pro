@@ -59,7 +59,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
   useEffect(() => () => setLayoutLocked(true), []);
 
   // Free-ratio width/height of the whole panel (saved per user on this device)
-  const box = useBoxResize(user ? `upsc_pie_size_${user.id}` : null, locked);
+  const box = useBoxResize(user ? `upsc_pie_size_${user.id}` : null, locked, user ? { userId: user.id, key: 'pie_size' } : undefined);
   const resetAll = () => { reset(); box.clear(); };
 
   // ── Measure container for RGL ─────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { loadCloudPref, saveCloudPref } from '../lib/cloudPrefs';
 
 export interface Geom { x: number; y: number; w: number; h: number }
 export type Handle = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -22,8 +23,12 @@ function read(key: string | null): Geom | null {
   return null;
 }
 
+const validGeom = (g: unknown): g is Geom =>
+  !!g && typeof g === 'object' && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite((g as Record<string, unknown>)[k]));
+
 // Free move + free-ratio resize inside the parent element. null geometry = docked in the normal layout.
-export function useFloatingPanel(storageKey: string | null, locked: boolean) {
+// `cloud` also saves the position to the user's account so it follows them across devices.
+export function useFloatingPanel(storageKey: string | null, locked: boolean, cloud?: { userId: string; key: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [geom, setGeom] = useState<Geom | null>(() => read(storageKey));
   const [wide, setWide] = useState(isWide);
@@ -39,12 +44,36 @@ export function useFloatingPanel(storageKey: string | null, locked: boolean) {
   }, []);
 
   const persist = useCallback((g: Geom | null) => {
-    if (!storageKey) return;
-    try {
-      if (g) localStorage.setItem(storageKey, JSON.stringify(g));
-      else localStorage.removeItem(storageKey);
-    } catch { /* ignore */ }
-  }, [storageKey]);
+    if (storageKey) {
+      try {
+        if (g) localStorage.setItem(storageKey, JSON.stringify(g));
+        else localStorage.removeItem(storageKey);
+      } catch { /* ignore */ }
+    }
+    if (cloud) saveCloudPref(cloud.userId, cloud.key, g ?? { docked: true });
+  }, [storageKey, cloud?.userId, cloud?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pull the saved position from the account (another device may have set it); push local one up if none exists yet
+  useEffect(() => {
+    if (!cloud) return;
+    let cancelled = false;
+    loadCloudPref<Geom | { docked: true }>(cloud.userId, cloud.key).then((r) => {
+      if (cancelled || !r.ok) return;
+      if (r.found) {
+        if (validGeom(r.value)) {
+          setGeom(r.value);
+          if (storageKey) { try { localStorage.setItem(storageKey, JSON.stringify(r.value)); } catch { /* ignore */ } }
+        } else {
+          setGeom(null);
+          if (storageKey) { try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }
+        }
+      } else {
+        const local = read(storageKey);
+        if (local) saveCloudPref(cloud.userId, cloud.key, local);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [cloud?.userId, cloud?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startGesture = useCallback((e: React.PointerEvent, mode: Handle) => {
     if (locked || !wide || e.button > 0) return;

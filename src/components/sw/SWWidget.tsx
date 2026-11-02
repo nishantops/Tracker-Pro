@@ -30,7 +30,7 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
 
   // Move/resize is unlocked together with the Sectional Pie matrix (same lock, always locked on load)
   const [locked] = useLayoutLocked();
-  const panel = useFloatingPanel(user ? `upsc_sw_geom_${user.id}` : null, locked);
+  const panel = useFloatingPanel(user ? `upsc_sw_geom_${user.id}` : null, locked, user ? { userId: user.id, key: 'sw_geom' } : undefined);
 
   // The grid slot reserves room for the panel so the Pie panel below is pushed down instead of being covered.
   // The three top cards are untouched. Only applies while the panel sits in the top row region.
@@ -100,6 +100,7 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
       if (next) {
         setData(next);
         try { localStorage.setItem(cacheKey, JSON.stringify(next)); } catch { /* ignore */ }
+        window.dispatchEvent(new Event('upsc-sw-changed'));
       }
     };
     load();
@@ -109,6 +110,7 @@ export function SWWidget({ externalOpen, onExternalClose }: { externalOpen?: boo
     setData(updated);
     if (!user) return;
     try { localStorage.setItem(`upsc_sw_${user.id}`, JSON.stringify(updated)); } catch { /* ignore */ }
+    window.dispatchEvent(new Event('upsc-sw-changed'));
 
     const { error } = await supabase.from('upsc_user_sw').upsert(
       { user_id: user.id, strengths: updated.strengths, weaknesses: updated.weaknesses, show_sw: updated.show_sw },

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 
 vi.mock('../../lib/supabase', () => {
   const q: unknown = new Proxy({}, {
@@ -10,6 +10,8 @@ vi.mock('../../lib/supabase', () => {
   return { supabase: { from: () => q } };
 });
 const stableUser = vi.hoisted(() => ({ id: 'u1' }));
+const cp = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn() }));
+vi.mock('../../lib/cloudPrefs', () => ({ loadCloudPref: cp.load, saveCloudPref: cp.save }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: stableUser }) }));
 vi.mock('../common/Toast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
@@ -25,6 +27,8 @@ let rectSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   localStorage.clear();
   setLayoutLocked(true);
+  cp.load.mockReset().mockResolvedValue({ ok: true, found: false, value: null });
+  cp.save.mockReset();
   rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const r = this.id === 'sw-widget'
       ? { left: 700, top: 100, width: 300, height: 200 }
@@ -60,6 +64,56 @@ describe('SWWidget — locked (default)', () => {
     fireEvent.pointerMove(window, { clientX: 400, clientY: 400 });
     expect(widget()).not.toHaveClass('sw-floating');
     expect(widget().getAttribute('style')).toBeNull();
+  });
+});
+
+describe('SWWidget — position follows you across devices', () => {
+  it('saves a drag to the account', () => {
+    render(<SWWidget />);
+    act(() => { setLayoutLocked(false); });
+    fireEvent.pointerDown(header(), { clientX: 710, clientY: 110 });
+    fireEvent.pointerMove(window, { clientX: 410, clientY: 360 });
+    fireEvent.pointerUp(window);
+    expect(cp.save).toHaveBeenLastCalledWith('u1', 'sw_geom', { x: 400, y: 350, w: 300, h: 200 });
+  });
+
+  it('saving Dock records "docked" in the account (so other devices dock too)', () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 0, y: 10, w: 300, h: 200 }));
+    render(<SWWidget />);
+    act(() => { setLayoutLocked(false); });
+    fireEvent.click(screen.getByTitle('Return to the default position'));
+    expect(cp.save).toHaveBeenLastCalledWith('u1', 'sw_geom', { docked: true });
+  });
+
+  it('applies a position saved from another device', async () => {
+    cp.load.mockResolvedValue({ ok: true, found: true, value: { x: 50, y: 60, w: 320, h: 240 } });
+    render(<SWWidget />);
+    await waitFor(() => expect(widget()).toHaveClass('sw-floating'));
+    expect(widget().style.top).toBe('60px');
+    expect(JSON.parse(localStorage.getItem(GEOM_KEY)!)).toEqual({ x: 50, y: 60, w: 320, h: 240 });
+  });
+
+  it('docks when another device docked it', async () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 0, y: 10, w: 300, h: 200 }));
+    cp.load.mockResolvedValue({ ok: true, found: true, value: { docked: true } });
+    render(<SWWidget />);
+    await waitFor(() => expect(widget()).not.toHaveClass('sw-floating'));
+    expect(localStorage.getItem(GEOM_KEY)).toBeNull();
+  });
+
+  it('uploads the local position the first time the account has none', async () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 5, y: 6, w: 300, h: 200 }));
+    render(<SWWidget />);
+    await waitFor(() => expect(cp.save).toHaveBeenCalledWith('u1', 'sw_geom', { x: 5, y: 6, w: 300, h: 200 }));
+  });
+
+  it('keeps working from the local copy if the account is unreachable', async () => {
+    localStorage.setItem(GEOM_KEY, JSON.stringify({ x: 5, y: 6, w: 300, h: 200 }));
+    cp.load.mockResolvedValue({ ok: false, found: false, value: null });
+    render(<SWWidget />);
+    await act(async () => { await Promise.resolve(); });
+    expect(widget()).toHaveClass('sw-floating');
+    expect(cp.save).not.toHaveBeenCalled();
   });
 });
 

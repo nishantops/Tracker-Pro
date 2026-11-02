@@ -238,6 +238,7 @@ export function useFocus() {
 
     // Add to daily total in DB
     await addToDailyTotal(user.id, totalDur);
+    window.dispatchEvent(new Event('upsc-focus-saved'));
 
     // Delete the active session row (only daily totals persist)
     if (!id.startsWith('local-')) {

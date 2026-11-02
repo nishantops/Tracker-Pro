@@ -11,6 +11,8 @@ import { SWWidget } from './sw/SWWidget';
 import { NavMenu, type AppPage } from './nav/NavMenu';
 import { MotivationalQuote } from './common/MotivationalQuote';
 import { NotificationToasts } from './modals/NotificationToasts';
+import { StudyActivity } from './home/StudyActivity';
+import { FocusNext } from './home/FocusNext';
 import { useNotifAlerts } from '../hooks/useNotifAlerts';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
@@ -333,6 +335,10 @@ export function Layout() {
             <Countdown />
             <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
             <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />
+            <div className="home-insights">
+              <StudyActivity />
+              <FocusNext progress={progress} onOpenSyllabus={() => goPage('syllabus')} />
+            </div>
           </div>
         )}
 

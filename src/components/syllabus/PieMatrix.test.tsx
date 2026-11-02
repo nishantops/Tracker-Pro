@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   reset: vi.fn(),
@@ -18,6 +18,8 @@ vi.mock('../../hooks/useTracker', () => ({ useTracker: () => ({ progress: h.prog
 vi.mock('../../hooks/useProfile', () => ({ useProfile: () => ({ profile: h.profile }) }));
 vi.mock('../../hooks/usePieLayouts', () => ({ usePieLayouts: () => ({ layout: h.layout, onLayoutChange: vi.fn(), reset: h.reset }) }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: h.user }) }));
+const cp = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn() }));
+vi.mock('../../lib/cloudPrefs', () => ({ loadCloudPref: cp.load, saveCloudPref: cp.save }));
 
 import { PieMatrix } from './PieMatrix';
 import { isLayoutLocked, setLayoutLocked } from '../../lib/layoutLock';
@@ -36,6 +38,8 @@ beforeEach(() => {
   });
   localStorage.clear();
   setLayoutLocked(true);
+  cp.load.mockReset().mockResolvedValue({ ok: true, found: false, value: null });
+  cp.save.mockReset();
   h.reset.mockClear();
   spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const isCard = this.classList.contains('neo-card');
@@ -151,6 +155,47 @@ describe('PieMatrix — free-ratio resize of the whole panel', () => {
     expect(localStorage.getItem(KEY)).toBeNull();
     expect(card().style.width).toBe('');
     expect(card().style.height).toBe('');
+  });
+});
+
+describe('PieMatrix — size follows you across devices', () => {
+  it('saves a resize to the account', () => {
+    render(<PieMatrix />);
+    fireEvent.click(lockBtn());
+    fireEvent.pointerDown(document.querySelector('.pie-rh-se')!, { clientX: 800, clientY: 400 });
+    fireEvent.pointerMove(window, { clientX: 950, clientY: 500 });
+    fireEvent.pointerUp(window);
+    expect(cp.save).toHaveBeenLastCalledWith('u1', 'pie_size', { w: 950, h: 500 });
+  });
+
+  it('RESET saves the default size to the account', () => {
+    localStorage.setItem(KEY, JSON.stringify({ w: 640, h: 380 }));
+    render(<PieMatrix />);
+    fireEvent.click(screen.getByText(/RESET/));
+    expect(cp.save).toHaveBeenLastCalledWith('u1', 'pie_size', { w: null, h: null });
+  });
+
+  it('applies a size saved from another device', async () => {
+    cp.load.mockResolvedValue({ ok: true, found: true, value: { w: 700, h: 420 } });
+    render(<PieMatrix />);
+    await waitFor(() => expect(card().style.width).toBe('700px'));
+    expect(card().style.height).toBe('420px');
+    expect(JSON.parse(localStorage.getItem(KEY)!)).toEqual({ w: 700, h: 420 });
+  });
+
+  it('uploads the local size the first time the account has none', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ w: 640, h: 380 }));
+    render(<PieMatrix />);
+    await waitFor(() => expect(cp.save).toHaveBeenCalledWith('u1', 'pie_size', { w: 640, h: 380 }));
+  });
+
+  it('keeps the local size if the account is unreachable', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ w: 640, h: 380 }));
+    cp.load.mockResolvedValue({ ok: false, found: false, value: null });
+    render(<PieMatrix />);
+    await act(async () => { await Promise.resolve(); });
+    expect(card().style.width).toBe('640px');
+    expect(cp.save).not.toHaveBeenCalled();
   });
 });
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { loadCloudPref, saveCloudPref } from '../lib/cloudPrefs';
 
 export interface BoxSize { w: number | null; h: number | null }
 export type BoxDir = 'e' | 's' | 'se';
@@ -17,19 +18,45 @@ function read(key: string | null): BoxSize {
 }
 
 // Free-ratio width/height resize for an in-flow box anchored at its top-left corner.
-export function useBoxResize(storageKey: string | null, locked: boolean) {
+export function useBoxResize(storageKey: string | null, locked: boolean, cloud?: { userId: string; key: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<BoxSize>(() => read(storageKey));
 
   useEffect(() => { setSize(read(storageKey)); }, [storageKey]);
 
   const persist = useCallback((s: BoxSize) => {
-    if (!storageKey) return;
-    try {
-      if (s.w == null && s.h == null) localStorage.removeItem(storageKey);
-      else localStorage.setItem(storageKey, JSON.stringify(s));
-    } catch { /* ignore */ }
-  }, [storageKey]);
+    if (storageKey) {
+      try {
+        if (s.w == null && s.h == null) localStorage.removeItem(storageKey);
+        else localStorage.setItem(storageKey, JSON.stringify(s));
+      } catch { /* ignore */ }
+    }
+    if (cloud) saveCloudPref(cloud.userId, cloud.key, s);
+  }, [storageKey, cloud?.userId, cloud?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pull the saved size from the account; push the local one up if the account has none yet
+  useEffect(() => {
+    if (!cloud) return;
+    let cancelled = false;
+    loadCloudPref<BoxSize>(cloud.userId, cloud.key).then((r) => {
+      if (cancelled || !r.ok) return;
+      if (r.found && r.value) {
+        const ok = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? n : null);
+        const next = { w: ok(r.value.w), h: ok(r.value.h) };
+        setSize(next);
+        if (storageKey) {
+          try {
+            if (next.w == null && next.h == null) localStorage.removeItem(storageKey);
+            else localStorage.setItem(storageKey, JSON.stringify(next));
+          } catch { /* ignore */ }
+        }
+      } else if (!r.found) {
+        const local = read(storageKey);
+        if (local.w != null || local.h != null) saveCloudPref(cloud.userId, cloud.key, local);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [cloud?.userId, cloud?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startResize = useCallback((e: React.PointerEvent, dir: BoxDir) => {
     if (locked || e.button > 0) return;
