@@ -185,7 +185,12 @@ export function Layout() {
             />
             <div
               id="user-avatar"
-              className="h-9 w-9 xl:h-11 xl:w-11 2xl:h-12 2xl:w-12 shrink-0 rounded-xl 2xl:rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-sm xl:text-base 2xl:text-lg tracking-tighter shadow-lg shadow-violet-500/30 glow-violet"
+              role="button"
+              tabIndex={0}
+              title="Go to Home"
+              onClick={() => goPage('home')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goPage('home'); } }}
+              className="cursor-pointer h-9 w-9 xl:h-11 xl:w-11 2xl:h-12 2xl:w-12 shrink-0 rounded-xl 2xl:rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-sm xl:text-base 2xl:text-lg tracking-tighter shadow-lg shadow-violet-500/30 glow-violet"
             >
               {initials}
             </div>
