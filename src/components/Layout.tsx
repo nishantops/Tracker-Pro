@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback, useRef, Suspense, lazy } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { ENV } from '../lib/env';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -10,7 +9,6 @@ import { Countdown } from './Countdown';
 import { PieMatrix } from './syllabus/PieMatrix';
 import { SWWidget } from './sw/SWWidget';
 import { NavMenu, type AppPage } from './nav/NavMenu';
-import { HomeGreeting } from './home/HomeGreeting';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
 const PlansGrid     = lazy(() => import('./plans/PlansGrid').then((m) => ({ default: m.PlansGrid })));
@@ -39,7 +37,6 @@ export function Layout() {
   const { profile, initials, features } = useProfile();
   const { syncStatus } = useTracker();
   const { trackTabSwitch } = useMetrics();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
@@ -129,19 +126,10 @@ export function Layout() {
     return () => clearInterval(id);
   }, []);
 
-  // Close menu on outside click
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-  useEffect(() => {
-    if (!menuOpen) return;
-    document.addEventListener('click', closeMenu);
-    return () => document.removeEventListener('click', closeMenu);
-  }, [menuOpen, closeMenu]);
-
   // ESC closes topmost open modal/panel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (menuOpen) { setMenuOpen(false); return; }
       if (notifPanelOpen) { setNotifPanelOpen(false); return; }
       if (profileModalOpen) { setProfileModalOpen(false); return; }
       if (notifSettingsOpen) { setNotifSettingsOpen(false); return; }
@@ -152,7 +140,7 @@ export function Layout() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [menuOpen, notifPanelOpen, profileModalOpen, notifSettingsOpen, aboutOpen, clearProgressOpen, customTopicOpen, swManagerOpen]);
+  }, [notifPanelOpen, profileModalOpen, notifSettingsOpen, aboutOpen, clearProgressOpen, customTopicOpen, swManagerOpen]);
 
   const optLabel =
     profile?.optional_subject && profile.optional_subject !== 'none'
@@ -181,6 +169,20 @@ export function Layout() {
 
           {/* Left: Avatar + Name + Sync — always fully visible */}
           <div className="flex items-center gap-2 xl:gap-3 min-w-0">
+            <NavMenu
+              active={activePage}
+              onNavigate={goPage}
+              showPyq={features.pyq !== false}
+              showPlans={features.plans !== false}
+              showSources={features.sources !== false}
+              settingsItems={[
+                { icon: '✏️', label: 'Update Profile', onClick: () => setProfileModalOpen(true) },
+                { icon: '💡', label: 'Strengths & Weaknesses', onClick: () => { setShowHome(true); setSWManagerOpen(true); } },
+                { icon: '🔔', label: 'Notification Settings', onClick: () => setNotifSettingsOpen(true) },
+                { icon: 'ℹ️', label: 'About & Contact Admin', onClick: () => setAboutOpen(true) },
+                { icon: '⏻', label: 'Sign Out', onClick: () => setShowLogoutConfirm(true), danger: true },
+              ]}
+            />
             <div
               id="user-avatar"
               className="h-9 w-9 xl:h-11 xl:w-11 2xl:h-12 2xl:w-12 shrink-0 rounded-xl 2xl:rounded-2xl bg-gradient-to-tr from-violet-600 via-fuchsia-500 to-orange-400 flex items-center justify-center font-black text-white text-sm xl:text-base 2xl:text-lg tracking-tighter shadow-lg shadow-violet-500/30 glow-violet"
@@ -209,13 +211,6 @@ export function Layout() {
                 )}
               </div>
             </div>
-            <NavMenu
-              active={activePage}
-              onNavigate={goPage}
-              showPyq={features.pyq !== false}
-              showPlans={features.plans !== false}
-              showSources={features.sources !== false}
-            />
           </div>
 
           {/* Right: Date + Focus + Bell + Theme + Settings — always visible, wraps on tiny screens */}
@@ -285,95 +280,6 @@ export function Layout() {
             <button id="theme-toggle" onClick={toggle} title="Toggle light/dark mode">
               <span id="theme-toggle-icon">{theme === 'dark' ? '☀️' : '🌙'}</span>
             </button>
-
-            {/* Settings */}
-            <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-              <button
-                id="header-settings-btn"
-                onClick={() => setMenuOpen((o) => !o)}
-                title="Settings"
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  background: 'var(--surf)',
-                  border: '1px solid var(--bdr)',
-                  borderRadius: '0.65rem',
-                  padding: 'clamp(0.25rem, 0.5vw, 0.45rem) clamp(0.5rem, 1vw, 0.9rem) clamp(0.25rem, 0.5vw, 0.45rem) clamp(0.35rem, 0.6vw, 0.6rem)',
-                  cursor: 'pointer',
-                  color: 'var(--t3)',
-                  fontSize: 'clamp(0.55rem, 0.75vw, 0.85rem)',
-                  fontWeight: 800,
-                  fontFamily: 'var(--mono)',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                <span
-                  id="header-settings-avatar"
-                  style={{
-                    width: 'clamp(1.4rem, 1.8vw, 2rem)',
-                    height: 'clamp(1.4rem, 1.8vw, 2rem)',
-                    borderRadius: '0.4rem',
-                    background: 'linear-gradient(135deg,#7c3aed,#db2777)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 'clamp(0.55rem, 0.7vw, 0.8rem)',
-                    fontWeight: 900,
-                    color: '#fff',
-                  }}
-                >
-                  {initials}
-                </span>
-                <span className="header-settings-text">⚙ SETTINGS</span>
-              </button>
-
-              {menuOpen && createPortal(
-                <div
-                  id="profile-menu"
-                  className="profile-menu"
-                  style={{ position: 'fixed', top: 68, right: 16, minWidth: 220, zIndex: 99999 }}
-                >
-                  <div
-                    style={{
-                      padding: '0.5rem 0.85rem 0.4rem',
-                      fontSize: '0.6rem',
-                      fontWeight: 800,
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'var(--t3)',
-                      fontFamily: 'var(--mono)',
-                      borderBottom: '1px solid var(--bdr)',
-                      marginBottom: '0.3rem',
-                    }}
-                  >
-                    Account Settings
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setProfileModalOpen(true);
-                    }}
-                  >
-                    ✏️ Update Profile
-                  </button>
-                  <button onClick={() => { setMenuOpen(false); setShowHome(true); setSWManagerOpen(true); }}>
-                    💡 Strengths &amp; Weaknesses
-                  </button>
-                  <button onClick={() => { setMenuOpen(false); setNotifSettingsOpen(true); }}>
-                    🔔 Notification Settings
-                  </button>
-                  <button onClick={() => { setMenuOpen(false); setAboutOpen(true); }}>
-                    ℹ️ About &amp; Contact Admin
-                  </button>
-                  <div style={{ borderTop: '1px solid var(--bdr)', margin: '0.3rem 0' }} />
-                  <button onClick={() => { setMenuOpen(false); setShowLogoutConfirm(true); }} style={{ color: '#dc2626' }}>
-                    ⏻ Sign Out
-                  </button>
-                </div>
-              , document.body)}
-            </div>
           </div>
 
         </div>
@@ -383,8 +289,7 @@ export function Layout() {
       <main className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-8 flex-1 space-y-8">
         {/* ── HOME DASHBOARD ─────────────────────────────────── */}
         {showHome && (
-          <div id="view-home" className="root-pane-view space-y-8">
-            <HomeGreeting name={displayName} />
+          <div id="view-marathon" className="root-pane-view space-y-8">
             <Countdown onClearProgress={() => setClearProgressOpen(true)} />
             <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
             <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />

@@ -7,15 +7,18 @@ export type AppPage =
 
 interface Item { page: AppPage; icon: string; label: string }
 
+interface SettingsItem { icon: string; label: string; onClick: () => void; danger?: boolean }
+
 interface Props {
   active: AppPage;
   onNavigate: (page: AppPage) => void;
   showPyq: boolean;
   showPlans: boolean;
   showSources: boolean;
+  settingsItems: SettingsItem[];
 }
 
-export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources }: Props) {
+export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources, settingsItems }: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -80,11 +83,10 @@ export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources }:
         onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Open navigation"
+        aria-label="Open menu"
+        title={`Menu — ${current.label}`}
       >
-        <span className="nav-menu-icon">{current.icon}</span>
-        <span className="nav-menu-current">{current.label}</span>
-        <span className="nav-menu-caret">▾</span>
+        <span className="nav-menu-burger" aria-hidden="true"><i /><i /><i /></span>
       </button>
       {open && createPortal(
         <>
@@ -98,6 +100,19 @@ export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources }:
                 {planner.map(renderItem)}
               </>
             )}
+            <div className="nav-menu-heading">Account Settings</div>
+            {settingsItems.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                className="nav-menu-item"
+                style={s.danger ? { color: '#dc2626' } : undefined}
+                onClick={() => { setOpen(false); s.onClick(); }}
+              >
+                <span className="nav-menu-icon">{s.icon}</span>
+                <span>{s.label}</span>
+              </button>
+            ))}
           </nav>
         </>,
         document.body,
