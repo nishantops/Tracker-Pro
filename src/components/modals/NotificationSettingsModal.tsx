@@ -23,6 +23,7 @@ interface NotifSettings {
   absorptionPct: number;
   streak: boolean;
   streakDays: number;
+  revision: boolean;
   daily: boolean;
   dailyTime: string;
   evening: boolean;
@@ -50,6 +51,7 @@ const DEFAULT_SETTINGS: NotifSettings = {
   absorptionPct: 15,
   streak: true,
   streakDays: 1,
+  revision: false,
   daily: false,
   dailyTime: '09:00',
   evening: false,
@@ -173,6 +175,12 @@ export function NotificationSettingsModal({ open, onClose }: Props) {
                 <Toggle checked={settings.streak} onChange={(v) => set('streak', v)} />
                 <input type="number" min={1} max={7} value={settings.streakDays} onChange={(e) => set('streakDays', +e.target.value)} className="ns-input" style={{ width: '3.5rem' }} />
               </div>
+            </div>
+
+            {/* Reminders */}
+            <div className="ns-row">
+              <div className="ns-label">Spaced Revision Reminders<div className="ns-sub">Nudge to revise studied topics after 1, 7 and 30 days</div></div>
+              <Toggle checked={settings.revision} onChange={(v) => set('revision', v)} />
             </div>
 
             {/* Reminders */}

@@ -1,11 +1,14 @@
 import { supabase } from './supabase';
 import { ENV } from './env';
+import { STAGES } from '../data/syllabus';
+import { dueRevisions, loadRevisionDone, revisionAlertParts, type CheckedRow } from './revision';
 
 export interface Alert {
   id: string;
   type: string;
   message: string;
   subtext?: string;
+  revisions?: { id: string; stage: number }[];
 }
 
 export interface NotifPrefs {
@@ -17,6 +20,7 @@ export interface NotifPrefs {
   mainsCountdown: boolean; mainsDays: number;
   lowAbsorption: boolean; absorptionPct: number;
   streak: boolean; streakDays: number;
+  revision: boolean;
   daily: boolean; dailyTime: string;
   evening: boolean; eveningTime: string;
   customReminder: boolean; customText: string; customTime: string;
@@ -33,6 +37,7 @@ export const DEFAULT_PREFS: NotifPrefs = {
   mainsCountdown: true, mainsDays: 30,
   lowAbsorption: false, absorptionPct: 15,
   streak: false, streakDays: 1,
+  revision: false,
   daily: false, dailyTime: '09:00',
   evening: false, eveningTime: '21:00',
   customReminder: false, customText: '', customTime: '14:00',
@@ -48,7 +53,7 @@ export interface PlanRow {
   notif_enabled: boolean | null;
 }
 
-export interface NotifData { prefs: NotifPrefs; plans: PlanRow[] }
+export interface NotifData { prefs: NotifPrefs; plans: PlanRow[]; checked?: CheckedRow[] }
 
 // ── Snooze (24h default) and "attended today" for time-based reminders ───────
 export function isSnoozed(key: string): boolean {
@@ -102,7 +107,12 @@ export async function fetchNotifData(userId: string): Promise<NotifData> {
     supabase.from('upsc_custom_plans').select('plan_id,plan_title,start_date,end_date,notif_enabled').eq('user_id', userId),
   ]);
   const prefs = { ...DEFAULT_PREFS, ...((profileRow?.notif_settings as Partial<NotifPrefs> | null) ?? {}) };
-  return { prefs, plans: (plans as PlanRow[] | null) ?? [] };
+  let checked: CheckedRow[] | undefined;
+  if (prefs.revision) {
+    const { data } = await supabase.from('upsc_tracker_progress').select('id,updated_at').eq('user_id', userId).eq('is_checked', true).limit(5000);
+    checked = ((data as CheckedRow[] | null) ?? []).filter((r) => r.id.startsWith('uid-'));
+  }
+  return { prefs, plans: (plans as PlanRow[] | null) ?? [], checked };
 }
 
 type ProgressLike = Map<string, { id: string; is_checked: boolean }> | undefined;
@@ -180,6 +190,13 @@ export function buildAlerts(data: NotifData, progress: ProgressLike, now = new D
         const dStr = hoursSince >= 48 ? `${Math.floor(hoursSince / 24)} days` : `${Math.round(hoursSince)}h`;
         out.push({ id: 'streak', type: 'streak', message: `🔥 No focus session for ${dStr}. Keep the momentum going!` });
       }
+    }
+  }
+
+  if (prefs.revision && data.checked && !isSnoozed('revision_due')) {
+    const due = dueRevisions(data.checked, STAGES, loadRevisionDone(), now);
+    if (due.length > 0) {
+      out.push({ id: 'revision_due', type: 'revision', ...revisionAlertParts(due), revisions: due.map((d) => ({ id: d.id, stage: d.stage })) });
     }
   }
 

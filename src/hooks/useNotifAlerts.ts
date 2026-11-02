@@ -4,6 +4,7 @@ import {
   ackToday, buildAlerts, DEFAULT_PREFS, fetchNotifData, REMINDER_IDS, snooze,
   type Alert, type NotifData,
 } from '../lib/notifEngine';
+import { markRevised } from '../lib/revision';
 
 type ProgressLike = Map<string, { id: string; is_checked: boolean }> | undefined;
 
@@ -17,6 +18,8 @@ export function useNotifAlerts(user: User | null, progress: ProgressLike) {
   const dataRef = useRef<{ data: NotifData; ts: number } | null>(null);
   const progressRef = useRef(progress);
   progressRef.current = progress;
+  const alertsRef = useRef<Alert[]>([]);
+  alertsRef.current = alerts;
 
   const recompute = useCallback(() => {
     const cached = dataRef.current;
@@ -47,9 +50,11 @@ export function useNotifAlerts(user: User | null, progress: ProgressLike) {
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
   }, [user, refresh]);
 
-  // hours omitted: reminders count as attended for today, others snooze for the default duration
+  // hours omitted: reminders count as attended for today, revision alerts mark their topics as revised, others snooze
   const dismiss = useCallback((id: string, hours?: number) => {
-    if (hours === undefined && REMINDER_IDS.includes(id)) ackToday(id);
+    const revisions = hours === undefined && id === 'revision_due' ? alertsRef.current.find((a) => a.id === id)?.revisions : undefined;
+    if (revisions) markRevised(revisions);
+    else if (hours === undefined && REMINDER_IDS.includes(id)) ackToday(id);
     else snooze(id, hours ?? dataRef.current?.data.prefs.snoozeDuration ?? DEFAULT_PREFS.snoozeDuration);
     setAlerts((a) => a.filter((x) => x.id !== id));
   }, []);
