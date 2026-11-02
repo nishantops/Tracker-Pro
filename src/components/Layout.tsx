@@ -9,6 +9,8 @@ import { ProfileModal } from './ProfileModal';
 import { Countdown } from './Countdown';
 import { PieMatrix } from './syllabus/PieMatrix';
 import { SWWidget } from './sw/SWWidget';
+import { Sidebar, type AppPage } from './nav/Sidebar';
+import { HomeShortcuts } from './home/HomeShortcuts';
 // ── Lazy-load all heavy view-level components (split into separate chunks) ──
 const SyllabusView  = lazy(() => import('./syllabus/SyllabusView').then((m) => ({ default: m.SyllabusView })));
 const PlansGrid     = lazy(() => import('./plans/PlansGrid').then((m) => ({ default: m.PlansGrid })));
@@ -26,9 +28,6 @@ const CustomTopicModal   = lazy(() => import('./modals/CustomTopicModal').then((
 import {
   DEFAULT_NAV,
   type NavState,
-  type RootTab,
-  type MarathonTab,
-  type PlannerTab,
   type StageTab,
 } from '../lib/navigation';
 import { useMetrics } from '../hooks/useMetrics';
@@ -50,6 +49,7 @@ export function Layout() {
   const [customTopicOpen, setCustomTopicOpen] = useState(false);
   const [swManagerOpen, setSWManagerOpen] = useState(false);
   const [nav, setNav] = useState<NavState>(DEFAULT_NAV);
+  const [showHome, setShowHome] = useState(true);
   const [dateStr, setDateStr] = useState('---');
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
@@ -74,26 +74,37 @@ export function Layout() {
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
 
-  const setRoot = (root: RootTab) => { setNav((n) => ({ ...n, root })); trackTabSwitch(root); };
-  const setMarathon = (marathon: MarathonTab) => { setNav((n) => ({ ...n, marathon })); trackTabSwitch(marathon); };
-  const setPlanner = (planner: PlannerTab) => { setNav((n) => ({ ...n, planner })); trackTabSwitch(planner); };
   const setStage = (stage: StageTab) => { setNav((n) => ({ ...n, stage })); trackTabSwitch(stage); };
 
-  // Browser Back/Forward steps through tabs instead of leaving (and reloading) the app
+  const activePage: AppPage = showHome ? 'home' : nav.root === 'planner' ? nav.planner : nav.marathon;
+  const goPage = (page: AppPage) => {
+    trackTabSwitch(page);
+    if (page === 'home') { setShowHome(true); return; }
+    setShowHome(false);
+    if (page === 'master' || page === 'plans' || page === 'sources') {
+      setNav((n) => ({ ...n, root: 'planner', planner: page }));
+    } else {
+      setNav((n) => ({ ...n, root: 'marathon', marathon: page }));
+    }
+  };
+
+  // Browser Back/Forward steps through pages instead of leaving (and reloading) the app
   const navHistoryRef = useRef<string>('');
   useEffect(() => {
-    const key = JSON.stringify(nav);
+    const key = JSON.stringify({ nav, showHome });
     if (navHistoryRef.current === key) return;
-    if (navHistoryRef.current === '') window.history.replaceState({ upscNav: nav }, '');
-    else window.history.pushState({ upscNav: nav }, '');
+    if (navHistoryRef.current === '') window.history.replaceState({ upscNav: nav, upscHome: showHome }, '');
+    else window.history.pushState({ upscNav: nav, upscHome: showHome }, '');
     navHistoryRef.current = key;
-  }, [nav]);
+  }, [nav, showHome]);
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
       const prev = e.state?.upscNav as NavState | undefined;
       if (!prev) return;
-      navHistoryRef.current = JSON.stringify(prev);
+      const home = e.state?.upscHome !== false;
+      navHistoryRef.current = JSON.stringify({ nav: prev, showHome: home });
       setNav(prev);
+      setShowHome(home);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -340,7 +351,7 @@ export function Layout() {
                   >
                     ✏️ Update Profile
                   </button>
-                  <button onClick={() => { setMenuOpen(false); setRoot('marathon'); setSWManagerOpen(true); }}>
+                  <button onClick={() => { setMenuOpen(false); setShowHome(true); setSWManagerOpen(true); }}>
                     💡 Strengths &amp; Weaknesses
                   </button>
                   <button onClick={() => { setMenuOpen(false); setNotifSettingsOpen(true); }}>
@@ -362,99 +373,28 @@ export function Layout() {
       </header>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
-      <main className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-10 xl:px-16 2xl:px-24 py-8 flex-1 space-y-8">
-        {/* ── Root Tabs: Marathon / Planner ──────────────────── */}
-        <div className="flex flex-row gap-2 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 backdrop-blur-lg rounded-2xl shadow-lg" style={{ background: 'var(--card)', border: '1px solid var(--bdr)', boxShadow: '0 4px 16px var(--accent-glow)' }}>
-          <button
-            id="btn-root-marathon"
-            onClick={() => setRoot('marathon')}
-            className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all heading-font ${
-              nav.root === 'marathon'
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 border border-indigo-500'
-                : 'border border-transparent'
-            }`}
-            style={nav.root !== 'marathon' ? { color: 'var(--t2)' } : {}}
-          >
-            ⚔️ Marathon Tracker
-          </button>
-          {features.plans !== false && (
-            <button
-              id="btn-root-planner"
-              onClick={() => setRoot('planner')}
-              className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest transition-all heading-font ${
-                nav.root === 'planner'
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 border border-indigo-500'
-                  : 'border border-transparent'
-              }`}
-              style={nav.root !== 'planner' ? { color: 'var(--t2)' } : {}}
-            >
-              📅 Strategy Planner
-            </button>
-          )}
-        </div>
+      <div className="app-shell w-full max-w-[1920px] mx-auto flex-1 flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-6 px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16 pt-4">
+      <Sidebar
+        active={activePage}
+        onNavigate={goPage}
+        showPyq={features.pyq !== false}
+        showPlans={features.plans !== false}
+        showSources={features.sources !== false}
+      />
+      <main className="min-w-0 w-full flex-1 pb-8 space-y-8">
+        {/* ── HOME DASHBOARD ─────────────────────────────────── */}
+        {showHome && (
+          <div id="view-home" className="root-pane-view space-y-8">
+            <Countdown onClearProgress={() => setClearProgressOpen(true)} />
+            <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
+            <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />
+            <HomeShortcuts onNavigate={goPage} showPyq={features.pyq !== false} showPlans={features.plans !== false} />
+          </div>
+        )}
 
         {/* ── MARATHON VIEW ──────────────────────────────────── */}
-        {nav.root === 'marathon' && (
+        {!showHome && nav.root === 'marathon' && (
           <div id="view-marathon" className="root-pane-view space-y-8">
-            {/* Countdown cards */}
-            <Countdown onClearProgress={() => setClearProgressOpen(true)} />
-
-            {/* S&W Widget */}
-            <SWWidget externalOpen={swManagerOpen} onExternalClose={() => setSWManagerOpen(false)} />
-
-            {/* Pie Completion Matrix */}
-            <PieMatrix onAddCustomTopic={() => setCustomTopicOpen(true)} />
-
-            {/* Sub-tabs: Syllabus / CA / PYQ / Test Series */}
-            <div className="neo-card rounded-2xl p-2 flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none shadow-sm">
-              <button
-                onClick={() => setMarathon('syllabus')}
-                className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all heading-font ${
-                  nav.marathon === 'syllabus'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
-                    : ''
-                }`}
-                style={nav.marathon !== 'syllabus' ? { color: 'var(--t2)' } : {}}
-              >
-                1. Syllabus
-              </button>
-              <button
-                onClick={() => setMarathon('ca')}
-                className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all heading-font ${
-                  nav.marathon === 'ca'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
-                    : ''
-                }`}
-                style={nav.marathon !== 'ca' ? { color: 'var(--t2)' } : {}}
-              >
-                2. CA Tracker
-              </button>
-              {features.pyq !== false && (
-                <button
-                  onClick={() => setMarathon('pyq')}
-                  className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all heading-font ${
-                    nav.marathon === 'pyq'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
-                      : ''
-                  }`}
-                  style={nav.marathon !== 'pyq' ? { color: 'var(--t2)' } : {}}
-                >
-                  3. PYQ
-                </button>
-              )}
-              <button
-                onClick={() => setMarathon('testseries')}
-                className={`cursor-pointer flex-1 text-center py-4 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all heading-font ${
-                  nav.marathon === 'testseries'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
-                    : ''
-                }`}
-                style={nav.marathon !== 'testseries' ? { color: 'var(--t2)' } : {}}
-              >
-                4. Test-Series
-              </button>
-            </div>
-
             {/* Syllabus View */}
             {nav.marathon === 'syllabus' && (
               <div className="space-y-6">
@@ -508,53 +448,15 @@ export function Layout() {
         )}
 
         {/* ── PLANNER VIEW ───────────────────────────────────── */}
-        {nav.root === 'planner' && (
+        {!showHome && nav.root === 'planner' && (
           <div id="view-planner" className="root-pane-view space-y-8">
-            {/* Sub-tabs */}
-            <div className="flex flex-row gap-1 overflow-x-auto whitespace-nowrap scrollbar-none p-1.5 rounded-2xl shadow-sm" style={{ background: 'var(--card)', border: '1px solid var(--bdr)' }}>
-              <button
-                onClick={() => setPlanner('master')}
-                className={`cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all heading-font ${
-                  nav.planner === 'master'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 border border-emerald-500'
-                    : 'border border-transparent'
-                }`}
-                style={nav.planner !== 'master' ? { color: 'var(--t2)' } : {}}
-              >
-                📅 Master Plan
-              </button>
-              <button
-                onClick={() => setPlanner('plans')}
-                className={`cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all heading-font ${
-                  nav.planner === 'plans'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 border border-emerald-500'
-                    : 'border border-transparent'
-                }`}
-                style={nav.planner !== 'plans' ? { color: 'var(--t2)' } : {}}
-              >
-                📋 My Plans
-              </button>
-              {features.sources !== false && (
-                <button
-                  onClick={() => setPlanner('sources')}
-                  className={`cursor-pointer flex-1 text-center py-3.5 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all heading-font ${
-                    nav.planner === 'sources'
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 border border-emerald-500'
-                      : 'border border-transparent'
-                  }`}
-                  style={nav.planner !== 'sources' ? { color: 'var(--t2)' } : {}}
-                >
-                  📚 Sources &amp; Links
-                </button>
-              )}
-            </div>
-
             {nav.planner === 'master' && <Suspense fallback={<div className="tab-loading">Loading…</div>}><MasterPlan /></Suspense>}
             {nav.planner === 'plans' && <Suspense fallback={<div className="tab-loading">Loading…</div>}><PlansGrid /></Suspense>}
             {nav.planner === 'sources' && <Suspense fallback={<div className="tab-loading">Loading…</div>}><SourcesView /></Suspense>}
           </div>
         )}
       </main>
+      </div>
 
       {/* Profile modal */}
       <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
