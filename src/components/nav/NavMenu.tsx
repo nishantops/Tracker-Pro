@@ -25,16 +25,16 @@ export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources, s
 
   const tracker: Item[] = [
     { page: 'home', icon: '🏠', label: 'Home' },
-    { page: 'syllabus', icon: '📚', label: 'Syllabus' },
-    { page: 'ca', icon: '📰', label: 'CA Tracker' },
-    ...(showPyq ? [{ page: 'pyq' as const, icon: '❓', label: 'PYQ' }] : []),
-    { page: 'testseries', icon: '📝', label: 'Test Series' },
+    { page: 'syllabus', icon: '📚', label: '1. Syllabus' },
+    { page: 'ca', icon: '📰', label: '2. CA Tracker' },
+    ...(showPyq ? [{ page: 'pyq' as const, icon: '❓', label: '3. PYQ' }] : []),
+    { page: 'testseries', icon: '📝', label: '4. Test-Series' },
   ];
   const planner: Item[] = showPlans
     ? [
         { page: 'master', icon: '📅', label: 'Master Plan' },
         { page: 'plans', icon: '📋', label: 'My Plans' },
-        ...(showSources ? [{ page: 'sources' as const, icon: '🔗', label: 'Sources' }] : []),
+        ...(showSources ? [{ page: 'sources' as const, icon: '📚', label: 'Sources & Links' }] : []),
       ]
     : [];
   const current = [...tracker, ...planner].find((i) => i.page === active) ?? tracker[0];
@@ -92,11 +92,11 @@ export function NavMenu({ active, onNavigate, showPyq, showPlans, showSources, s
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 8990 }} onClick={() => setOpen(false)} />
           <nav className="nav-menu-panel" style={{ top: pos.top, left: pos.left }} aria-label="Main navigation">
-            <div className="nav-menu-heading">Tracker</div>
+            <div className="nav-menu-heading">⚔️ Marathon Tracker</div>
             {tracker.map(renderItem)}
             {planner.length > 0 && (
               <>
-                <div className="nav-menu-heading">Planner</div>
+                <div className="nav-menu-heading">📅 Strategy Planner</div>
                 {planner.map(renderItem)}
               </>
             )}
