@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { loadCloudPref, saveCloudPref } from '../lib/cloudPrefs';
+import { istDayOf, istToday } from '../lib/studyStats';
+import {
+  applyBaseline, focusTotals, parseBaseline, planOpenSession,
+  type ClearBaseline, type DailyFocus, type OpenSessionPlan,
+} from '../lib/focusStats';
 
-export interface DailyFocus {
-  focus_date: string;
-  total_seconds: number;
-}
+export type { DailyFocus };
 
 // Keep old interface for backward compat (tests etc)
 export interface FocusSession {
@@ -15,34 +18,54 @@ export interface FocusSession {
   duration_seconds: number | null;
 }
 
+const BEAT_MS = 30_000;          // checkpoint to the database this often while running
+const SLEEP_GAP_MS = 150_000;    // a longer silence between ticks means the machine slept or the tab was frozen
+const baselineKey = (uid: string) => `upsc_focus_cleared_${uid}`;
+
+interface Live {
+  id: string;
+  start: number;        // ms epoch the current stretch began (advanced at every checkpoint)
+  accumulated: number;  // seconds already counted before `start`
+  day: string;          // IST day the session began; the whole session is credited to it
+}
+
+function readBaseline(uid: string | undefined): ClearBaseline | null {
+  if (!uid) return null;
+  try { return parseBaseline(JSON.parse(localStorage.getItem(baselineKey(uid)) ?? 'null')); } catch { return null; }
+}
+
 export function useFocus() {
   const { user } = useAuth();
   const [active, setActive] = useState(false);
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [dailyHistory, setDailyHistory] = useState<DailyFocus[]>([]);
-  const [todayTotal, setTodayTotal] = useState(0);
-  const [weekTotal, setWeekTotal] = useState(0);
-  const sessionRef = useRef<{ id: string; start: number; accumulated: number } | null>(null);
+  const [rawDaily, setRawDaily] = useState<DailyFocus[]>([]);
+  const [baseline, setBaseline] = useState<ClearBaseline | null>(() => readBaseline(user?.id));
+  const sessionRef = useRef<Live | null>(null);
+  const pausedRef = useRef(false);
+  const lastTickRef = useRef(0);
+  const lastBeatRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const getTodayIST = () => {
-    const d = new Date();
-    const ist = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
-    return ist.toISOString().slice(0, 10);
-  };
+  // What the Focus panel shows. The database always keeps everything; "clear" only moves this baseline.
+  const dailyHistory = useMemo(() => applyBaseline(rawDaily, baseline), [rawDaily, baseline]);
+  const totals = focusTotals(dailyHistory, istToday());
 
-  // ── Helper: upsert seconds into daily total ────────────────────────────
-  const addToDailyTotal = useCallback(async (userId: string, seconds: number) => {
+  const writeSession = useCallback(async (id: string, patch: Record<string, unknown>) => {
+    if (id.startsWith('local-')) return;
+    try { await supabase.from('upsc_focus_sessions').update(patch).eq('id', id); } catch { /* non-critical */ }
+  }, []);
+
+  // ── Helper: add seconds to the total of a given IST day ────────────────
+  const addToDailyTotal = useCallback(async (userId: string, seconds: number, date: string) => {
     if (seconds <= 0) return;
-    const date = getTodayIST();
     try {
       const { data: existing } = await supabase
         .from('upsc_focus_daily')
         .select('total_seconds')
         .eq('user_id', userId)
         .eq('focus_date', date)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         await supabase
@@ -58,107 +81,138 @@ export function useFocus() {
     } catch { /* non-critical */ }
   }, []);
 
-  // ── Load daily history + resume active session ───────────────────────────
+  const loadDaily = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('upsc_focus_daily')
+      .select('focus_date, total_seconds')
+      .eq('user_id', user.id)
+      .order('focus_date', { ascending: false })
+      .limit(60);
+    setRawDaily((data ?? []) as DailyFocus[]);
+  }, [user]);
+
+  // ── Ticker: elapsed display, checkpoints, and protection against sleep gaps ──
+  const stopTicker = () => { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } };
+
+  const checkpoint = useCallback((now: number) => {
+    const s = sessionRef.current;
+    if (!s) return;
+    const whole = Math.floor((now - s.start) / 1000);
+    s.accumulated += whole;
+    s.start += whole * 1000;
+    lastBeatRef.current = now;
+    void writeSession(s.id, { accumulated_seconds: s.accumulated, started_at: new Date(s.start).toISOString() });
+  }, [writeSession]);
+
+  const tick = useCallback(() => {
+    const s = sessionRef.current;
+    if (!s || pausedRef.current) return;
+    const now = Date.now();
+    if (now - lastTickRef.current > SLEEP_GAP_MS) {
+      // Laptop slept / tab frozen: count only up to the last tick we actually saw
+      s.accumulated += Math.max(0, Math.floor((lastTickRef.current - s.start) / 1000));
+      s.start = now;
+      checkpoint(now);
+    }
+    lastTickRef.current = now;
+    setElapsed(s.accumulated + Math.floor((now - s.start) / 1000));
+    if (now - lastBeatRef.current >= BEAT_MS) checkpoint(now);
+  }, [checkpoint]);
+
+  const startTicker = useCallback(() => {
+    stopTicker();
+    intervalRef.current = setInterval(tick, 1000);
+  }, [tick]);
+
+  // ── Load daily history, the clear baseline, and resume an unstopped session ──
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+
+    const adopt = (id: string, plan: OpenSessionPlan, now: number, wasPausedInDb: boolean) => {
+      const elapsedNow = plan.running ? plan.accumulated + Math.floor((now - plan.checkpoint) / 1000) : plan.accumulated;
+      sessionRef.current = {
+        id,
+        start: plan.running ? plan.checkpoint : now,
+        accumulated: plan.accumulated,
+        day: istDayOf(plan.originMs),
+      };
+      pausedRef.current = !plan.running;
+      lastTickRef.current = now;
+      lastBeatRef.current = now;
+      setActive(true);
+      setPaused(!plan.running);
+      setElapsed(elapsedNow);
+      try { localStorage.setItem('upsc_focus_active', '1'); } catch { /* ignore */ }
+      if (plan.running) startTicker();
+      else if (!wasPausedInDb) void writeSession(id, { duration_seconds: 1, started_at: new Date(now).toISOString() });
+    };
+
     const load = async () => {
-      // 1. Check for active session to RESUME
       try {
-        const { data: openSessions } = await supabase
+        const { data: open } = await supabase
           .from('upsc_focus_sessions')
-          .select('id, started_at, accumulated_seconds')
+          .select('id, started_at, accumulated_seconds, duration_seconds, created_at')
           .eq('user_id', user.id)
           .is('ended_at', null)
           .order('started_at', { ascending: false });
 
-        if (openSessions && openSessions.length > 0) {
-          const now = Date.now();
-          const resumable = openSessions.find((s) => {
-            const age = Math.floor((now - new Date(s.started_at).getTime()) / 1000);
-            return age >= 0 && age < 86_400;
-          });
-
-          if (resumable) {
-            const startTs = new Date(resumable.started_at).getTime();
-            const accumulated = resumable.accumulated_seconds ?? 0;
-            sessionRef.current = { id: resumable.id, start: startTs, accumulated };
-            setActive(true);
-            setPaused(false);
-            setElapsed(accumulated + Math.floor((now - startTs) / 1000));
-            try { localStorage.setItem('upsc_focus_active', '1'); } catch { /* ignore */ }
-            intervalRef.current = setInterval(() => {
-              if (sessionRef.current) {
-                const curr = Math.floor((Date.now() - sessionRef.current.start) / 1000);
-                setElapsed(sessionRef.current.accumulated + curr);
-              }
-            }, 1000);
-
-            // Close other orphans — save their time to daily
-            const others = openSessions.filter((s) => s.id !== resumable.id);
-            if (others.length > 0) {
-              await Promise.all(others.map((s) => {
-                const dur = (s.accumulated_seconds ?? 0) + Math.floor((now - new Date(s.started_at).getTime()) / 1000);
-                return addToDailyTotal(user.id, dur).then(() =>
-                  supabase.from('upsc_focus_sessions').delete().eq('id', s.id)
-                );
-              }));
-            }
-          } else {
-            // All stale (> 24h) — save and delete
-            const now2 = Date.now();
-            await Promise.all(openSessions.map((s) => {
-              const dur = (s.accumulated_seconds ?? 0) + Math.floor((now2 - new Date(s.started_at).getTime()) / 1000);
-              if (dur > 5) {
-                return addToDailyTotal(user.id, dur).then(() =>
-                  supabase.from('upsc_focus_sessions').delete().eq('id', s.id)
-                );
-              }
-              return supabase.from('upsc_focus_sessions').delete().eq('id', s.id);
-            }));
+        const now = Date.now();
+        let adopted = false;
+        for (const row of open ?? []) {
+          const plan = planOpenSession(row, now);
+          if (!adopted && plan.kind === 'resume' && !cancelled) {
+            adopted = true;
+            adopt(row.id, plan, now, row.duration_seconds === 1);
+            continue;
           }
+          // Extra or abandoned sessions: keep only the time that was really tracked, on the day they began
+          if (plan.accumulated > 5) await addToDailyTotal(user.id, plan.accumulated, istDayOf(plan.originMs));
+          await supabase.from('upsc_focus_sessions').delete().eq('id', row.id);
         }
       } catch { /* non-critical */ }
 
-      // 2. Load daily history (last 30 days)
-      const { data: daily } = await supabase
-        .from('upsc_focus_daily')
-        .select('focus_date, total_seconds')
-        .eq('user_id', user.id)
-        .order('focus_date', { ascending: false })
-        .limit(30);
-
-      const days = (daily ?? []) as DailyFocus[];
-      setDailyHistory(days);
-
-      // Compute totals
-      const today = getTodayIST();
-      const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
-      let td = 0, wd = 0;
-      days.forEach((d) => {
-        if (d.focus_date === today) td += d.total_seconds;
-        if (d.focus_date >= weekAgo) wd += d.total_seconds;
-      });
-      setTodayTotal(td);
-      setWeekTotal(wd);
+      if (!cancelled) await loadDaily();
     };
     load();
-  }, [user, addToDailyTotal]);
+
+    setBaseline(readBaseline(user.id));
+    loadCloudPref<unknown>(user.id, 'focus_cleared').then((r) => {
+      if (cancelled || !r.ok || !r.found) return;
+      const b = parseBaseline(r.value);
+      if (b) {
+        setBaseline(b);
+        try { localStorage.setItem(baselineKey(user.id), JSON.stringify(b)); } catch { /* ignore */ }
+      }
+    });
+
+    return () => { cancelled = true; };
+  }, [user, addToDailyTotal, loadDaily, startTicker, writeSession]);
 
   // ── Start ──────────────────────────────────────────────────────────────
   const start = useCallback(async () => {
     if (!user || active) return;
-    const now = new Date();
-    let sessionId = `local-${Date.now()}`;
+    const now = Date.now();
+    let sessionId = `local-${now}`;
+    let originMs = now;
     try {
       const { data, error } = await supabase
         .from('upsc_focus_sessions')
-        .insert({ user_id: user.id, started_at: now.toISOString(), accumulated_seconds: 0 })
+        .insert({ user_id: user.id, started_at: new Date(now).toISOString(), accumulated_seconds: 0, duration_seconds: 0 })
         .select()
         .single();
-      if (!error && data) sessionId = data.id;
+      if (!error && data) {
+        sessionId = data.id;
+        const created = data.created_at ? new Date(data.created_at).getTime() : NaN;
+        if (Number.isFinite(created)) originMs = created;
+      }
     } catch { /* use local */ }
 
-    sessionRef.current = { id: sessionId, start: now.getTime(), accumulated: 0 };
+    sessionRef.current = { id: sessionId, start: now, accumulated: 0, day: istDayOf(originMs) };
+    pausedRef.current = false;
+    lastTickRef.current = now;
+    lastBeatRef.current = now;
     setActive(true);
     setPaused(false);
     setElapsed(0);
@@ -169,97 +223,57 @@ export function useFocus() {
         { onConflict: 'user_id' },
       );
     } catch { /* non-critical */ }
-    intervalRef.current = setInterval(() => {
-      if (sessionRef.current) {
-        const curr = Math.floor((Date.now() - sessionRef.current.start) / 1000);
-        setElapsed(sessionRef.current.accumulated + curr);
-      }
-    }, 1000);
-  }, [user, active]);
+    startTicker();
+  }, [user, active, startTicker]);
 
   // ── Pause ──────────────────────────────────────────────────────────────
   const pause = useCallback(async () => {
-    if (!user || !sessionRef.current || paused) return;
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-
-    const { id, start, accumulated } = sessionRef.current;
-    const segmentDur = Math.floor((Date.now() - start) / 1000);
-    const newAccumulated = accumulated + segmentDur;
-
-    // Save accumulated to DB so it persists across refresh
-    if (!id.startsWith('local-')) {
-      try {
-        await supabase
-          .from('upsc_focus_sessions')
-          .update({ accumulated_seconds: newAccumulated, started_at: new Date().toISOString() })
-          .eq('id', id);
-      } catch { /* non-critical */ }
-    }
-
-    sessionRef.current = { id, start: Date.now(), accumulated: newAccumulated };
+    const s = sessionRef.current;
+    if (!user || !s || pausedRef.current) return;
+    stopTicker();
+    const now = Date.now();
+    s.accumulated += Math.floor((now - s.start) / 1000);
+    s.start = now;
+    pausedRef.current = true;
     setPaused(true);
-    setElapsed(newAccumulated);
-  }, [user, paused]);
+    setElapsed(s.accumulated);
+    // duration_seconds doubles as the paused flag (1 = paused) so a refresh does not count break time
+    await writeSession(s.id, { accumulated_seconds: s.accumulated, started_at: new Date(now).toISOString(), duration_seconds: 1 });
+  }, [user, writeSession]);
 
   // ── Resume (from pause) ────────────────────────────────────────────────
   const resume = useCallback(async () => {
-    if (!user || !sessionRef.current || !paused) return;
-
-    const { id, accumulated } = sessionRef.current;
+    const s = sessionRef.current;
+    if (!user || !s || !pausedRef.current) return;
     const now = Date.now();
-    sessionRef.current = { id, start: now, accumulated };
-
-    if (!id.startsWith('local-')) {
-      try {
-        await supabase
-          .from('upsc_focus_sessions')
-          .update({ started_at: new Date(now).toISOString() })
-          .eq('id', id);
-      } catch { /* non-critical */ }
-    }
-
+    s.start = now;
+    pausedRef.current = false;
+    lastTickRef.current = now;
+    lastBeatRef.current = now;
     setPaused(false);
-    intervalRef.current = setInterval(() => {
-      if (sessionRef.current) {
-        const curr = Math.floor((Date.now() - sessionRef.current.start) / 1000);
-        setElapsed(sessionRef.current.accumulated + curr);
-      }
-    }, 1000);
-  }, [user, paused]);
+    startTicker();
+    await writeSession(s.id, { started_at: new Date(now).toISOString(), duration_seconds: 0 });
+  }, [user, startTicker, writeSession]);
 
   // ── Stop ───────────────────────────────────────────────────────────────
   const stop = useCallback(async () => {
-    if (!user || !sessionRef.current) return;
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    const s = sessionRef.current;
+    if (!user || !s) return;
+    stopTicker();
+    const now = Date.now();
+    const totalDur = s.accumulated + (pausedRef.current ? 0 : Math.floor((now - s.start) / 1000));
 
-    const { id, start, accumulated } = sessionRef.current;
-    const segmentDur = paused ? 0 : Math.floor((Date.now() - start) / 1000);
-    const totalDur = accumulated + segmentDur;
-
-    // Add to daily total in DB
-    await addToDailyTotal(user.id, totalDur);
+    // The whole session belongs to the day it began, even if it runs past midnight
+    await addToDailyTotal(user.id, totalDur, s.day);
     window.dispatchEvent(new Event('upsc-focus-saved'));
 
     // Delete the active session row (only daily totals persist)
-    if (!id.startsWith('local-')) {
-      try { await supabase.from('upsc_focus_sessions').delete().eq('id', id); } catch { /* */ }
+    if (!s.id.startsWith('local-')) {
+      try { await supabase.from('upsc_focus_sessions').delete().eq('id', s.id); } catch { /* */ }
     }
 
-    // Update local state
-    const today = getTodayIST();
-    setDailyHistory((prev) => {
-      const existing = prev.find((d) => d.focus_date === today);
-      if (existing) {
-        return prev.map((d) => d.focus_date === today
-          ? { ...d, total_seconds: d.total_seconds + totalDur }
-          : d);
-      }
-      return [{ focus_date: today, total_seconds: totalDur }, ...prev];
-    });
-    setTodayTotal((t) => t + totalDur);
-    setWeekTotal((t) => t + totalDur);
-
     sessionRef.current = null;
+    pausedRef.current = false;
     setActive(false);
     setPaused(false);
     setElapsed(0);
@@ -272,19 +286,19 @@ export function useFocus() {
     } catch { /* non-critical */ }
     try { localStorage.setItem('upsc_last_focus_ts', String(Date.now())); } catch { /* ignore */ }
 
+    await loadDaily();
     return totalDur;
-  }, [user, paused, addToDailyTotal]);
+  }, [user, addToDailyTotal, loadDaily]);
 
-  // ── Clear all history ──────────────────────────────────────────────────
+  // ── Clear history: hides it in this panel only; nothing is deleted anywhere ──
   const clearHistory = useCallback(async () => {
     if (!user) return;
-    try {
-      await supabase.from('upsc_focus_daily').delete().eq('user_id', user.id);
-    } catch { /* non-critical */ }
-    setDailyHistory([]);
-    setTodayTotal(0);
-    setWeekTotal(0);
-  }, [user]);
+    const today = istToday();
+    const next: ClearBaseline = { before: today, secs: focusTotals(rawDaily, today).today };
+    setBaseline(next);
+    try { localStorage.setItem(baselineKey(user.id), JSON.stringify(next)); } catch { /* ignore */ }
+    saveCloudPref(user.id, 'focus_cleared', next);
+  }, [user, rawDaily]);
 
   // Auto-stop on logout
   useEffect(() => {
@@ -294,11 +308,13 @@ export function useFocus() {
   }, [stop]);
 
   // Cleanup interval on unmount (session stays in DB for resume)
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
+  useEffect(() => stopTicker, []);
 
-  return { active, paused, elapsed, dailyHistory, todayTotal, weekTotal, start, stop, pause, resume, clearHistory };
+  return {
+    active, paused, elapsed, dailyHistory,
+    todayTotal: totals.today, weekTotal: totals.week, lastWeekTotal: totals.lastWeek,
+    start, stop, pause, resume, clearHistory,
+  };
 }
 
 export function formatDuration(secs: number): string {

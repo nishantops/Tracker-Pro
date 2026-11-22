@@ -2,11 +2,14 @@ export type Level = 0 | 1 | 2 | 3 | 4;
 export interface Cell { date: string; secs: number; level: Level }
 
 // "Today" in IST, matching how focus time is stored (upsc_focus_daily.focus_date)
-export const istToday = (now = new Date()) => new Date(now.getTime() + 5.5 * 3_600_000).toISOString().slice(0, 10);
+export const istDayOf = (t: number | string | Date) => new Date(new Date(t).getTime() + 5.5 * 3_600_000).toISOString().slice(0, 10);
+export const istToday = (now = new Date()) => istDayOf(now);
 
 export const addDays = (ymd: string, n: number) => new Date(new Date(`${ymd}T00:00:00Z`).getTime() + n * 86_400_000).toISOString().slice(0, 10);
 // Monday = 0 … Sunday = 6
-const weekdayIdx = (ymd: string) => (new Date(`${ymd}T00:00:00Z`).getUTCDay() + 6) % 7;
+export const weekdayIdx = (ymd: string) => (new Date(`${ymd}T00:00:00Z`).getUTCDay() + 6) % 7;
+// Monday of the week containing ymd
+export const weekStartOf = (ymd: string) => addDays(ymd, -weekdayIdx(ymd));
 
 export function levelFor(secs: number, goalSecs: number): Level {
   if (secs <= 0) return 0;

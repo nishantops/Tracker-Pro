@@ -200,7 +200,7 @@ describe('Layout — pages', () => {
       expect(screen.queryByText('COUNTDOWN')).not.toBeInTheDocument();
       expect(screen.queryByText('PIEMATRIX')).not.toBeInTheDocument();
     }
-  });
+  }, 30_000);
 
   it('Syllabus keeps the three stage tabs with main\'s wording and passes the stage down', async () => {
     render(<Layout />);

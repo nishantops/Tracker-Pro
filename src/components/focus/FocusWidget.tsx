@@ -3,10 +3,11 @@ import { createPortal } from 'react-dom';
 import { useFocus, formatDuration, formatDurationShort } from '../../hooks/useFocus';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useToast } from '../common/Toast';
+import { istToday } from '../../lib/studyStats';
 
 export function FocusWidget() {
   const {
-    active, paused, elapsed, dailyHistory, todayTotal, weekTotal,
+    active, paused, elapsed, dailyHistory, todayTotal, weekTotal, lastWeekTotal = 0,
     start, stop, pause, resume, clearHistory,
   } = useFocus();
   const { showToast } = useToast();
@@ -130,7 +131,7 @@ export function FocusWidget() {
 
   const handleClear = async () => {
     await clearHistory();
-    showToast('History cleared', 'success');
+    showToast('History cleared from this panel (your data is safe)', 'success');
   };
 
   return (
@@ -267,14 +268,18 @@ export function FocusWidget() {
             </button>
 
             {/* Stats grid */}
-            <div className="fp-stat-grid">
+            <div className="fp-stat-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div className="fp-stat">
                 <div className="fp-stat-label">Today</div>
                 <div className="fp-stat-value">{todayTotal > 0 ? formatDurationShort(todayTotal) : '—'}</div>
               </div>
               <div className="fp-stat">
-                <div className="fp-stat-label">7-day total</div>
+                <div className="fp-stat-label">This week (Mon–today)</div>
                 <div className="fp-stat-value">{weekTotal > 0 ? formatDurationShort(weekTotal) : '—'}</div>
+              </div>
+              <div className="fp-stat">
+                <div className="fp-stat-label">Last week (Mon–Sun)</div>
+                <div className="fp-stat-value">{lastWeekTotal > 0 ? formatDurationShort(lastWeekTotal) : '—'}</div>
               </div>
               <div className="fp-stat">
                 <div className="fp-stat-label">Days tracked</div>
@@ -291,7 +296,7 @@ export function FocusWidget() {
                 <button
                   className="fp-clear-btn"
                   onClick={handleClear}
-                  title="Clear all history"
+                  title="Hide this list. Your study time, daily goal and activity are not touched."
                 >
                   Clear All
                 </button>
@@ -303,7 +308,7 @@ export function FocusWidget() {
               ) : (
                 dailyHistory.slice(0, 14).map((d) => {
                   const date = new Date(d.focus_date + 'T00:00:00');
-                  const isToday = d.focus_date === new Date().toISOString().slice(0, 10);
+                  const isToday = d.focus_date === istToday();
                   return (
                     <div key={d.focus_date} className="fp-hist-item">
                       <span className="fp-hist-date">

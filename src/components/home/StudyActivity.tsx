@@ -3,9 +3,10 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { loadCloudPref, saveCloudPref } from '../../lib/cloudPrefs';
 import {
-  addDays, buildHeatmap, buildTrend, currentStreak, DAY_LABELS, fmtHM, goalHoursFor, istToday, lastNDaysTotal,
+  addDays, buildHeatmap, buildTrend, currentStreak, DAY_LABELS, fmtHM, goalHoursFor, istToday,
   TREND_HISTORY_DAYS, trendDelta, type DailyGoal, type TrendMode,
 } from '../../lib/studyStats';
+import { adjustMode, applyAdjust, focusTotals } from '../../lib/focusStats';
 import { TrendChart } from './TrendChart';
 
 const MODES: { id: TrendMode; label: string; unit: string; now: string; before: string }[] = [
@@ -86,21 +87,25 @@ export function StudyActivity() {
     return () => { clearInterval(id); window.removeEventListener('upsc-focus-saved', load); };
   }, [user, load]);
 
-  // Manual entry: adds to that day's total, the same table the focus timer writes to
+  // Manual correction of the daily totals (the table the focus timer writes to): today can only be added to,
+  // the two days before can only be reduced, anything older is locked.
   const addManual = async () => {
     if (!user) return;
     const secs = Math.round((Math.max(0, parseFloat(addH) || 0) * 60 + Math.max(0, parseFloat(addM) || 0)) * 60);
     if (secs <= 0 || secs > 24 * 3600) { setAddErr('Enter a time between 1 minute and 24 hours.'); return; }
-    if (!addDate || addDate > today) { setAddErr('Pick today or an earlier date.'); return; }
-    setAddErr('');
+    const kind = adjustMode(addDate, today);
+    if (!kind) { setAddErr('You can add time for today, or subtract from yesterday and the day before.'); return; }
     const { data: existing, error: readErr } = await supabase
       .from('upsc_focus_daily').select('total_seconds').eq('user_id', user.id).eq('focus_date', addDate).maybeSingle();
     if (readErr) { setAddErr('Could not save. Try again.'); return; }
+    const next = applyAdjust(kind, (existing?.total_seconds as number | undefined) ?? null, secs);
+    if (!next.ok) { setAddErr(next.error); return; }
+    setAddErr('');
     const { error } = existing
       ? await supabase.from('upsc_focus_daily')
-        .update({ total_seconds: (existing.total_seconds as number) + secs, updated_at: new Date().toISOString() })
+        .update({ total_seconds: next.total, updated_at: new Date().toISOString() })
         .eq('user_id', user.id).eq('focus_date', addDate)
-      : await supabase.from('upsc_focus_daily').insert({ user_id: user.id, focus_date: addDate, total_seconds: secs });
+      : await supabase.from('upsc_focus_daily').insert({ user_id: user.id, focus_date: addDate, total_seconds: next.total });
     if (error) { setAddErr('Could not save. Try again.'); return; }
     setAdding(false); setAddH(''); setAddM('');
     window.dispatchEvent(new Event('upsc-focus-saved'));
@@ -145,7 +150,7 @@ export function StudyActivity() {
   );
   const goalLabel = goal.weekday === goal.weekend ? `${goal.weekday}h/day` : `${goal.weekday}h weekdays · ${goal.weekend}h weekends`;
   const streak = currentStreak(secsByDate, today);
-  const week = lastNDaysTotal(secsByDate, today, 7);
+  const week = focusTotals(Array.from(secsByDate, ([focus_date, total_seconds]) => ({ focus_date, total_seconds })), today).week;
   const heatStart = addDays(today, -(WEEKS * 7 - 1));
   const activeDays = Array.from(secsByDate.entries()).filter(([d, s]) => s > 0 && d <= today && d >= heatStart).length;
 
@@ -205,22 +210,22 @@ export function StudyActivity() {
 
             <div className="study-stats">
               <div><b>{streak > 0 ? `🔥 ${streak}` : '—'}</b><span>day streak</span></div>
-              <div><b>{fmtHM(week)}</b><span>last 7 days</span></div>
+              <div><b>{fmtHM(week)}</b><span>this week</span></div>
               <div><b>{activeDays}</b><span>active days</span></div>
             </div>
 
             <div className="study-add">
               {adding ? (
                 <div className="study-add-form">
-                  <input type="date" aria-label="Date" value={addDate} max={today} onChange={(e) => setAddDate(e.target.value)} />
+                  <input type="date" aria-label="Date" value={addDate} min={addDays(today, -2)} max={today} onChange={(e) => setAddDate(e.target.value)} />
                   <input type="number" min={0} max={24} placeholder="h" aria-label="Hours" value={addH} onChange={(e) => setAddH(e.target.value)} />
                   <input type="number" min={0} max={59} placeholder="min" aria-label="Minutes" value={addM} onChange={(e) => setAddM(e.target.value)} />
-                  <button type="button" onClick={addManual}>Add</button>
+                  <button type="button" onClick={addManual}>{adjustMode(addDate, today) === 'subtract' ? 'Subtract' : 'Add'}</button>
                   <button type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
                   {addErr && <span className="study-add-err" role="alert">{addErr}</span>}
                 </div>
               ) : (
-                <button type="button" className="study-goal-btn" onClick={() => { setAddDate(today); setAdding(true); }}>+ Add study time</button>
+                <button type="button" className="study-goal-btn" title="Add time for today, or subtract from the last two days" onClick={() => { setAddDate(today); setAdding(true); }}>± Adjust study time</button>
               )}
             </div>
           </div>

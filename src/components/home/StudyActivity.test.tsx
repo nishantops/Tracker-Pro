@@ -30,7 +30,7 @@ vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: h.user }) 
 vi.mock('../../lib/cloudPrefs', () => ({ loadCloudPref: h.load, saveCloudPref: h.save }));
 
 import { StudyActivity } from './StudyActivity';
-import { istToday, isWeekend } from '../../lib/studyStats';
+import { fmtHM, istToday, isWeekend, weekStartOf } from '../../lib/studyStats';
 
 const ymdAgo = (n: number) => new Date(new Date(`${istToday()}T00:00:00Z`).getTime() - n * 86_400_000).toISOString().slice(0, 10);
 
@@ -59,10 +59,11 @@ describe('StudyActivity', () => {
       { focus_date: ymdAgo(1), total_seconds: 3600 },
       { focus_date: ymdAgo(2), total_seconds: 1800 },
     ];
+    const weekExpected = h.rows.filter((r) => r.focus_date >= weekStartOf(istToday())).reduce((s, r) => s + r.total_seconds, 0);
     render(<StudyActivity />);
     expect(await screen.findByRole('img', { name: 'Today 2h 0m of 4 hours' })).toBeInTheDocument(); // today inside the ring
     expect(screen.getByText('🔥 3')).toBeInTheDocument();                // streak
-    expect(document.querySelector('.study-stats')!.textContent).toContain('3h 30m'); // last 7 days
+    expect(document.querySelector('.study-stats')!.textContent).toContain(fmtHM(weekExpected)); // this week (Mon-today)
     expect(document.querySelectorAll('.study-heat .study-cell.lv4, .study-heat .study-cell.lv3, .study-heat .study-cell.lv2, .study-heat .study-cell.lv1').length).toBe(3);
   });
 
@@ -205,46 +206,79 @@ describe('StudyActivity', () => {
     });
   });
 
-  describe('manual study time', () => {
+  describe('manual study time (add today, subtract the last two days)', () => {
     const open = async () => {
       render(<StudyActivity />);
       await screen.findByText('of 4h');
-      fireEvent.click(screen.getByText('+ Add study time'));
+      fireEvent.click(screen.getByText('± Adjust study time'));
     };
     const fill = (hh: string, mm: string) => {
       fireEvent.change(screen.getByLabelText('Hours'), { target: { value: hh } });
       fireEvent.change(screen.getByLabelText('Minutes'), { target: { value: mm } });
     };
+    const pickDay = (ymd: string) => fireEvent.change(screen.getByLabelText('Date'), { target: { value: ymd } });
 
-    it('inserts a new day total (default date is today) and refreshes', async () => {
+    it('today: inserts a new day total, the button says Add, and the list refreshes', async () => {
       await open();
       expect((screen.getByLabelText('Date') as HTMLInputElement).value).toBe(istToday());
+      expect(screen.getByText('Add')).toBeInTheDocument();
       fill('1', '30');
       fireEvent.click(screen.getByText('Add'));
       await waitFor(() => expect(h.writes).toEqual([{ op: 'insert', payload: { user_id: 'u1', focus_date: istToday(), total_seconds: 5400 } }]));
       await waitFor(() => expect(screen.queryByLabelText('Hours')).not.toBeInTheDocument());
     });
 
-    it('adds onto an existing day for a past date', async () => {
-      h.rows = [{ focus_date: ymdAgo(2), total_seconds: 3600 }];
+    it('today: adds onto the existing total', async () => {
+      h.rows = [{ focus_date: istToday(), total_seconds: 3600 }];
       await open();
-      fireEvent.change(screen.getByLabelText('Date'), { target: { value: ymdAgo(2) } });
       fill('', '45');
       fireEvent.click(screen.getByText('Add'));
       await waitFor(() => expect(h.writes[0]).toMatchObject({ op: 'update', payload: { total_seconds: 3600 + 2700 } }));
     });
 
-    it('rejects empty, over-24h and future entries without writing', async () => {
+    it.each([1, 2])('%i day(s) ago: the button says Subtract and removes time', async (n) => {
+      h.rows = [{ focus_date: ymdAgo(n), total_seconds: 3600 }];
+      await open();
+      pickDay(ymdAgo(n));
+      expect(screen.getByText('Subtract')).toBeInTheDocument();
+      expect(screen.queryByText('Add')).not.toBeInTheDocument();
+      fill('', '15');
+      fireEvent.click(screen.getByText('Subtract'));
+      await waitFor(() => expect(h.writes[0]).toMatchObject({ op: 'update', payload: { total_seconds: 3600 - 900 } }));
+    });
+
+    it('cannot subtract more than was logged, or from an empty day', async () => {
+      h.rows = [{ focus_date: ymdAgo(1), total_seconds: 1800 }];
+      await open();
+      pickDay(ymdAgo(1));
+      fill('1', '0');
+      fireEvent.click(screen.getByText('Subtract'));
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('more than was logged'));
+      pickDay(ymdAgo(2));
+      fireEvent.click(screen.getByText('Subtract'));
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Nothing is logged'));
+      expect(h.writes).toEqual([]);
+    });
+
+    it('3 or more days ago is locked, and the date picker only offers the last three days', async () => {
+      await open();
+      const input = screen.getByLabelText('Date') as HTMLInputElement;
+      expect(input.min).toBe(ymdAgo(2));
+      expect(input.max).toBe(istToday());
+      pickDay(ymdAgo(3));
+      fill('1', '0');
+      fireEvent.click(screen.getByText('Add'));
+      expect(screen.getByRole('alert')).toHaveTextContent('add time for today, or subtract from yesterday');
+      expect(h.writes).toEqual([]);
+    });
+
+    it('rejects empty and over-24h entries without writing', async () => {
       await open();
       fireEvent.click(screen.getByText('Add'));
       expect(screen.getByRole('alert')).toHaveTextContent('between 1 minute and 24 hours');
       fill('25', '0');
       fireEvent.click(screen.getByText('Add'));
       expect(screen.getByRole('alert')).toHaveTextContent('between 1 minute and 24 hours');
-      fill('1', '0');
-      fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2999-01-01' } });
-      fireEvent.click(screen.getByText('Add'));
-      expect(screen.getByRole('alert')).toHaveTextContent('today or an earlier date');
       expect(h.writes).toEqual([]);
     });
 
