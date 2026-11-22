@@ -25,6 +25,7 @@ interface PieEntry {
 const COLS        = ENV.PIE_GRID_COLS;
 const ROW_HEIGHT  = ENV.PIE_ROW_HEIGHT;
 const MARGIN: [number, number] = [ENV.PIE_GRID_MARGIN, ENV.PIE_GRID_MARGIN];
+const PHONE_QUERY = '(max-width: 639px)';
 
 export function PieMatrix({ onAddCustomTopic }: Props) {
   const { progress, getCustomTopics } = useTracker();
@@ -62,6 +63,17 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
   const box = useBoxResize(user ? `upsc_pie_size_${user.id}` : null, locked, user ? { userId: user.id, key: 'pie_size' } : undefined);
   const resetAll = () => { reset(); box.clear(); };
 
+  // A panel size saved on a wide screen must not squash the grid on a phone
+  const [phone, setPhone] = useState(() => !!window.matchMedia?.(PHONE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.(PHONE_QUERY);
+    if (!mq) return;
+    const on = () => setPhone(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  const sized = phone ? { w: 0, h: 0 } : box.size;
+
   // ── Measure container for RGL ─────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
@@ -82,7 +94,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
 
   // When the panel has a custom height the card rows stretch to fill it (aspect adjusts automatically)
   const rowCount = Math.max(1, ...layout.map((l) => l.y + l.h));
-  const rowHeight = box.size.h && gridH > 0
+  const rowHeight = sized.h && gridH > 0
     ? Math.max(40, Math.floor((gridH - (rowCount - 1) * MARGIN[1]) / rowCount))
     : ROW_HEIGHT;
 
@@ -112,8 +124,8 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
   return (
     <div
       ref={box.ref}
-      className={`neo-card rounded-3xl p-6${box.size.h ? ' pie-sized' : ''}${!locked ? ' pie-unlocked' : ''}`}
-      style={{ width: box.size.w ? `${box.size.w}px` : undefined, maxWidth: '100%', height: box.size.h ? `${box.size.h}px` : undefined }}
+      className={`neo-card rounded-3xl p-6${sized.h ? ' pie-sized' : ''}${!locked ? ' pie-unlocked' : ''}`}
+      style={{ width: sized.w ? `${sized.w}px` : undefined, maxWidth: '100%', height: sized.h ? `${sized.h}px` : undefined }}
     >
       <div className="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
         <h3 className="text-xs font-bold tracking-widest text-violet-300 uppercase font-mono">
@@ -139,7 +151,8 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
         </div>
       </div>
 
-      <div ref={containerRef} className={box.size.h ? 'pie-grid-fill' : undefined}>
+      <div className="pie-scroll">
+      <div ref={containerRef} className={`pie-grid-min${sized.h ? ' pie-grid-fill' : ''}`}>
         <GridLayout
           layout={layout as unknown as Layout}
           gridConfig={{ cols: COLS, rowHeight, margin: MARGIN, containerPadding: [0, 0] }}
@@ -170,6 +183,7 @@ export function PieMatrix({ onAddCustomTopic }: Props) {
             );
           })}
         </GridLayout>
+      </div>
       </div>
       {!locked && (
         <>

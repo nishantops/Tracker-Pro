@@ -147,6 +147,21 @@ describe('PieMatrix — free-ratio resize of the whole panel', () => {
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 
+  it('on a phone the size saved on a wide screen is ignored, so the cards are not squashed', () => {
+    localStorage.setItem(KEY, JSON.stringify({ w: 2351, h: 220 }));
+    const original = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q.includes('639px'), media: q, addEventListener: () => {}, removeEventListener: () => {} })) as unknown as typeof window.matchMedia;
+    try {
+      render(<PieMatrix />);
+      expect(card()).not.toHaveClass('pie-sized');
+      expect(card().style.height).toBe('');
+      expect(card().style.width).toBe('');
+      expect(document.querySelector('.pie-scroll .pie-grid-min')).toBeInTheDocument();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('RESET restores the default card layout and the default panel size', () => {
     localStorage.setItem(KEY, JSON.stringify({ w: 640, h: 380 }));
     render(<PieMatrix />);
