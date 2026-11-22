@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { loadCloudPref, saveCloudPref } from '../lib/cloudPrefs';
+import { addFocusSeconds, logFocus, type FocusSource } from '../lib/focusDb';
 import { istDayOf, istToday } from '../lib/studyStats';
 import {
   applyBaseline, focusTotals, parseBaseline, planOpenSession,
@@ -27,6 +28,7 @@ interface Live {
   start: number;        // ms epoch the current stretch began (advanced at every checkpoint)
   accumulated: number;  // seconds already counted before `start`
   day: string;          // IST day the session began; the whole session is credited to it
+  origin: number;       // ms epoch the session really began
 }
 
 function readBaseline(uid: string | undefined): ClearBaseline | null {
@@ -56,29 +58,13 @@ export function useFocus() {
     try { await supabase.from('upsc_focus_sessions').update(patch).eq('id', id); } catch { /* non-critical */ }
   }, []);
 
-  // ── Helper: add seconds to the total of a given IST day ────────────────
-  const addToDailyTotal = useCallback(async (userId: string, seconds: number, date: string) => {
+  // ── Helper: credit seconds to an IST day (atomic when migration v12 is applied) and log it ──
+  const addToDailyTotal = useCallback(async (
+    userId: string, seconds: number, date: string,
+    meta: { source: FocusSource; startedAt?: number; endedAt?: number },
+  ) => {
     if (seconds <= 0) return;
-    try {
-      const { data: existing } = await supabase
-        .from('upsc_focus_daily')
-        .select('total_seconds')
-        .eq('user_id', userId)
-        .eq('focus_date', date)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from('upsc_focus_daily')
-          .update({ total_seconds: existing.total_seconds + seconds, updated_at: new Date().toISOString() })
-          .eq('user_id', userId)
-          .eq('focus_date', date);
-      } else {
-        await supabase
-          .from('upsc_focus_daily')
-          .insert({ user_id: userId, focus_date: date, total_seconds: seconds });
-      }
-    } catch { /* non-critical */ }
+    if (await addFocusSeconds(userId, date, seconds)) void logFocus(userId, { date, seconds, ...meta });
   }, []);
 
   const loadDaily = useCallback(async () => {
@@ -137,6 +123,7 @@ export function useFocus() {
         start: plan.running ? plan.checkpoint : now,
         accumulated: plan.accumulated,
         day: istDayOf(plan.originMs),
+        origin: plan.originMs,
       };
       pausedRef.current = !plan.running;
       lastTickRef.current = now;
@@ -168,7 +155,9 @@ export function useFocus() {
             continue;
           }
           // Extra or abandoned sessions: keep only the time that was really tracked, on the day they began
-          if (plan.accumulated > 5) await addToDailyTotal(user.id, plan.accumulated, istDayOf(plan.originMs));
+          if (plan.accumulated > 5) {
+            await addToDailyTotal(user.id, plan.accumulated, istDayOf(plan.originMs), { source: 'recovered', startedAt: plan.originMs, endedAt: plan.checkpoint });
+          }
           await supabase.from('upsc_focus_sessions').delete().eq('id', row.id);
         }
       } catch { /* non-critical */ }
@@ -184,6 +173,9 @@ export function useFocus() {
       if (b) {
         setBaseline(b);
         try { localStorage.setItem(baselineKey(user.id), JSON.stringify(b)); } catch { /* ignore */ }
+      } else {
+        setBaseline(null);
+        try { localStorage.removeItem(baselineKey(user.id)); } catch { /* ignore */ }
       }
     });
 
@@ -209,7 +201,7 @@ export function useFocus() {
       }
     } catch { /* use local */ }
 
-    sessionRef.current = { id: sessionId, start: now, accumulated: 0, day: istDayOf(originMs) };
+    sessionRef.current = { id: sessionId, start: now, accumulated: 0, day: istDayOf(originMs), origin: originMs };
     pausedRef.current = false;
     lastTickRef.current = now;
     lastBeatRef.current = now;
@@ -264,7 +256,7 @@ export function useFocus() {
     const totalDur = s.accumulated + (pausedRef.current ? 0 : Math.floor((now - s.start) / 1000));
 
     // The whole session belongs to the day it began, even if it runs past midnight
-    await addToDailyTotal(user.id, totalDur, s.day);
+    await addToDailyTotal(user.id, totalDur, s.day, { source: 'timer', startedAt: s.origin, endedAt: now });
     window.dispatchEvent(new Event('upsc-focus-saved'));
 
     // Delete the active session row (only daily totals persist)
@@ -300,6 +292,14 @@ export function useFocus() {
     saveCloudPref(user.id, 'focus_cleared', next);
   }, [user, rawDaily]);
 
+  // Bring the hidden history back (it was never deleted)
+  const restoreHistory = useCallback(() => {
+    if (!user) return;
+    setBaseline(null);
+    try { localStorage.removeItem(baselineKey(user.id)); } catch { /* ignore */ }
+    saveCloudPref(user.id, 'focus_cleared', {});
+  }, [user]);
+
   // Auto-stop on logout
   useEffect(() => {
     const handleLogout = () => { if (sessionRef.current) stop(); };
@@ -313,7 +313,7 @@ export function useFocus() {
   return {
     active, paused, elapsed, dailyHistory,
     todayTotal: totals.today, weekTotal: totals.week, lastWeekTotal: totals.lastWeek,
-    start, stop, pause, resume, clearHistory,
+    start, stop, pause, resume, clearHistory, restoreHistory, historyHidden: baseline !== null,
   };
 }
 

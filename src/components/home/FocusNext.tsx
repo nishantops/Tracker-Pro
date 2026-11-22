@@ -125,7 +125,11 @@ export function FocusNext({ progress, onOpenSyllabus }: Props) {
     setQuery('');
   };
   const removeCustom = (id: string) => save({ ...prefs, custom: prefs.custom.filter((c) => c.id !== id) });
-  const hide = (id: string) => save({ ...prefs, hidden: [...prefs.hidden, id] });
+  // Hidden ids that are ticked by now are dropped, so the list cannot grow without bound
+  const hide = (id: string) => save({
+    ...prefs,
+    hidden: Array.from(new Set([...prefs.hidden, id])).filter((x) => !progress?.get(x)?.is_checked),
+  });
 
   return (
     <div className="neo-card rounded-3xl p-5 focus-next">

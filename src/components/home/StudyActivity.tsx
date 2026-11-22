@@ -7,6 +7,7 @@ import {
   TREND_HISTORY_DAYS, trendDelta, type DailyGoal, type TrendMode,
 } from '../../lib/studyStats';
 import { adjustMode, applyAdjust, focusTotals } from '../../lib/focusStats';
+import { addFocusSeconds, logFocus } from '../../lib/focusDb';
 import { TrendChart } from './TrendChart';
 
 const MODES: { id: TrendMode; label: string; unit: string; now: string; before: string }[] = [
@@ -101,12 +102,9 @@ export function StudyActivity() {
     const next = applyAdjust(kind, (existing?.total_seconds as number | undefined) ?? null, secs);
     if (!next.ok) { setAddErr(next.error); return; }
     setAddErr('');
-    const { error } = existing
-      ? await supabase.from('upsc_focus_daily')
-        .update({ total_seconds: next.total, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id).eq('focus_date', addDate)
-      : await supabase.from('upsc_focus_daily').insert({ user_id: user.id, focus_date: addDate, total_seconds: next.total });
-    if (error) { setAddErr('Could not save. Try again.'); return; }
+    const delta = kind === 'add' ? secs : -secs;
+    if (!(await addFocusSeconds(user.id, addDate, delta))) { setAddErr('Could not save. Try again.'); return; }
+    void logFocus(user.id, { date: addDate, seconds: delta, source: kind === 'add' ? 'manual_add' : 'manual_subtract' });
     setAdding(false); setAddH(''); setAddM('');
     window.dispatchEvent(new Event('upsc-focus-saved'));
   };

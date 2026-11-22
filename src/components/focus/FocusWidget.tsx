@@ -8,7 +8,7 @@ import { istToday } from '../../lib/studyStats';
 export function FocusWidget() {
   const {
     active, paused, elapsed, dailyHistory, todayTotal, weekTotal, lastWeekTotal = 0,
-    start, stop, pause, resume, clearHistory,
+    start, stop, pause, resume, clearHistory, restoreHistory, historyHidden = false,
   } = useFocus();
   const { showToast } = useToast();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -127,6 +127,11 @@ export function FocusWidget() {
   const handleResume = async () => {
     await resume();
     showToast('Session resumed', 'info');
+  };
+
+  const handleRestore = () => {
+    restoreHistory?.();
+    showToast('History is visible again', 'success');
   };
 
   const handleClear = async () => {
@@ -299,6 +304,11 @@ export function FocusWidget() {
                   title="Hide this list. Your study time, daily goal and activity are not touched."
                 >
                   Clear All
+                </button>
+              )}
+              {historyHidden && (
+                <button className="fp-clear-btn" onClick={handleRestore} title="Show the history you cleared earlier">
+                  Show hidden history
                 </button>
               )}
             </div>

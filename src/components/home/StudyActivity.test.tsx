@@ -7,19 +7,23 @@ const h = vi.hoisted(() => ({
   load: vi.fn(),
   save: vi.fn(),
   writes: [] as { op: string; payload: unknown }[],
+  logs: [] as unknown[],
+  rpc: vi.fn(),
   writeError: null as unknown,
 }));
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {
-    from: () => {
+    rpc: (...args: unknown[]) => h.rpc(...args),
+    from: (table: string) => {
       let op = 'select';
       let date = '';
+      const track = (o: string, payload: unknown) => { op = o; if (table === 'upsc_focus_daily') h.writes.push({ op: o, payload }); if (table === 'upsc_focus_log') h.logs.push(payload); return b; };
       const b: Record<string, unknown> = {
         select: () => b, eq: (k: string, v: string) => { if (k === 'focus_date') date = v; return b; }, gte: () => b,
         maybeSingle: () => Promise.resolve({ data: h.rows.find((r) => r.focus_date === date) ?? null, error: null }),
-        update: (p: unknown) => { op = 'update'; h.writes.push({ op, payload: p }); return b; },
-        insert: (p: unknown) => { op = 'insert'; h.writes.push({ op, payload: p }); return b; },
+        update: (p: unknown) => track('update', p),
+        insert: (p: unknown) => track('insert', p),
         then: (res: (v: unknown) => unknown) => res(op === 'select' ? { data: h.rows, error: null } : { data: null, error: h.writeError }),
       };
       return b;
@@ -38,6 +42,8 @@ beforeEach(() => {
   localStorage.clear();
   h.rows = [];
   h.writes = [];
+  h.logs = [];
+  h.rpc.mockReset().mockResolvedValue({ data: null, error: { code: 'PGRST202' } }); // function not installed: fall back
   h.writeError = null;
   h.load.mockReset().mockResolvedValue({ ok: true, found: false, value: null });
   h.save.mockReset();
@@ -270,6 +276,26 @@ describe('StudyActivity', () => {
       fireEvent.click(screen.getByText('Add'));
       expect(screen.getByRole('alert')).toHaveTextContent('add time for today, or subtract from yesterday');
       expect(h.writes).toEqual([]);
+    });
+
+    it('with the atomic database function installed, one call does the change and an audit row is logged', async () => {
+      h.rpc.mockResolvedValue({ data: 1, error: null });
+      h.rows = [{ focus_date: ymdAgo(1), total_seconds: 3600 }];
+      await open();
+      pickDay(ymdAgo(1));
+      fill('', '15');
+      fireEvent.click(screen.getByText('Subtract'));
+      await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('upsc_focus_add', { p_date: ymdAgo(1), p_secs: -900 }));
+      await waitFor(() => expect(h.logs).toEqual([expect.objectContaining({ user_id: 'u1', focus_date: ymdAgo(1), seconds: -900, source: 'manual_subtract' })]));
+      expect(h.writes).toEqual([]);
+    });
+
+    it('logs an addition too', async () => {
+      h.rpc.mockResolvedValue({ data: 1, error: null });
+      await open();
+      fill('1', '0');
+      fireEvent.click(screen.getByText('Add'));
+      await waitFor(() => expect(h.logs).toEqual([expect.objectContaining({ seconds: 3600, source: 'manual_add' })]));
     });
 
     it('rejects empty and over-24h entries without writing', async () => {

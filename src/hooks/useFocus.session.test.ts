@@ -4,7 +4,7 @@ import { renderHook, act } from '@testing-library/react';
 type Row = Record<string, unknown>;
 const h = vi.hoisted(() => ({
   user: { id: 'u1' },
-  db: { upsc_focus_sessions: [] as Row[], upsc_focus_daily: [] as Row[] } as Record<string, Row[]>,
+  db: { upsc_focus_sessions: [] as Row[], upsc_focus_daily: [] as Row[], upsc_focus_log: [] as Row[] } as Record<string, Row[]>,
   deletes: [] as string[],
   cloud: vi.fn(),
   saveCloud: vi.fn(),
@@ -64,6 +64,7 @@ beforeEach(() => {
   vi.useFakeTimers({ now: T0, toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
   h.db.upsc_focus_sessions = [];
   h.db.upsc_focus_daily = [];
+  h.db.upsc_focus_log = [];
   h.deletes = [];
   h.cloud.mockReset().mockResolvedValue({ ok: true, found: false, value: null });
   h.saveCloud.mockReset();
@@ -208,5 +209,52 @@ describe('useFocus: clearing history never touches the data', () => {
     expect(result.current.todayTotal).toBe(1800);
     expect(result.current.dailyHistory.map((d) => d.focus_date)).toEqual(['2026-11-02']);
     expect(h.db.upsc_focus_daily.find((r) => r.focus_date === '2026-11-02')!.total_seconds).toBe(3600 + 1800);
+  });
+});
+
+describe('useFocus: audit log and restoring history', () => {
+  it('stop writes one log row with the session length and its real start and end', async () => {
+    const { result } = renderHook(() => useFocus());
+    await flush();
+    await act(async () => { await result.current.start(); });
+    await advance(0.5 * HOUR);
+    await act(async () => { await result.current.stop(); });
+    expect(h.db.upsc_focus_log).toHaveLength(1);
+    expect(h.db.upsc_focus_log[0]).toMatchObject({
+      user_id: 'u1', focus_date: '2026-11-02', seconds: 1800, source: 'timer',
+      started_at: new Date(T0).toISOString(), ended_at: new Date(T0 + 0.5 * HOUR).toISOString(),
+    });
+  });
+
+  it('an abandoned session that is closed on load is logged as recovered', async () => {
+    const created = new Date('2026-10-30T10:00:00Z').toISOString();
+    h.db.upsc_focus_sessions.push({ id: 'old', user_id: 'u1', ended_at: null, duration_seconds: 0, accumulated_seconds: 5400, created_at: created, started_at: created });
+    renderHook(() => useFocus());
+    await flush();
+    expect(h.db.upsc_focus_log[0]).toMatchObject({ focus_date: '2026-10-30', seconds: 5400, source: 'recovered' });
+  });
+
+  it('restoreHistory shows the cleared list again and syncs that', async () => {
+    h.db.upsc_focus_daily = [{ user_id: 'u1', focus_date: '2026-11-01', total_seconds: 7200 }];
+    const { result } = renderHook(() => useFocus());
+    await flush();
+    await act(async () => { await result.current.clearHistory(); });
+    expect(result.current.historyHidden).toBe(true);
+    expect(result.current.dailyHistory).toHaveLength(0);
+    act(() => { result.current.restoreHistory(); });
+    expect(result.current.historyHidden).toBe(false);
+    expect(result.current.dailyHistory).toHaveLength(1);
+    expect(h.saveCloud).toHaveBeenLastCalledWith('u1', 'focus_cleared', {});
+    expect(localStorage.getItem('upsc_focus_cleared_u1')).toBeNull();
+  });
+
+  it('a cleared marker removed on another device is honoured here', async () => {
+    localStorage.setItem('upsc_focus_cleared_u1', JSON.stringify({ before: '2026-11-02', secs: 0 }));
+    h.db.upsc_focus_daily = [{ user_id: 'u1', focus_date: '2026-11-01', total_seconds: 7200 }];
+    h.cloud.mockResolvedValue({ ok: true, found: true, value: {} });
+    const { result } = renderHook(() => useFocus());
+    await flush();
+    expect(result.current.historyHidden).toBe(false);
+    expect(result.current.dailyHistory).toHaveLength(1);
   });
 });

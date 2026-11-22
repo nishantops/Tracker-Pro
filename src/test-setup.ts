@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
 
 // Node 25+ ships its own experimental `localStorage` that is unusable without --localstorage-file and shadows jsdom's.
-if (typeof globalThis.localStorage?.clear !== 'function') {
+// Reading it prints a warning, so it is replaced without ever being touched.
+{
   const mem = new Map<string, string>();
   const storage: Storage = {
     get length() { return mem.size; },
